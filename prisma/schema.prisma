@@ -1,0 +1,163 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String    @id @default(cuid())
+  phone             String    @unique
+  email             String?   @unique
+  pendingEmail      String?
+  businessName      String?
+  sells             String?
+  goal              String?
+  onboardedAt       DateTime?
+  paused            Boolean   @default(false)
+  welcomeEmailSentAt DateTime?
+  emailTokenHash    String?   @unique
+  emailTokenExpires DateTime?
+  createdAt         DateTime  @default(now())
+  payments          Payment[]
+  agents            UserAgent[]
+  approvals         Approval[]
+  tasks             Task[]
+  messages          Message[]
+  sessions          Session[]
+}
+
+model Payment {
+  id              String    @id
+  userId          String?
+  user            User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  gateway         String
+  amountInr       Int
+  status          String
+  phone           String?
+  gatewayPaymentId String?
+  raw             Json?
+  smsSentAt       DateTime?
+  createdAt       DateTime  @default(now())
+  paidAt          DateTime?
+
+  @@index([status])
+  @@index([userId])
+}
+
+model LoginCode {
+  id        String   @id @default(cuid())
+  email     String
+  codeHash  String
+  expiresAt DateTime
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([email])
+}
+
+model RateLimit {
+  id      String   @id
+  count   Int
+  resetAt DateTime
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  email     String
+  isAdmin   Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Agent {
+  id         String      @id
+  name       String
+  role       String
+  department String
+  blurb      String
+  color      String
+  goals      String
+  sort       Int
+  userAgents UserAgent[]
+  approvals  Approval[]
+  messages   Message[]
+}
+
+model UserAgent {
+  id          String  @id @default(cuid())
+  userId      String
+  agentId     String
+  enabled     Boolean @default(false)
+  recommended Boolean @default(false)
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agent       Agent   @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, agentId])
+}
+
+model Approval {
+  id        String    @id @default(cuid())
+  userId    String
+  agentId   String
+  title     String
+  detail    String
+  status    String
+  createdAt DateTime  @default(now())
+  decidedAt DateTime?
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agent     Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+}
+
+model Task {
+  id        String   @id @default(cuid())
+  userId    String
+  agentId   String?
+  title     String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  userId    String
+  agentId   String
+  role      String
+  body      String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@index([userId, agentId, createdAt])
+}
+
+model Setting {
+  key   String @id
+  value String
+}
+
+model SmsLog {
+  id        String   @id @default(cuid())
+  phone     String
+  body      String
+  provider  String
+  createdAt DateTime @default(now())
+}
+
+model EmailLog {
+  id        String   @id @default(cuid())
+  toEmail   String
+  subject   String
+  body      String
+  provider  String
+  createdAt DateTime @default(now())
+}
