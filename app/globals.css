@@ -379,7 +379,8 @@ textarea {
   gap: 14px;
 }
 
-.chat-picker {
+.chat-picker,
+.br-main .chat > .chat-picker {
   display: none;
 }
 
@@ -410,6 +411,19 @@ textarea {
 
 .chat-list button.on {
   border-color: var(--lime);
+}
+
+@media (min-width: 861px) {
+  .br-main .chat > .chat-list {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .br-main .chat > .thread {
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
+  }
 }
 
 .thread {
@@ -551,7 +565,8 @@ td {
   .chat {
     grid-template-columns: 1fr;
   }
-  .chat-picker {
+  .chat-picker,
+  .br-main .chat > .chat-picker {
     display: flex;
     width: 100%;
     margin-bottom: 8px;
@@ -683,15 +698,61 @@ button.btn:disabled {
   min-width: 0;
 }
 
-.br-main .chat-form input {
-  flex: 1 1 auto;
-  width: 1%;
+.br-main .thread .chat-form {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  margin-top: 10px;
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  background: #0b0f12;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.br-main .thread .chat-form input[type="text"] {
+  flex: 1 1 0%;
+  width: auto;
   min-width: 0;
   max-width: none;
 }
 
-.br-main .chat-form .btn {
+.br-main .chat-form .btn,
+.br-main .thread .chat-form .btn {
   flex: 0 0 auto;
+}
+
+@media (max-width: 860px) {
+  .br-shell:has(.chat-page) {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+  }
+
+  .br-shell:has(.chat-page) .br-side {
+    flex: none;
+    height: auto;
+    max-height: none;
+  }
+
+  .br-shell:has(.chat-page) .br-main {
+    flex: 1 1 auto;
+    height: auto;
+    max-height: none;
+    min-height: 0;
+    overflow: hidden;
+    padding: 12px 16px calc(8px + env(safe-area-inset-bottom));
+  }
+
+  .br-shell:has(.chat-page) .chat-page h1 {
+    font-size: 28px;
+    margin: 0 0 8px;
+  }
 }
 
 .onboard {
@@ -762,6 +823,38 @@ button.text-link {
 button.text-link:disabled {
   color: var(--dim);
   cursor: default;
+}
+
+.pay-wait {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 18px;
+  background: #06080a;
+  color: var(--text);
+  text-align: center;
+  padding: 24px;
+}
+
+.pay-wait h1 {
+  margin: 0;
+  font-size: clamp(28px, 5vw, 40px);
+}
+
+.pay-spin {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.16);
+  border-top-color: var(--lime);
+  animation: pay-spin 0.8s linear infinite;
+}
+
+@keyframes pay-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .test-badge {

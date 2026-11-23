@@ -24,9 +24,9 @@ export function CashfreeHandoff({ sessionId, mode }: { sessionId: string; mode: 
   }, [sessionId, mode]);
 
   return (
-    <main className="page prose">
-      <h1>Opening secure checkout…</h1>
-      <p>The next page is Cashfree. Your name, email, and mobile are already on the payment. No card details are typed on this site.</p>
+    <main className="pay-wait">
+      <div className="pay-spin" aria-hidden="true" />
+      <h1>Opening secure payment…</h1>
     </main>
   );
 }
