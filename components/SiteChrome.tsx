@@ -72,7 +72,7 @@ export function PolicyFrame({ title, children }: { title: string; children: Reac
   return (
     <>
       <SiteHeader />
-      <main className="page prose">
+      <main className="wrap policy prose">
         <h1>{title}</h1>
         {children}
         <p>
