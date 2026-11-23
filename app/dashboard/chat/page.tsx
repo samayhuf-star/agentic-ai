@@ -23,7 +23,7 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
     : [];
 
   return (
-    <div>
+    <div className="chat-page">
       <p className="br-kicker">Talk to an agent</p>
       <h1>Plain words. No setup.</h1>
       {memberships.length === 0 ? (

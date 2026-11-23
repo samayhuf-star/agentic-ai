@@ -22,12 +22,12 @@ test("owner payment alerts send once per order", async () => {
   try {
     const input = {
       kind: "payment_received" as const,
-      dedupeKey: "payment_received:order-alert-1",
+      dedupeKey: `payment_received:order-alert-${Date.now()}`,
       name: "Chai and Co",
       email: "buyer@shop.test",
       phone: "+919999900000",
       amountInr: 1999,
-      orderId: "order-alert-1",
+      orderId: `order-alert-${Date.now()}`,
       status: "paid",
     };
     await deliverOwnerAlert(input);
@@ -53,8 +53,9 @@ test("follow-up notes send once and stop after payment or unsubscribe", async ()
   const original = globalThis.fetch;
   globalThis.fetch = (async () => new Response("{}", { status: 200 })) as typeof fetch;
   const old = new Date(Date.now() - 2 * 60 * 60 * 1000);
+  const stamp = Date.now();
   const lead = await prisma.lead.create({
-    data: { orderId: `lead-${Date.now()}`, email: "wait@shop.test", amountInr: 1999, status: "pending", createdAt: old },
+    data: { orderId: `lead-${stamp}`, email: `wait-${stamp}@shop.test`, amountInr: 1999, status: "pending", createdAt: old },
   });
   try {
     await runFollowups();
@@ -68,7 +69,7 @@ test("follow-up notes send once and stop after payment or unsubscribe", async ()
     const user = await prisma.user.create({
       data: {
         phone: `+91${phone}`,
-        email: "paid-wait@shop.test",
+        email: `paid-wait-${stamp}@shop.test`,
         payments: { create: { id: `pay-${Date.now()}`, gateway: "cashfree", amountInr: 1999, status: "paid", paidAt: old } },
       },
     });

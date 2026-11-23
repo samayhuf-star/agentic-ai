@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { appOrigin } from "@/lib/config";
 import { destroySession, SESSION_COOKIE, cookieDomain, tokenFromRequest } from "@/lib/auth";
 
 export const runtime = "nodejs";
@@ -6,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   await destroySession(tokenFromRequest(request));
-  const response = NextResponse.redirect(new URL("/", request.url), 303);
+  const response = NextResponse.redirect(new URL("/", appOrigin(request)), 303);
   response.headers.set("Cache-Control", "no-store");
   const host = request.headers.get("x-forwarded-host") || request.headers.get("host");
   const domain = cookieDomain(host);

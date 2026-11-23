@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { GatewaySwitch, ResendButton, TestEmailForm } from "@/components/AdminPanel";
-import { formatInr } from "@/lib/config";
+import { formatInr, formatIst } from "@/lib/config";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { getActiveGateway } from "@/lib/settings";
@@ -74,7 +74,7 @@ export default async function SuperAdminPage({ searchParams }: { searchParams: P
                 ) : (
                   alerts.map((alert) => (
                     <tr key={alert.id}>
-                      <td>{alert.createdAt.toISOString().slice(0, 16).replace("T", " ")}</td>
+                      <td>{formatIst(alert.createdAt)}</td>
                       <td>{alert.kind}</td>
                       <td>{alert.channel}</td>
                       <td>{alert.status}</td>
@@ -109,7 +109,7 @@ export default async function SuperAdminPage({ searchParams }: { searchParams: P
                 ) : (
                   leads.map((lead) => (
                     <tr key={lead.id}>
-                      <td>{lead.createdAt.toISOString().slice(0, 16).replace("T", " ")}</td>
+                      <td>{formatIst(lead.createdAt)}</td>
                       <td>{lead.email || "—"}</td>
                       <td>{lead.phone ? displayPhone(lead.phone) : "—"}</td>
                       <td>{lead.orderId}</td>
@@ -137,7 +137,7 @@ export default async function SuperAdminPage({ searchParams }: { searchParams: P
                 ) : (
                   followups.map((row) => (
                     <tr key={row.id}>
-                      <td>{row.createdAt.toISOString().slice(0, 16).replace("T", " ")}</td>
+                      <td>{formatIst(row.createdAt)}</td>
                       <td>{row.step}</td>
                       <td>{row.toEmail}</td>
                     </tr>
@@ -185,6 +185,7 @@ export default async function SuperAdminPage({ searchParams }: { searchParams: P
           <thead>
             <tr>
               <th>Person</th>
+              <th>Signed up</th>
               <th>Paid</th>
               <th>Welcome</th>
             </tr>
@@ -192,7 +193,7 @@ export default async function SuperAdminPage({ searchParams }: { searchParams: P
           <tbody>
             {users.length === 0 ? (
               <tr>
-                <td colSpan={3}>No one matches.</td>
+                <td colSpan={4}>No one matches.</td>
               </tr>
             ) : (
               users.map((user) => (
@@ -202,6 +203,7 @@ export default async function SuperAdminPage({ searchParams }: { searchParams: P
                     <div className="muted">{displayPhone(user.phone)}</div>
                     <div className="muted">{user.email || "Email not added"}</div>
                   </td>
+                  <td>{formatIst(user.createdAt)}</td>
                   <td>{formatInr(user.payments.reduce((sum, payment) => sum + payment.amountInr, 0))}</td>
                   <td>{user.email ? <ResendButton userId={user.id} /> : <span className="muted">Waiting for email</span>}</td>
                 </tr>
@@ -225,7 +227,7 @@ export default async function SuperAdminPage({ searchParams }: { searchParams: P
           <tbody>
             {payments.map((payment) => (
               <tr key={payment.id}>
-                <td>{payment.createdAt.toISOString().slice(0, 16).replace("T", " ")}</td>
+                <td>{formatIst(payment.createdAt)}</td>
                 <td>{payment.gateway}</td>
                 <td>{formatInr(payment.amountInr)}</td>
                 <td>{payment.status}</td>

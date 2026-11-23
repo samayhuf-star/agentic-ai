@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { mockPaymentsAllowed } from "@/lib/config";
+import { appOrigin, mockPaymentsAllowed } from "@/lib/config";
 import { mockSignature } from "@/lib/payments/signature";
 import { handleWebhook } from "@/lib/payments/webhook";
 import { prisma } from "@/lib/prisma";
@@ -61,5 +61,5 @@ export async function POST(request: Request) {
   const gateway = payment.gateway === "cashfree" ? "cashfree" : payment.gateway;
   const result = await handleWebhook(gateway, payload, headers);
   if (result.status !== 200) return NextResponse.json(result.body, { status: result.status });
-  return NextResponse.redirect(new URL(`/checkout/return?order_id=${payment.id}`, request.url), 303);
+  return NextResponse.redirect(new URL(`/checkout/return?order_id=${payment.id}`, appOrigin(request)), 303);
 }

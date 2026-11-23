@@ -23,7 +23,7 @@ export function GatewaySwitch({ current }: { current: string }) {
   return (
     <form className="stack" onSubmit={save}>
       {["cashfree", "razorpay", "payu"].map((name) => (
-        <label key={name}>
+        <label key={name} className={gateway === name ? "onboard-choice on" : "onboard-choice"}>
           <input type="radio" name="gateway" value={name} checked={gateway === name} onChange={() => setGateway(name)} /> {name === "cashfree" ? "Cashfree" : name === "razorpay" ? "Razorpay" : "PayU"}
         </label>
       ))}

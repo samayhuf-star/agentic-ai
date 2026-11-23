@@ -40,19 +40,39 @@ export function publicConfig(): PublicConfig {
   };
 }
 
+function isRailwayHost(hostname: string) {
+  return hostname === "railway.app" || hostname.endsWith(".railway.app");
+}
+
+export function formatIst(date: Date) {
+  const formatted = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).format(date);
+  return `${formatted} IST`;
+}
+
 export function appOrigin(request?: Request) {
   const configured = process.env.APP_URL?.replace(/\/$/, "");
-  const raw = configured || (request ? new URL(request.url).origin : "http://localhost:3000");
+  const requestOrigin = request ? new URL(request.url).origin : "";
+  const raw = configured || requestOrigin || "http://localhost:3000";
+  let url: URL;
   try {
-    const url = new URL(raw);
-    if (url.hostname === "theaitimemachine.com") {
-      url.hostname = "www.theaitimemachine.com";
-      url.protocol = "https:";
-    }
-    return url.origin;
+    url = new URL(raw);
   } catch {
-    return raw;
+    return "http://localhost:3000";
   }
+  if (isRailwayHost(url.hostname)) return "https://www.theaitimemachine.com";
+  if (url.hostname === "theaitimemachine.com") {
+    url.hostname = "www.theaitimemachine.com";
+    url.protocol = "https:";
+  }
+  return url.origin;
 }
 
 export function isProduction() {

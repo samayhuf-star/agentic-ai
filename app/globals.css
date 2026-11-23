@@ -350,17 +350,45 @@ textarea {
   font-size: 22px;
 }
 
+.br-main:has(.chat-page) {
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.chat-page {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-page h1 {
+  margin-bottom: 10px;
+  font-size: clamp(28px, 4vw, 40px);
+}
+
 .chat {
+  flex: 1;
+  min-height: 0;
   display: grid;
-  grid-template-columns: 220px 1fr;
+  grid-template-columns: 240px minmax(0, 1fr);
   gap: 14px;
-  min-height: 520px;
+}
+
+.chat-picker {
+  display: none;
 }
 
 .chat-list {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-height: 0;
+  overflow: auto;
 }
 
 .chat-list button,
@@ -391,7 +419,14 @@ textarea {
   padding: 14px;
   display: flex;
   flex-direction: column;
-  min-height: 420px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.thread-log {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
 }
 
 .bubble {
@@ -413,7 +448,8 @@ textarea {
 }
 
 .chat-form {
-  margin-top: auto;
+  margin-top: 10px;
+  flex: none;
 }
 
 .chat-form input {
@@ -514,6 +550,18 @@ td {
   .stats,
   .chat {
     grid-template-columns: 1fr;
+  }
+  .chat-picker {
+    display: flex;
+    width: 100%;
+    margin-bottom: 8px;
+  }
+  .chat-list {
+    display: none;
+    max-height: 38vh;
+  }
+  .chat-list.open {
+    display: flex;
   }
   .pause-big {
     align-items: flex-start;

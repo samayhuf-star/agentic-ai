@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import { agents, DEPARTMENTS } from "../data/agents";
+import { appOrigin } from "../lib/config";
 import { cashfreeTarget } from "../lib/payments/gateways";
 
 const expected: Record<string, number> = {
@@ -50,6 +51,18 @@ test("the home page keeps the approved hero words", () => {
   assert.doesNotMatch(html, /₹1,800/);
   assert.doesNotMatch(html, /lookalike buyers/);
   assert.doesNotMatch(html, /listing views/);
+});
+
+test("public links use APP_URL and never a Railway host", () => {
+  const previous = process.env.APP_URL;
+  process.env.APP_URL = "https://www.theaitimemachine.com";
+  assert.equal(appOrigin(new Request("https://web-production.up.railway.app/api/checkout")), "https://www.theaitimemachine.com");
+  process.env.APP_URL = "https://theaitimemachine.com";
+  assert.equal(appOrigin(), "https://www.theaitimemachine.com");
+  delete process.env.APP_URL;
+  assert.equal(appOrigin(new Request("https://web-production.up.railway.app/api/checkout")).includes("railway.app"), false);
+  if (previous === undefined) delete process.env.APP_URL;
+  else process.env.APP_URL = previous;
 });
 
 test("Cashfree TEST uses the sandbox and PROD uses the live API", () => {

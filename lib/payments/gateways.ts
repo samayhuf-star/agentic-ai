@@ -46,6 +46,8 @@ async function createCashfree(input: CheckoutInput) {
       order_note: "Replace the sample phone with your own mobile before you pay.",
       order_meta: {
         return_url: `${input.origin}/checkout/return?order_id=${input.orderId}`,
+        notify_url: `${input.origin}/api/webhooks/cashfree`,
+        ...(cashfree.mode === "sandbox" ? { payment_methods: "cc,dc,upi" } : {}),
       },
     }),
   });

@@ -12,6 +12,7 @@ export function ChatPanel({ agents, activeId, initial }: { agents: AgentOption[]
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [listOpen, setListOpen] = useState(false);
   const active = agents.find((agent) => agent.id === activeId) ?? agents[0];
 
   async function send(event: React.FormEvent) {
@@ -38,9 +39,20 @@ export function ChatPanel({ agents, activeId, initial }: { agents: AgentOption[]
 
   return (
     <div className="chat">
-      <div className="chat-list" role="listbox" aria-label="Your agents">
+      <button className="btn btn-g chat-picker" type="button" onClick={() => setListOpen((open) => !open)} aria-expanded={listOpen}>
+        {listOpen ? "Close agents" : `${active?.name || "Choose an agent"}`}
+      </button>
+      <div className={listOpen ? "chat-list open" : "chat-list"} role="listbox" aria-label="Your agents">
         {agents.map((agent) => (
-          <button key={agent.id} type="button" className={agent.id === active?.id ? "on" : ""} onClick={() => router.push(`/dashboard/chat?agent=${agent.id}`)}>
+          <button
+            key={agent.id}
+            type="button"
+            className={agent.id === active?.id ? "on" : ""}
+            onClick={() => {
+              setListOpen(false);
+              router.push(`/dashboard/chat?agent=${agent.id}`);
+            }}
+          >
             <b>{agent.name}</b>
             <span className="muted" style={{ display: "block" }}>
               {agent.role}
@@ -60,13 +72,15 @@ export function ChatPanel({ agents, activeId, initial }: { agents: AgentOption[]
             </small>
           </span>
         </div>
-        {messages.length === 0 ? <p className="muted">Say hello. Talk like you would to a person.</p> : null}
-        {messages.map((message) => (
-          <p key={message.id} className={message.role === "user" ? "bubble user" : "bubble agent"}>
-            {message.body}
-          </p>
-        ))}
-        {error ? <p className="error">{error}</p> : null}
+        <div className="thread-log">
+          {messages.length === 0 ? <p className="muted">Say hello. Talk like you would to a person.</p> : null}
+          {messages.map((message) => (
+            <p key={message.id} className={message.role === "user" ? "bubble user" : "bubble agent"}>
+              {message.body}
+            </p>
+          ))}
+          {error ? <p className="error">{error}</p> : null}
+        </div>
         <form className="chat-form" onSubmit={send}>
           <input type="text" value={text} onChange={(event) => setText(event.target.value)} placeholder="Type anything, like you'd text a person…" aria-label="Message" />
           <button className="btn btn-p" type="submit" disabled={busy}>
