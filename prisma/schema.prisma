@@ -19,6 +19,7 @@ model User {
   onboardedAt       DateTime?
   paused            Boolean   @default(false)
   welcomeEmailSentAt DateTime?
+  marketingOptOut Boolean   @default(false)
   emailTokenHash    String?   @unique
   emailTokenExpires DateTime?
   createdAt         DateTime  @default(now())
@@ -161,4 +162,48 @@ model EmailLog {
   body      String
   provider  String
   createdAt DateTime @default(now())
+}
+
+model Lead {
+  id              String         @id @default(cuid())
+  orderId         String         @unique
+  email           String?
+  phone           String?
+  name            String?
+  amountInr       Int
+  status          String
+  marketingOptOut Boolean        @default(false)
+  userId          String?
+  createdAt       DateTime       @default(now())
+  paidAt          DateTime?
+  followups       FollowupSend[]
+
+  @@index([status, createdAt])
+  @@index([email])
+}
+
+model FollowupSend {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  step      String
+  toEmail   String
+  leadId    String?
+  lead      Lead?    @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+}
+
+model AlertLog {
+  id        String   @id @default(cuid())
+  kind      String
+  channel   String
+  status    String
+  dedupeKey String?
+  toAddress String
+  subject   String
+  body      String
+  error     String?
+  createdAt DateTime @default(now())
+
+  @@unique([dedupeKey, channel])
+  @@index([createdAt])
 }

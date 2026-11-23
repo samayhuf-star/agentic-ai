@@ -3,6 +3,7 @@ import { appOrigin, mockPaymentsAllowed, pricing } from "@/lib/config";
 import { randomToken } from "@/lib/crypto";
 import { createHostedCheckout, gatewayHasKeys } from "@/lib/payments/gateways";
 import { getActiveGateway } from "@/lib/settings";
+import { openLead } from "@/lib/leads";
 
 export async function createCheckout(request: Request) {
   const gateway = await getActiveGateway();
@@ -12,6 +13,7 @@ export async function createCheckout(request: Request) {
   await prisma.payment.create({
     data: { id: orderId, gateway, amountInr, status: "pending" },
   });
+  await openLead({ orderId, amountInr });
 
   if (gatewayHasKeys(gateway)) {
     try {

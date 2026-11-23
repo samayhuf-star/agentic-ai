@@ -6,14 +6,20 @@ import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { getActiveGateway } from "@/lib/settings";
 import { displayPhone } from "@/lib/phone";
+import { TestAlertButton } from "@/components/TestAlertButton";
 
 export const dynamic = "force-dynamic";
 
-export default async function SuperAdminPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+export default async function SuperAdminPage({ searchParams }: { searchParams: Promise<{ q?: string; tab?: string }> }) {
   const session = await getSession();
   if (!session?.isAdmin) redirect("/login");
-  const { q } = await searchParams;
+  const { q, tab } = await searchParams;
   const query = (q || "").trim();
+  const [alerts, followups, leads] = await Promise.all([
+    prisma.alertLog.findMany({ orderBy: { createdAt: "desc" }, take: 50 }),
+    prisma.followupSend.findMany({ orderBy: { createdAt: "desc" }, take: 50 }),
+    prisma.lead.findMany({ where: { status: "pending" }, orderBy: { createdAt: "desc" }, take: 50 }),
+  ]);
   const [signups, paidCount, revenue, gateway, users, payments] = await Promise.all([
     prisma.user.count(),
     prisma.payment.count({ where: { status: "paid" } }),
@@ -40,6 +46,110 @@ export default async function SuperAdminPage({ searchParams }: { searchParams: P
     <main className="page">
       <p className="br-kicker">Admin</p>
       <h1>AI Time Machine</h1>
+      <p className="row-actions">
+        <Link href="/sup-admin">Home</Link>
+        <Link href="/sup-admin?tab=alerts">Alerts</Link>
+        <Link href="/sup-admin?tab=followups">Follow-ups</Link>
+      </p>
+      {tab === "alerts" ? (
+        <section>
+          <h2 style={{ fontSize: 28 }}>Alerts</h2>
+          <TestAlertButton />
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>When</th>
+                  <th>Kind</th>
+                  <th>Channel</th>
+                  <th>Status</th>
+                  <th>To</th>
+                </tr>
+              </thead>
+              <tbody>
+                {alerts.length === 0 ? (
+                  <tr>
+                    <td colSpan={5}>No alerts yet.</td>
+                  </tr>
+                ) : (
+                  alerts.map((alert) => (
+                    <tr key={alert.id}>
+                      <td>{alert.createdAt.toISOString().slice(0, 16).replace("T", " ")}</td>
+                      <td>{alert.kind}</td>
+                      <td>{alert.channel}</td>
+                      <td>{alert.status}</td>
+                      <td>{alert.toAddress}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
+      {tab === "followups" ? (
+        <section>
+          <h2 style={{ fontSize: 28 }}>Follow-ups</h2>
+          <h3>Waiting on payment</h3>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Started</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Order</th>
+                </tr>
+              </thead>
+              <tbody>
+                {leads.length === 0 ? (
+                  <tr>
+                    <td colSpan={4}>No open checkouts.</td>
+                  </tr>
+                ) : (
+                  leads.map((lead) => (
+                    <tr key={lead.id}>
+                      <td>{lead.createdAt.toISOString().slice(0, 16).replace("T", " ")}</td>
+                      <td>{lead.email || "—"}</td>
+                      <td>{lead.phone ? displayPhone(lead.phone) : "—"}</td>
+                      <td>{lead.orderId}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+          <h3>Sent</h3>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>When</th>
+                  <th>Step</th>
+                  <th>To</th>
+                </tr>
+              </thead>
+              <tbody>
+                {followups.length === 0 ? (
+                  <tr>
+                    <td colSpan={3}>None sent yet.</td>
+                  </tr>
+                ) : (
+                  followups.map((row) => (
+                    <tr key={row.id}>
+                      <td>{row.createdAt.toISOString().slice(0, 16).replace("T", " ")}</td>
+                      <td>{row.step}</td>
+                      <td>{row.toEmail}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
+      {tab ? null : (
+      <>
       <div className="stats">
         <div className="stat">
           <small>Signups</small>
@@ -128,6 +238,8 @@ export default async function SuperAdminPage({ searchParams }: { searchParams: P
       <p style={{ marginTop: 18 }}>
         <Link href="/dashboard">Back to the dashboard</Link>
       </p>
+      </>
+      )}
     </main>
   );
 }

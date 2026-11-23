@@ -25,7 +25,19 @@ export async function confirmPendingCashfreeOrder(orderId: string) {
     return payment;
   }
 
-  if (String(body.order_status || "").toUpperCase() !== "PAID") return payment;
+  const orderStatus = String(body.order_status || "").toUpperCase();
+  if (orderStatus === "EXPIRED" || orderStatus === "CANCELLED" || orderStatus === "TERMINATED" || orderStatus === "FAILED") {
+    await fulfillPayment("cashfree", {
+      orderId,
+      status: "failed",
+      amountInr: body.order_amount != null ? Math.round(Number(body.order_amount)) : payment.amountInr,
+      phone: body.customer_details?.customer_phone || payment.phone,
+      gatewayPaymentId: null,
+      raw: body,
+    });
+    return prisma.payment.findUnique({ where: { id: orderId } });
+  }
+  if (orderStatus !== "PAID") return payment;
   await fulfillPayment("cashfree", {
     orderId,
     status: "paid",

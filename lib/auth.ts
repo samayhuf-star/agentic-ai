@@ -4,6 +4,8 @@ import { hashSecret, randomToken, sixDigitCode } from "@/lib/crypto";
 import { sendEmail } from "@/lib/messaging/email";
 import { clientIp, hitLimit } from "@/lib/rate-limit";
 import { welcomeEmail } from "@/lib/copy";
+import { queueOwnerAlert } from "@/lib/alerts/notify";
+import { attachLeadContact } from "@/lib/leads";
 
 const TEN_MINUTES = 10 * 60 * 1000;
 const SESSION_DAYS = 30;
@@ -166,6 +168,22 @@ export async function verifyLoginCode(emailInput: string, codeInput: string) {
   if (admin) user = await upsertCompUser(email);
   if (!hasProductAccess(user ? { compAccess: user.compAccess, payments: user.payments } : null)) {
     return { ok: false as const, status: 403, message: "Only a paid AI Time Machine account can sign in." };
+  }
+
+  if (user?.id) {
+    const prior = await prisma.session.count({ where: { userId: user.id } });
+    if (prior === 0) {
+      queueOwnerAlert({
+        kind: "first_login",
+        dedupeKey: `first_login:${user.id}`,
+        name: user.businessName,
+        email: user.email || email,
+        phone: user.phone,
+        orderId: null,
+        status: "first login",
+      });
+    }
+    await attachLeadContact({ userId: user.id, phone: user.phone, email: user.email || email, name: user.businessName });
   }
 
   const token = randomToken();

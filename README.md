@@ -99,6 +99,24 @@ Copy `.env.example` to `.env`. Leave a line blank to keep that part in test mode
 | `GUPSHUP_API_KEY`, `GUPSHUP_SOURCE`, `GUPSHUP_APP_NAME` | Gupshup WhatsApp. |
 | `RESEND_API_KEY` | [resend.com](https://resend.com). Sends the code and the welcome email. Leave blank and email stays in test mode. |
 | `RESEND_FROM` | Sender Resend has verified. Default `AI Time Machine <no-reply@adiology.io>`. Replies go to support@theaitimemachine.com. `/sup-admin` can send a test email. |
+| `OWNER_ALERT_EMAILS` | Comma-separated emails that get checkout, payment, and first-login alerts. |
+| `WHATSAPP_PROVIDER` | `none`, `callmebot`, or `meta`. `none` only writes a log. |
+| `OWNER_WHATSAPP_NUMBER` | Owner WhatsApp number with country code. |
+| `CALLMEBOT_API_KEY` | Used when `WHATSAPP_PROVIDER=callmebot`. |
+| `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID` | Used when `WHATSAPP_PROVIDER=meta`. |
+| `CRON_SECRET` | Shared secret for `POST /api/jobs/followups`. Send it as `x-cron-secret`. |
+
+## Follow-up cron
+
+The web service stays running. Add a second Railway service from this same repo for the timer. Do not put a cron schedule on the web service.
+
+1. New service, same GitHub repo and branch.
+2. Set its start command to `curl -fsS -X POST -H "x-cron-secret: $CRON_SECRET" "$APP_URL/api/jobs/followups"`.
+3. Set the cron schedule to `*/15 * * * *`.
+4. Give that service `CRON_SECRET` and `APP_URL` (the public https address, including `www`).
+5. The web service also needs `CRON_SECRET`, `RESEND_API_KEY`, `RESEND_FROM`, and `OWNER_ALERT_EMAILS`.
+
+The job sends at most one note per person each run. Paying stops the checkout notes. Unsubscribe stops the rest. Sign-in codes still send.
 | `LLM_API_KEY` | Optional. Any chat API that speaks the OpenAI format. |
 | `LLM_BASE_URL` | Optional. Default `https://api.openai.com/v1`. |
 | `LLM_MODEL` | Optional. Default `gpt-4o-mini`. |
