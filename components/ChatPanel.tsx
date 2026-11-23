@@ -68,7 +68,7 @@ export function ChatPanel({ agents, activeId, initial }: { agents: AgentOption[]
         ))}
         {error ? <p className="error">{error}</p> : null}
         <form className="chat-form" onSubmit={send}>
-          <input value={text} onChange={(event) => setText(event.target.value)} placeholder="Type anything, like you'd text a person…" aria-label="Message" />
+          <input type="text" value={text} onChange={(event) => setText(event.target.value)} placeholder="Type anything, like you'd text a person…" aria-label="Message" />
           <button className="btn btn-p" type="submit" disabled={busy}>
             {busy ? "Sending…" : "Send"}
           </button>

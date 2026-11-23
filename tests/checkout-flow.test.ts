@@ -117,6 +117,9 @@ test("checkout, webhook, email code, and team setup in mock mode", async () => {
   assert.ok(adminUser?.onboardedAt);
   assert.equal(adminUser?.phone, null);
   assert.equal(adminUser?.payments.length, 0);
+  const { ensureTeam } = await import("../lib/team");
+  await ensureTeam(adminUser!.id);
+  assert.equal(await prisma.userAgent.count({ where: { userId: adminUser!.id } }), 55);
 
   process.env.RESEND_API_KEY = "re_test_key";
   process.env.RESEND_FROM = "AI Time Machine <no-reply@adiology.io>";
@@ -148,4 +151,33 @@ test("checkout, webhook, email code, and team setup in mock mode", async () => {
   }
   const limited = await requestLoginCode(email, new Request("http://localhost/api/auth/request-code", { headers: { "x-forwarded-for": "203.0.113.30" } }));
   assert.equal(limited.status, 429);
+});
+
+test("a Cashfree return marks a pending order paid when Cashfree says it is paid", async () => {
+  const { confirmPendingCashfreeOrder } = await import("../lib/payments/confirm");
+  const orderId = `brconfirm${Date.now()}`;
+  const phone = `8${String(Date.now()).slice(-9)}`;
+  await prisma.payment.create({ data: { id: orderId, gateway: "cashfree", amountInr: 1999, status: "pending" } });
+  process.env.CASHFREE_APP_ID = "test_id";
+  process.env.CASHFREE_SECRET_KEY = "test_secret";
+  process.env.CASHFREE_ENV = "TEST";
+  const original = globalThis.fetch;
+  globalThis.fetch = (async () =>
+    new Response(JSON.stringify({ order_status: "PAID", order_amount: 1999, customer_details: { customer_phone: phone } }), {
+      status: 200,
+    })) as typeof fetch;
+  try {
+    const payment = await confirmPendingCashfreeOrder(orderId);
+    assert.equal(payment?.status, "paid");
+    const user = await prisma.user.findUnique({ where: { phone: `+91${phone}` } });
+    assert.ok(user);
+    const texts = await prisma.smsLog.findMany({ where: { phone: user!.phone! } });
+    assert.equal(texts.length, 1);
+    const blocked = await requestLoginCode(`new-${Date.now()}@shop.test`, new Request("http://localhost/api/auth/request-code", { headers: { "x-forwarded-for": "203.0.113.50" } }));
+    assert.equal(blocked.status, 403);
+  } finally {
+    globalThis.fetch = original;
+    delete process.env.CASHFREE_APP_ID;
+    delete process.env.CASHFREE_SECRET_KEY;
+  }
 });

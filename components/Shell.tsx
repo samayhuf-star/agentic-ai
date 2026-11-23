@@ -56,7 +56,7 @@ export function Shell({
             </Link>
           ) : null}
         </nav>
-        <div className="pause-big" style={{ marginTop: "auto" }}>
+        <div className="pause-big side-pause">
           <div>
             <b>Pause everything</b>
             <div className="muted">One switch. No posts, no messages, no spending.</div>

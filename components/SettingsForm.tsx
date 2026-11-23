@@ -22,11 +22,11 @@ export function SettingsForm({ businessName, sells, email, phone }: { businessNa
     <form className="stack" onSubmit={save}>
       <label className="field">
         Business name
-        <input value={name} onChange={(event) => setName(event.target.value)} required />
+        <input type="text" autoComplete="organization" value={name} onChange={(event) => setName(event.target.value)} required />
       </label>
       <label className="field">
         What you sell
-        <input value={what} onChange={(event) => setWhat(event.target.value)} required />
+        <input type="text" autoComplete="off" value={what} onChange={(event) => setWhat(event.target.value)} required />
       </label>
       <p className="muted">Email: {email || "Not added yet"}</p>
       <p className="muted">Phone: {phone}</p>

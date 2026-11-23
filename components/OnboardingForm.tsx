@@ -2,20 +2,42 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { GOALS } from "@/data/agents";
+
+const CHOICES = [
+  { id: "customers", label: "Talk to customers" },
+  { id: "replies", label: "Answer messages" },
+  { id: "posts", label: "Write posts" },
+  { id: "books", label: "Keep the books tidy" },
+  { id: "everything", label: "A bit of everything" },
+] as const;
 
 type Picked = { id: string; name: string; role: string; department: string; color: string };
 
 export function OnboardingForm() {
   const [businessName, setBusinessName] = useState("");
   const [sells, setSells] = useState("");
-  const [goal, setGoal] = useState("everything");
+  const [goal, setGoal] = useState("");
   const [error, setError] = useState("");
+  const [nameError, setNameError] = useState("");
+  const [sellsError, setSellsError] = useState("");
+  const [goalError, setGoalError] = useState("");
   const [busy, setBusy] = useState(false);
   const [team, setTeam] = useState<Picked[] | null>(null);
+  const nameOk = businessName.trim().length >= 2;
+  const sellsOk = sells.trim().length >= 2;
+  const goalOk = CHOICES.some((item) => item.id === goal);
+  const valid = nameOk && sellsOk && goalOk;
+
+  function validate() {
+    setNameError(nameOk ? "" : "Enter the business name.");
+    setSellsError(sellsOk ? "" : "Say what you sell, in a short line.");
+    setGoalError(goalOk ? "" : "Pick one.");
+    return valid;
+  }
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
+    if (!validate()) return;
     setBusy(true);
     setError("");
     const response = await fetch("/api/onboarding", {
@@ -39,9 +61,9 @@ export function OnboardingForm() {
   if (team) {
     return (
       <div>
-        <p className="br-kicker">Your AI CEO</p>
-        <h1>Ayaan is assembling your team.</h1>
-        <p className="muted">These are the people he picked first. The other agents are ready whenever you want them.</p>
+        <p className="br-kicker">Ready</p>
+        <h1>Your starting team is here.</h1>
+        <p className="lead">These are turned on first. The others wait until you switch them on. Nothing goes out until you say yes.</p>
         <div className="assemble">
           {team.map((agent, index) => (
             <div key={agent.id} style={{ animationDelay: `${index * 70}ms` }}>
@@ -68,30 +90,63 @@ export function OnboardingForm() {
   }
 
   return (
-    <form className="stack" onSubmit={submit}>
-      <p className="br-kicker">About two minutes</p>
-      <h1>Tell Ayaan about the business.</h1>
-      <p className="muted">Plain answers are enough. He uses them to pick a starting team from the 55 agents.</p>
+    <form className="stack" onSubmit={submit} noValidate>
+      <p className="br-kicker">Setup</p>
+      <h1>Tell us about the business.</h1>
+      <p className="lead">Three answers. We use them to turn on a starting group. You can change this later.</p>
       <label className="field">
         Business name
-        <input value={businessName} onChange={(event) => setBusinessName(event.target.value)} required maxLength={80} />
+        <input
+          type="text"
+          name="business-name"
+          autoComplete="organization"
+          value={businessName}
+          onChange={(event) => {
+            setBusinessName(event.target.value);
+            if (nameError) setNameError("");
+          }}
+          maxLength={80}
+        />
+        {nameError ? <span className="field-error">{nameError}</span> : null}
       </label>
       <label className="field">
         What do you sell?
-        <input value={sells} onChange={(event) => setSells(event.target.value)} required maxLength={200} placeholder="Masala chai and snacks" />
+        <input
+          type="text"
+          name="sells"
+          autoComplete="off"
+          value={sells}
+          onChange={(event) => {
+            setSells(event.target.value);
+            if (sellsError) setSellsError("");
+          }}
+          maxLength={200}
+          placeholder="Masala chai and snacks"
+        />
+        {sellsError ? <span className="field-error">{sellsError}</span> : null}
       </label>
-      <fieldset className="choices" style={{ border: 0, padding: 0 }}>
-        <legend className="muted">What do you most want help with?</legend>
-        {GOALS.map((item) => (
-          <label key={item.id}>
-            <input type="radio" name="goal" value={item.id} checked={goal === item.id} onChange={() => setGoal(item.id)} />
+      <fieldset className="choices" style={{ border: 0, padding: 0, margin: 0 }}>
+        <legend>What should the team help with?</legend>
+        {CHOICES.map((item) => (
+          <label key={item.id} className={goal === item.id ? "onboard-choice on" : "onboard-choice"}>
+            <input
+              type="radio"
+              name="goal"
+              value={item.id}
+              checked={goal === item.id}
+              onChange={() => {
+                setGoal(item.id);
+                setGoalError("");
+              }}
+            />
             {item.label}
           </label>
         ))}
+        {goalError ? <span className="field-error">{goalError}</span> : null}
       </fieldset>
       {error ? <p className="error">{error}</p> : null}
-      <button className="btn btn-p" type="submit" disabled={busy}>
-        {busy ? "Picking your team…" : "Assemble my team"}
+      <button className="btn btn-p" type="submit" disabled={busy || !valid}>
+        {busy ? "Saving…" : "Set up my team"}
       </button>
     </form>
   );

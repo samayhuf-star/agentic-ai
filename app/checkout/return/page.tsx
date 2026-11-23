@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { confirmPendingCashfreeOrder } from "@/lib/payments/confirm";
 
 export const dynamic = "force-dynamic";
 
 export default async function ReturnPage({ searchParams }: { searchParams: Promise<{ order_id?: string }> }) {
   const { order_id: orderId } = await searchParams;
+  if (orderId) await confirmPendingCashfreeOrder(orderId);
   const payment = orderId ? await prisma.payment.findUnique({ where: { id: orderId } }) : null;
   const paid = payment?.status === "paid";
   const unassigned = payment?.status === "paid_unassigned";
