@@ -19,7 +19,7 @@ window.startLanding = function (cfg) {
   try {
     var root = document.querySelector('.landing-root') || document;
     root.querySelectorAll('.amt-x').forEach(function (el) {
-      if (el.closest('.vc-bon, .pr-bon, .bn')) return;
+      if (el.closest('.vc-bon, .pr-bon, .bn, #bonuses')) return;
       var inr = el.getAttribute('data-inr') || '';
       if (inr.indexOf('4,999') !== -1) {
         el.setAttribute('data-inr', cfg.compareInrLabel);

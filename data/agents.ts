@@ -70,7 +70,7 @@ export const agents: AgentSeed[] = [
   agent("rehan", "Rehan", "Quiet carts", "Sales", "Drafts a nudge for people who almost bought.", ["customers", "everything"]),
   agent("naina", "Naina", "Quotes", "Sales", "Turns a price list into a clear quote.", ["customers"]),
   agent("harsh", "Harsh", "New leads", "Sales", "Greets a new enquiry and asks the one next question.", ["customers"]),
-  agent("aditya", "Aditya", "Shop follow-ups", "Sales", "Reminds you who to call back today.", []),
+  agent("aditya", "Aditya", "Shop follow-ups", "Sales", "Reminds you who to write back to today.", []),
   agent("ishaan", "Ishaan", "Bulk orders", "Sales", "Drafts a reply when someone wants a large order.", []),
   agent("kiara", "Kiara", "Reminder messages", "Sales", "Writes polite reminders. They wait in your yes queue.", []),
   agent("yash", "Yash", "Price lists", "Sales", "Turns your prices into a message a customer can understand.", []),

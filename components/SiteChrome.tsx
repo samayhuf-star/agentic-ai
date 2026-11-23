@@ -48,7 +48,7 @@ export function SiteFooter() {
             <br />
             {BUSINESS.address}
             <br />
-            <a href={BUSINESS.phoneHref}>{BUSINESS.phone}</a>
+            {BUSINESS.phone}
             <br />
             <a href={`mailto:${BUSINESS.supportEmail}`}>{BUSINESS.supportEmail}</a>
           </p>
@@ -80,7 +80,7 @@ export function PolicyFrame({ title, children }: { title: string; children: Reac
           <br />
           {BUSINESS.address}
           <br />
-          <a href={BUSINESS.phoneHref}>{BUSINESS.phone}</a>
+          {BUSINESS.phone}
           <br />
           <a href={`mailto:${BUSINESS.supportEmail}`}>{BUSINESS.supportEmail}</a>
         </p>

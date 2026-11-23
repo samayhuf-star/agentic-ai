@@ -10,7 +10,7 @@ export default function ShippingPage() {
       <p>
         After a successful payment, access is delivered instantly. You get a link by email and by WhatsApp or SMS on the phone number used at checkout. You add your email, type a one-time code, and open your account.
       </p>
-      <p>If the link does not arrive within a few minutes, check the phone number you paid with, then write to {BUSINESS.supportEmail} or call {BUSINESS.phone}. We will resend access.</p>
+      <p>If the link does not arrive within a few minutes, check the phone number you paid with, then write to {BUSINESS.supportEmail}. Support is by email only. We will resend access.</p>
     </PolicyFrame>
   );
 }

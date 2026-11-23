@@ -6,11 +6,11 @@ export const metadata = { title: "Contact · AI Time Machine" };
 export default function ContactPage() {
   return (
     <PolicyFrame title="Contact">
-      <p>A real person reads mail to {BUSINESS.supportEmail}.</p>
+      <p>Support is by email only. A real person reads mail to {BUSINESS.supportEmail}.</p>
       <p>
         Email: <a href={`mailto:${BUSINESS.supportEmail}`}>{BUSINESS.supportEmail}</a>
         <br />
-        Phone: <a href={BUSINESS.phoneHref}>{BUSINESS.phone}</a>
+        Business number: {BUSINESS.phone}
         <br />
         {BUSINESS.legalName}
         <br />

@@ -16,7 +16,7 @@ export default function AboutPage() {
         The 55-agent offer, the price, and how buying works are on the <a href="/55-ai-agents">55 agents page</a>.
       </p>
       <p>
-        Registered details: {BUSINESS.legalName}, {BUSINESS.address}. Phone {BUSINESS.phone}. Email {BUSINESS.supportEmail}.
+        Registered details: {BUSINESS.legalName}, {BUSINESS.address}. Business number {BUSINESS.phone}. Support is by email only: {BUSINESS.supportEmail}.
       </p>
     </PolicyFrame>
   );

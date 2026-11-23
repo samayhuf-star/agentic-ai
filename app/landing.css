@@ -686,14 +686,6 @@ s>span.amt-x{text-decoration:line-through!important;text-decoration-thickness:2p
 .wg-list p{margin:4px 0 0;color:#b9c3be;font-size:15px;line-height:1.45;padding-right:70px}
 .wg-list em{position:absolute;right:16px;top:18px;font-style:normal;font-family:var(--mono-f);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--lime);border:1px solid rgba(200,242,90,.35);padding:3px 8px;border-radius:999px}
 /* new bonus visuals */
-.bv-call{width:270px}
-.vc-tiles{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.vc-tiles div{height:92px;border-radius:10px;background:linear-gradient(160deg,#1d2a33,#11181e);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border:1px solid rgba(255,255,255,.1)}
-.vc-tiles .t2{background:linear-gradient(160deg,#2a3a12,#141b0b);border-color:rgba(200,242,90,.4)}
-.vc-tiles span{width:34px;height:34px;border-radius:50%;background:#ff9f5a;color:#0a0a0a;display:grid;place-items:center;font-weight:800}.vc-tiles .t2 span{background:var(--lime)}
-.vc-tiles small{font-size:10px;color:#c3ccc8}
-.vc-bar{display:flex;align-items:center;gap:6px;justify-content:center;margin:8px 0}.vc-bar i{width:22px;height:22px;border-radius:50%;background:#2a333b}.vc-bar i.r{background:#ff5f57}.vc-bar b{font-family:var(--mono-f);font-size:10px;color:var(--dim);margin-left:6px}
-.vc-set{list-style:none;margin:0;padding:8px 10px;background:#141b21;border:1px solid var(--line);border-radius:10px;font-size:11px;display:grid;gap:4px;color:#c3ccc8}.vc-set .p{color:#ffc94d}
 .bv-sw{width:285px;background:#fbfaf5;color:#1a1d1b;border-radius:12px;padding:10px;transform:rotate(-2deg);box-shadow:0 20px 40px -10px #000}
 .sw-h{display:flex;justify-content:space-between;margin-bottom:6px}.sw-h b{font-size:12.5px}.sw-h small{font-size:10px;color:#777}
 .sw-r{display:flex;gap:7px;align-items:center;padding:6px 0;border-top:1px solid #e6e3d8;font-size:10px;color:#444}
@@ -767,7 +759,6 @@ s>span.amt-x{text-decoration:line-through!important;text-decoration-thickness:2p
 @media (max-width:760px){.wg-box{padding:22px 16px}.wg-list li{padding:15px 14px;gap:13px}.wg-ic{width:42px;height:42px}.wg-list b{font-size:17.5px;padding-right:72px}.wg-list p{padding-right:0;font-size:14.5px}
   .sl-stage{height:330px}.dx{padding:14px}.dx-chat p{font-size:13.5px}.dx-res b{font-size:22px}.dx-ask b{font-size:17px}.dx-row{padding:10px 12px}.dx-task{padding:10px 12px}.dx-task p{font-size:13.5px}}
 @media (prefers-reduced-motion:reduce){.sl-f.on .dx-row,.sl-f.on .dx-chat p,.sl-f.on .dx-task,.sl-f.on .dx-res div,.sl-f.on .dx-bar i,.sl-f.on .dx-ok{animation:none}}
-.vc-tiles div{height:72px}.vc-bar{margin:6px 0}.vc-set{padding:6px 10px}
 @media (max-width:760px){.wg-list em{position:static;display:inline-block;margin-top:8px}.wg-list b{padding-right:0}}
 .sl-stage{height:320px}
 /* Wordmark: "AI Time Machine" is longer than the old name. Keep it on one line on a phone. */
