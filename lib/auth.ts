@@ -9,13 +9,22 @@ const TEN_MINUTES = 10 * 60 * 1000;
 const SESSION_DAYS = 30;
 export const SESSION_COOKIE = "ai_time_machine_session";
 
-export function sessionCookieOptions() {
+export function cookieDomain(host: string | null | undefined) {
+  const hostname = (host || "").split(":")[0].toLowerCase().replace(/\.$/, "");
+  if (hostname === "theaitimemachine.com" || hostname === "www.theaitimemachine.com") return ".theaitimemachine.com";
+  return undefined;
+}
+
+export function sessionCookieOptions(request?: Request) {
+  const host = request?.headers.get("x-forwarded-host") || request?.headers.get("host");
+  const domain = cookieDomain(host);
   return {
     httpOnly: true,
     sameSite: "lax" as const,
     secure: isProduction(),
     path: "/",
     maxAge: 60 * 60 * 24 * SESSION_DAYS,
+    ...(domain ? { domain } : {}),
   };
 }
 

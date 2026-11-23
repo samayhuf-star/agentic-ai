@@ -3,7 +3,9 @@ import { getSessionFromRequest } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export function json(body: unknown, status = 200) {
-  return NextResponse.json(body, { status });
+  const response = NextResponse.json(body, { status });
+  response.headers.set("Cache-Control", "no-store");
+  return response;
 }
 
 export async function readJson(request: Request) {

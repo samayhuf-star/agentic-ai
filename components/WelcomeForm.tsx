@@ -48,7 +48,7 @@ export function WelcomeForm({ token }: { token: string }) {
       setError(data.message || "That code did not work.");
       return;
     }
-    window.location.href = data.redirect || "/onboarding";
+    window.location.replace(data.redirect || "/onboarding");
   }
 
   return (

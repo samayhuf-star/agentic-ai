@@ -47,7 +47,7 @@ js = js.replace(
     btn.disabled=true;
     fetch('/api/auth/verify-code',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email:email,code:code})})
       .then(function(r){return r.json().then(function(d){return {ok:r.ok,d:d};});})
-      .then(function(res){btn.disabled=false; if(!res.ok){show(res.d.message||'That code did not work.',true);return;} window.location.href=res.d.redirect||'/dashboard';})
+      .then(function(res){btn.disabled=false; if(!res.ok){show(res.d.message||'That code did not work.',true);return;} window.location.replace(res.d.redirect||'/dashboard');})
       .catch(function(){btn.disabled=false; show('Could not sign you in. Try again.',true);});
   });`,
 );

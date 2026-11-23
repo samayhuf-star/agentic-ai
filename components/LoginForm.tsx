@@ -49,7 +49,7 @@ export function LoginForm() {
       setError(data.message || "That code did not work.");
       return;
     }
-    window.location.href = data.redirect || "/dashboard";
+    window.location.replace(data.redirect || "/dashboard");
   }
 
   return (

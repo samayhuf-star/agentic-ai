@@ -83,6 +83,18 @@ test("checkout, webhook, email code, and team setup in mock mode", async () => {
     }),
   );
   assert.equal(setup.status, 200);
+  const again = await onboard(
+    new Request("http://localhost/api/onboarding", {
+      method: "POST",
+      headers: { "content-type": "application/json", cookie: `ai_time_machine_session=${verified.token}` },
+      body: JSON.stringify({ businessName: "Chai and Co", sells: "masala chai", goal: "posts" }),
+    }),
+  );
+  assert.equal(again.status, 200);
+  const againBody = (await again.json()) as { ok?: boolean; redirect?: string; message?: string };
+  assert.equal(againBody.ok, true);
+  assert.equal(againBody.redirect, "/dashboard");
+  assert.equal(againBody.message, undefined);
   const teamCount = await prisma.userAgent.count({ where: { userId: user!.id } });
   const enabled = await prisma.userAgent.count({ where: { userId: user!.id, enabled: true } });
   assert.equal(teamCount, 55);

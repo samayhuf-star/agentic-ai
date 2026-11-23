@@ -23,7 +23,11 @@ export function OnboardingForm() {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ businessName, sells, goal }),
     });
-    const data = (await response.json().catch(() => ({}))) as { message?: string; team?: Picked[] };
+    const data = (await response.json().catch(() => ({}))) as { message?: string; team?: Picked[]; ok?: boolean; redirect?: string };
+    if (data.redirect || /already set up/i.test(data.message || "")) {
+      window.location.replace(data.redirect || "/dashboard");
+      return;
+    }
     setBusy(false);
     if (!response.ok || !data.team) {
       setError(data.message || "That did not save. Try again.");

@@ -10,6 +10,7 @@ export async function POST(request: Request) {
   const result = await verifyLoginCode(String(body.email || ""), String(body.code || ""));
   if (!result.ok) return NextResponse.json({ message: result.message }, { status: result.status });
   const response = NextResponse.json({ redirect: result.redirect });
-  response.cookies.set(SESSION_COOKIE, result.token, sessionCookieOptions());
+  response.headers.set("Cache-Control", "no-store");
+  response.cookies.set(SESSION_COOKIE, result.token, sessionCookieOptions(request));
   return response;
 }

@@ -42,9 +42,17 @@ export function publicConfig(): PublicConfig {
 
 export function appOrigin(request?: Request) {
   const configured = process.env.APP_URL?.replace(/\/$/, "");
-  if (configured) return configured;
-  if (request) return new URL(request.url).origin;
-  return "http://localhost:3000";
+  const raw = configured || (request ? new URL(request.url).origin : "http://localhost:3000");
+  try {
+    const url = new URL(raw);
+    if (url.hostname === "theaitimemachine.com") {
+      url.hostname = "www.theaitimemachine.com";
+      url.protocol = "https:";
+    }
+    return url.origin;
+  } catch {
+    return raw;
+  }
 }
 
 export function isProduction() {
