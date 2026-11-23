@@ -27,7 +27,7 @@ Open http://localhost:3000
 5. Answer three questions. Ayaan picks a starting team.
 6. Use the dashboard: team on/off, chat, Needs your yes, and Pause everything.
 
-To open the admin page, put your email in `ADMIN_EMAILS` in `.env`, restart, and sign in with that email at http://localhost:3000/login
+To open the product and the admin page, put your email in `ADMIN_EMAILS` in `.env`, restart, and sign in with that email at http://localhost:3000/login. No payment is required for those addresses. The first sign-in creates the account.
 
 ## Put it on Railway
 
@@ -78,7 +78,7 @@ Copy `.env.example` to `.env`. Leave a line blank to keep that part in test mode
 | `DATABASE_URL` | Your Postgres host. Leave the sample value to use the local database. |
 | `APP_URL` | The public site address, like `https://adiology.io`. Used in text and email links. |
 | `AUTH_SECRET` | Make up a long random string. It locks the sign-in codes. |
-| `ADMIN_EMAILS` | Emails that may open `/sup-admin`. Comma-separated if there are several. |
+| `ADMIN_EMAILS` | Comma-separated owner emails. They can sign in without a payment, use the dashboard, and open `/sup-admin`. |
 | `PRICE_INR` | Price charged, in rupees. Default `1999`. |
 | `PRICE_USD` | Price shown outside India. Default `24`. The charge is still `PRICE_INR`. |
 | `COMPARE_PRICE_INR` / `COMPARE_PRICE_USD` | The crossed-out launch price. Defaults `4999` and `60`. |

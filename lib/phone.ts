@@ -13,7 +13,8 @@ export function isPlaceholderPhone(phone: string) {
   return PLACEHOLDERS.has(phone) || PLACEHOLDERS.has(phone.replace(/\D/g, ""));
 }
 
-export function displayPhone(phone: string) {
+export function displayPhone(phone: string | null | undefined) {
+  if (!phone) return "Not added";
   if (phone.startsWith("+91") && phone.length === 13) return phone.slice(3);
   return phone;
 }

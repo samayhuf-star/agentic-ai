@@ -50,7 +50,7 @@ export function LoginForm() {
   return (
     <div className="page prose">
       <h1>Sign in</h1>
-      <p>No password. We email a 6-digit code. Only a paid account can get in.</p>
+      <p>No password. We email a 6-digit code.</p>
       {step === 0 ? (
         <form className="stack" onSubmit={requestCode}>
           <label className="field">

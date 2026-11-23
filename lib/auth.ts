@@ -41,7 +41,11 @@ async function issueCode(email: string, request: Request) {
   });
   const subject = "Your AI Time Machine code";
   const text = `Your AI Time Machine code is ${code}. It expires in 10 minutes. If you did not ask for it, ignore this email.`;
-  await sendEmail(email, subject, text);
+  try {
+    await sendEmail(email, subject, text);
+  } catch {
+    return { ok: false as const, status: 502, message: "The code could not be emailed. Wait a minute and try again." };
+  }
   const emailIsMock = !process.env.RESEND_API_KEY;
   const showCode = emailIsMock || !isProduction();
   return {
@@ -52,12 +56,32 @@ async function issueCode(email: string, request: Request) {
   };
 }
 
+type AccessUser = { compAccess: boolean; payments: unknown[] } | null;
+
+function hasProductAccess(user: AccessUser) {
+  return Boolean(user && (user.compAccess || user.payments.length > 0));
+}
+
+async function upsertCompUser(email: string) {
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (existing) {
+    if (!existing.compAccess) {
+      await prisma.user.update({ where: { id: existing.id }, data: { compAccess: true } });
+    }
+  } else {
+    await prisma.user.create({ data: { email, compAccess: true } });
+  }
+  return prisma.user.findUniqueOrThrow({
+    where: { email },
+    include: { payments: { where: { status: "paid" }, take: 1 } },
+  });
+}
+
 export async function requestLoginCode(emailInput: string, request: Request) {
   const email = cleanEmail(emailInput || "");
   if (!isEmail(email)) return { ok: false as const, status: 400, message: "Enter a valid email." };
   const user = await prisma.user.findUnique({ where: { email }, include: { payments: { where: { status: "paid" }, take: 1 } } });
-  const admin = isAdminEmail(email);
-  if (!admin && (!user || user.payments.length === 0)) {
+  if (!isAdminEmail(email) && !hasProductAccess(user)) {
     return {
       ok: false as const,
       status: 403,
@@ -127,7 +151,8 @@ export async function verifyLoginCode(emailInput: string, codeInput: string) {
       });
     }
   }
-  if (!admin && (!user || user.payments.length === 0)) {
+  if (admin) user = await upsertCompUser(email);
+  if (!hasProductAccess(user ? { compAccess: user.compAccess, payments: user.payments } : null)) {
     return { ok: false as const, status: 403, message: "Only a paid AI Time Machine account can sign in." };
   }
 
@@ -141,7 +166,7 @@ export async function verifyLoginCode(emailInput: string, codeInput: string) {
       expiresAt: new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000),
     },
   });
-  const redirect = !user ? "/sup-admin" : user.onboardedAt ? "/dashboard" : "/onboarding";
+  const redirect = user?.onboardedAt ? "/dashboard" : "/onboarding";
   return { ok: true as const, status: 200, token, redirect, isAdmin: admin };
 }
 
