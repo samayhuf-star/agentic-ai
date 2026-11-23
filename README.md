@@ -98,7 +98,7 @@ Copy `.env.example` to `.env`. Leave a line blank to keep that part in test mode
 | `MSG91_AUTH_KEY`, `MSG91_SENDER_ID`, `MSG91_TEMPLATE_ID` | MSG91. The template should print the message text. |
 | `GUPSHUP_API_KEY`, `GUPSHUP_SOURCE`, `GUPSHUP_APP_NAME` | Gupshup WhatsApp. |
 | `RESEND_API_KEY` | [resend.com](https://resend.com). Sends the code and the welcome email. Leave blank and email stays in test mode. |
-| `RESEND_FROM` | Sender Resend has verified. Default `AI Time Machine <no-reply@adiology.io>`. Replies go to support@theaitimemachine.com. |
+| `RESEND_FROM` | Sender Resend has verified. Default `AI Time Machine <no-reply@adiology.io>`. Replies go to support@theaitimemachine.com. `/sup-admin` can send a test email. |
 | `LLM_API_KEY` | Optional. Any chat API that speaks the OpenAI format. |
 | `LLM_BASE_URL` | Optional. Default `https://api.openai.com/v1`. |
 | `LLM_MODEL` | Optional. Default `gpt-4o-mini`. |
@@ -131,4 +131,4 @@ npm run build
 
 Support mail is support@theaitimemachine.com. The seller is Rizwiz Enterprises, 261 A Bhim Street, Vishwas Nagar, Delhi, India, +91 99537 10111.
 
-Public routes: `/`, `/55-ai-agents`, `/pricing`, `/about`, `/contact`, `/privacy`, `/terms`, `/refund-policy`, `/shipping-policy`, `/disclaimer`, `/cookie-policy`, `/login`, `/dashboard`, `/sup-admin`. `/admin` is not a page.
+Public routes: `/`, `/55-ai-agents`, `/pricing`, `/about`, `/contact`, `/privacy`, `/terms`, `/refund-policy`, `/shipping-policy`, `/disclaimer`, `/cookie-policy`, `/login`, `/dashboard`, `/sup-admin`. `/admin` redirects to `/sup-admin`.

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { GatewaySwitch, ResendButton } from "@/components/AdminPanel";
+import { GatewaySwitch, ResendButton, TestEmailForm } from "@/components/AdminPanel";
 import { formatInr } from "@/lib/config";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
@@ -58,6 +58,11 @@ export default async function SuperAdminPage({ searchParams }: { searchParams: P
         <h2 style={{ fontSize: 24 }}>Active gateway</h2>
         <p className="muted">New Buy buttons use this. Cashfree is the main one. Razorpay and PayU are backups.</p>
         <GatewaySwitch current={gateway} />
+      </div>
+      <div className="card" style={{ marginBottom: 18 }}>
+        <h2 style={{ fontSize: 24 }}>Test email</h2>
+        <p className="muted">Sends from the configured sender. Replies go to support@theaitimemachine.com.</p>
+        <TestEmailForm defaultTo={session.email} />
       </div>
       <form className="row-actions" action="/sup-admin" method="get" style={{ margin: "18px 0" }}>
         <input name="q" defaultValue={query} placeholder="Search phone, email or business" aria-label="Search people" style={{ maxWidth: 360 }} />
