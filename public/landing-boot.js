@@ -72,8 +72,8 @@ window.startLanding = function (cfg) {
       btn.disabled=true;
       fetch('/api/auth/request-code',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email:email})})
         .then(function(r){return r.json().then(function(d){return {ok:r.ok,d:d};});})
-        .then(function(res){btn.disabled=false; if(!res.ok){show(res.d.message||'Try again in a minute.',true);return;}
-          step=1; document.getElementById('otp').classList.add('show'); btn.textContent='Sign in';
+        .then(function(res){ if(!res.ok){btn.disabled=false; show(res.d.message||'Try again in a minute.',true);return;}
+          step=1; document.getElementById('otp').classList.add('show'); btn.textContent='Sign in'; btn.disabled=true;
           sf.querySelector('.sub').textContent=res.d.devCode?'Email is in test mode. Your code is '+res.d.devCode+'.':'Code sent. Check your inbox and type it below.';
           if(res.d.devCode) show('Your code is '+res.d.devCode+'. This only appears in test mode.',false);
           sf.querySelector('.otp input').focus();
@@ -87,7 +87,24 @@ window.startLanding = function (cfg) {
       .then(function(res){btn.disabled=false; if(!res.ok){show(res.d.message||'That code did not work.',true);return;} window.location.href=res.d.redirect||'/dashboard';})
       .catch(function(){btn.disabled=false; show('Could not sign you in. Try again.',true);});
   });
-  document.querySelectorAll('.otp input').forEach(function(inp,i,all){inp.addEventListener('input',function(){if(inp.value&&all[i+1])all[i+1].focus();});});
+  function otpDigits(text){return String(text||'').replace(/\D/g,'').slice(0,6);}
+  function fillOtp(all,start,raw){
+    var incoming=otpDigits(raw); if(!incoming) return;
+    var values=[].map.call(all,function(el){return (el.value||'').replace(/\D/g,'').slice(0,1);});
+    if(incoming.length>=all.length){for(var n=0;n<all.length;n++) values[n]=incoming.charAt(n);}
+    else {for(var k=0;k<incoming.length && start+k<all.length;k++) values[start+k]=incoming.charAt(k);}
+    for(var i=0;i<all.length;i++) all[i].value=values[i]||'';
+    var joined=values.join('');
+    var focusAt=joined.length>=all.length?all.length-1:Math.min(start+incoming.length,all.length-1);
+    if(all[focusAt]) all[focusAt].focus();
+    var btn=document.getElementById('siGo');
+    if(btn && document.getElementById('otp').classList.contains('show')) btn.disabled=joined.length!==all.length;
+  }
+  document.querySelectorAll('.otp input').forEach(function(inp,i,all){
+    inp.addEventListener('paste',function(e){e.preventDefault();var data=e.clipboardData||window.clipboardData;fillOtp(all,i,data?data.getData('text'):'');});
+    inp.addEventListener('input',function(){if(inp.value.length>1){fillOtp(all,i,inp.value);return;} inp.value=inp.value.replace(/\D/g,'').slice(-1); if(inp.value&&all[i+1]) all[i+1].focus(); var joined=[].map.call(all,function(el){return el.value;}).join(''); var btn=document.getElementById('siGo'); if(btn && document.getElementById('otp').classList.contains('show')) btn.disabled=joined.length!==all.length;});
+    inp.addEventListener('keydown',function(e){if(e.key==='Backspace'&&!inp.value&&all[i-1]){all[i-1].value='';all[i-1].focus();e.preventDefault(); var joined=[].map.call(all,function(el){return el.value;}).join(''); var btn=document.getElementById('siGo'); if(btn) btn.disabled=joined.length!==all.length;}});
+  });
   // Mobile menu
   var mb=document.querySelector('.menu-btn'),nav=document.querySelector('.nav');
   if(mb){mb.addEventListener('click',function(){var o=nav.classList.toggle('menu-open');mb.setAttribute('aria-expanded',o);});

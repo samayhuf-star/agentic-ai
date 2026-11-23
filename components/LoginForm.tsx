@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
+import { OtpInput } from "@/components/OtpInput";
 
 export function LoginForm() {
   const [email, setEmail] = useState("");
@@ -9,6 +10,10 @@ export function LoginForm() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const verifyCode = useCallback((next: string) => {
+    if (formRef.current && next.length === 6) formRef.current.requestSubmit();
+  }, []);
 
   async function requestCode(event: React.FormEvent) {
     event.preventDefault();
@@ -63,14 +68,14 @@ export function LoginForm() {
           </button>
         </form>
       ) : (
-        <form className="stack" onSubmit={verify}>
+        <form className="stack" ref={formRef} onSubmit={verify}>
           <p>{message}</p>
           <label className="field">
             6-digit code
-            <input inputMode="numeric" autoComplete="one-time-code" value={code} onChange={(event) => setCode(event.target.value)} required maxLength={6} />
+            <OtpInput onChange={setCode} onComplete={verifyCode} />
           </label>
           {error ? <p className="error">{error}</p> : null}
-          <button className="btn btn-p" type="submit" disabled={busy}>
+          <button className="btn btn-p" type="submit" disabled={busy || code.length !== 6}>
             Sign in
           </button>
         </form>

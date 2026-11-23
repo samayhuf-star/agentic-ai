@@ -1087,7 +1087,7 @@ s>span.amt-x{text-decoration:line-through!important;text-decoration-thickness:2p
     <h3 id="si-t">Sign in</h3>
     <p class="sub">No password. We'll email you a 6-digit code.</p>
     <label for="si-email">Email</label><input id="si-email" type="email" required autocomplete="email" placeholder="you@yourshop.in">
-    <div class="otp" id="otp" aria-label="One-time code"><input inputmode="numeric" maxlength="1" aria-label="Digit 1"><input inputmode="numeric" maxlength="1" aria-label="Digit 2"><input inputmode="numeric" maxlength="1" aria-label="Digit 3"><input inputmode="numeric" maxlength="1" aria-label="Digit 4"><input inputmode="numeric" maxlength="1" aria-label="Digit 5"><input inputmode="numeric" maxlength="1" aria-label="Digit 6"></div>
+    <div class="otp" id="otp" aria-label="One-time code"><input inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" aria-label="Digit 1"><input inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-label="Digit 2"><input inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-label="Digit 3"><input inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-label="Digit 4"><input inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-label="Digit 5"><input inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-label="Digit 6"></div>
     <button class="go" type="submit" id="siGo" style="margin-top:16px">Email me a code</button>
     <p class="fine">New here? <a href="https://payments.cashfree.com/forms/boardroom" data-buy style="color:var(--lime)">Get AI Time Machine — <span class="amt-x" data-inr="₹1,999" data-usd="$24">₹1,999</span></a></p>
   </form>
@@ -1117,7 +1117,24 @@ s>span.amt-x{text-decoration:line-through!important;text-decoration-thickness:2p
   sf.addEventListener('submit',function(e){e.preventDefault();
     if(step===0){step=1;document.getElementById('otp').classList.add('show');document.getElementById('siGo').textContent='Sign in';sf.querySelector('.sub').textContent='Code sent. Check your inbox and type it below.';sf.querySelector('.otp input').focus();}
   });
-  document.querySelectorAll('.otp input').forEach(function(inp,i,all){inp.addEventListener('input',function(){if(inp.value&&all[i+1])all[i+1].focus();});});
+  function otpDigits(text){return String(text||'').replace(/\D/g,'').slice(0,6);}
+  function fillOtp(all,start,raw){
+    var incoming=otpDigits(raw); if(!incoming) return;
+    var values=[].map.call(all,function(el){return (el.value||'').replace(/\D/g,'').slice(0,1);});
+    if(incoming.length>=all.length){for(var n=0;n<all.length;n++) values[n]=incoming.charAt(n);}
+    else {for(var k=0;k<incoming.length && start+k<all.length;k++) values[start+k]=incoming.charAt(k);}
+    for(var i=0;i<all.length;i++) all[i].value=values[i]||'';
+    var joined=values.join('');
+    var focusAt=joined.length>=all.length?all.length-1:Math.min(start+incoming.length,all.length-1);
+    if(all[focusAt]) all[focusAt].focus();
+    var btn=document.getElementById('siGo');
+    if(btn && document.getElementById('otp').classList.contains('show')) btn.disabled=joined.length!==all.length;
+  }
+  document.querySelectorAll('.otp input').forEach(function(inp,i,all){
+    inp.addEventListener('paste',function(e){e.preventDefault();var data=e.clipboardData||window.clipboardData;fillOtp(all,i,data?data.getData('text'):'');});
+    inp.addEventListener('input',function(){if(inp.value.length>1){fillOtp(all,i,inp.value);return;} inp.value=inp.value.replace(/\D/g,'').slice(-1); if(inp.value&&all[i+1]) all[i+1].focus(); var joined=[].map.call(all,function(el){return el.value;}).join(''); var btn=document.getElementById('siGo'); if(btn && document.getElementById('otp').classList.contains('show')) btn.disabled=joined.length!==all.length;});
+    inp.addEventListener('keydown',function(e){if(e.key==='Backspace'&&!inp.value&&all[i-1]){all[i-1].value='';all[i-1].focus();e.preventDefault(); var joined=[].map.call(all,function(el){return el.value;}).join(''); var btn=document.getElementById('siGo'); if(btn) btn.disabled=joined.length!==all.length;}});
+  });
   // Mobile menu
   var mb=document.querySelector('.menu-btn'),nav=document.querySelector('.nav');
   if(mb){mb.addEventListener('click',function(){var o=nav.classList.toggle('menu-open');mb.setAttribute('aria-expanded',o);});

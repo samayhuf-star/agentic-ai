@@ -304,7 +304,7 @@
     <h3 id="si-t">Sign in</h3>
     <p class="sub">No password. We'll email you a 6-digit code.</p>
     <label for="si-email">Email</label><input id="si-email" type="email" required autocomplete="email" placeholder="you@yourshop.in">
-    <div class="otp" id="otp" aria-label="One-time code"><input inputmode="numeric" maxlength="1" aria-label="Digit 1"><input inputmode="numeric" maxlength="1" aria-label="Digit 2"><input inputmode="numeric" maxlength="1" aria-label="Digit 3"><input inputmode="numeric" maxlength="1" aria-label="Digit 4"><input inputmode="numeric" maxlength="1" aria-label="Digit 5"><input inputmode="numeric" maxlength="1" aria-label="Digit 6"></div>
+    <div class="otp" id="otp" aria-label="One-time code"><input inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" aria-label="Digit 1"><input inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-label="Digit 2"><input inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-label="Digit 3"><input inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-label="Digit 4"><input inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-label="Digit 5"><input inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-label="Digit 6"></div>
     <p class="msg" id="siMsg"></p>
     <button class="go" type="submit" id="siGo" style="margin-top:16px">Email me a code</button>
     <p class="fine">New here? <a href="/api/checkout" data-buy style="color:var(--lime)">Get AI Time Machine — <span class="amt-x" data-inr="₹1,999" data-usd="$24">₹1,999</span></a></p>

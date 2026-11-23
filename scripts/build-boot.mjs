@@ -35,8 +35,8 @@ js = js.replace(
       btn.disabled=true;
       fetch('/api/auth/request-code',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email:email})})
         .then(function(r){return r.json().then(function(d){return {ok:r.ok,d:d};});})
-        .then(function(res){btn.disabled=false; if(!res.ok){show(res.d.message||'Try again in a minute.',true);return;}
-          step=1; document.getElementById('otp').classList.add('show'); btn.textContent='Sign in';
+        .then(function(res){ if(!res.ok){btn.disabled=false; show(res.d.message||'Try again in a minute.',true);return;}
+          step=1; document.getElementById('otp').classList.add('show'); btn.textContent='Sign in'; btn.disabled=true;
           sf.querySelector('.sub').textContent=res.d.devCode?'Email is in test mode. Your code is '+res.d.devCode+'.':'Code sent. Check your inbox and type it below.';
           if(res.d.devCode) show('Your code is '+res.d.devCode+'. This only appears in test mode.',false);
           sf.querySelector('.otp input').focus();
