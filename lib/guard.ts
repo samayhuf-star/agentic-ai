@@ -5,14 +5,14 @@ import { getSession } from "@/lib/session";
 export async function requireDashboardUser() {
   const session = await getSession();
   if (!session?.user) redirect(session?.isAdmin ? "/sup-admin" : "/login");
-  if (!session.user.onboardedAt) redirect("/onboarding");
+  if (!session.user.onboardedAt && !session.isAdmin && !session.user.compAccess) redirect("/onboarding");
   return session;
 }
 
 export async function requireOnboardingUser() {
   const session = await getSession();
   if (!session?.user) redirect("/login");
-  if (session.user.onboardedAt) redirect("/dashboard");
+  if (session.user.onboardedAt || session.isAdmin || session.user.compAccess) redirect("/dashboard");
   return session;
 }
 

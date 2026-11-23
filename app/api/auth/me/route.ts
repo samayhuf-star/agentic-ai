@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   const session = await getSessionFromRequest(request);
   if (!session) return json({ ok: false });
-  const href = session.user?.onboardedAt ? "/dashboard" : session.user ? "/onboarding" : "/sup-admin";
+  const owner = Boolean(session.isAdmin || session.user?.compAccess);
+  const href = !session.user ? "/sup-admin" : owner || session.user.onboardedAt ? "/dashboard" : "/onboarding";
   return json({ ok: true, href });
 }

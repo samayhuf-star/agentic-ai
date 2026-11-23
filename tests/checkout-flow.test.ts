@@ -98,21 +98,13 @@ test("checkout, webhook, email code, and team setup in mock mode", async () => {
   assert.equal(admin.ok, true);
   if (!admin.ok) return;
   assert.equal(admin.isAdmin, true);
-  assert.equal(admin.redirect, "/onboarding");
+  assert.equal(admin.redirect, "/dashboard");
   const adminUser = await prisma.user.findUnique({ where: { email: "owner@adiology.io" }, include: { payments: true } });
   assert.ok(adminUser);
   assert.equal(adminUser?.compAccess, true);
+  assert.ok(adminUser?.onboardedAt);
   assert.equal(adminUser?.phone, null);
   assert.equal(adminUser?.payments.length, 0);
-  const adminSetup = await onboard(
-    new Request("http://localhost/api/onboarding", {
-      method: "POST",
-      headers: { "content-type": "application/json", cookie: `ai_time_machine_session=${admin.token}` },
-      body: JSON.stringify({ businessName: "Owner shop", sells: "software", goal: "everything" }),
-    }),
-  );
-  assert.equal(adminSetup.status, 200);
-  assert.equal(await prisma.userAgent.count({ where: { userId: adminUser!.id } }), 55);
 
   process.env.RESEND_API_KEY = "re_test_key";
   process.env.RESEND_FROM = "AI Time Machine <no-reply@adiology.io>";

@@ -65,11 +65,14 @@ function hasProductAccess(user: AccessUser) {
 async function upsertCompUser(email: string) {
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
-    if (!existing.compAccess) {
-      await prisma.user.update({ where: { id: existing.id }, data: { compAccess: true } });
+    if (!existing.compAccess || !existing.onboardedAt) {
+      await prisma.user.update({
+        where: { id: existing.id },
+        data: { compAccess: true, onboardedAt: existing.onboardedAt ?? new Date() },
+      });
     }
   } else {
-    await prisma.user.create({ data: { email, compAccess: true } });
+    await prisma.user.create({ data: { email, compAccess: true, onboardedAt: new Date() } });
   }
   return prisma.user.findUniqueOrThrow({
     where: { email },
@@ -166,7 +169,7 @@ export async function verifyLoginCode(emailInput: string, codeInput: string) {
       expiresAt: new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000),
     },
   });
-  const redirect = user?.onboardedAt ? "/dashboard" : "/onboarding";
+  const redirect = admin || user?.onboardedAt ? "/dashboard" : "/onboarding";
   return { ok: true as const, status: 200, token, redirect, isAdmin: admin };
 }
 

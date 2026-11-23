@@ -61,7 +61,7 @@ export function SiteFooter() {
               </Link>
             ))}
           </nav>
-          <small>© 2026 {BUSINESS.legalName} · AI Time Machine · {BUSINESS.domain} · Payments secured by Cashfree</small>
+          <small>© 2026 {BUSINESS.legalName} · AI Time Machine · Payments secured by Cashfree</small>
         </div>
       </div>
     </footer>

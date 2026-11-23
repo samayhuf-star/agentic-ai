@@ -7,7 +7,7 @@ export default function PrivacyPage() {
   return (
     <PolicyFrame title="Privacy">
       <p>
-        {BUSINESS.legalName} (“we”) runs AI Time Machine at {BUSINESS.domain}. This page says what we keep and why.
+        {BUSINESS.legalName} (“we”) runs AI Time Machine. This page says what we keep and why.
       </p>
       <ul>
         <li>Your phone number, from the payment, so we can send the access link.</li>
