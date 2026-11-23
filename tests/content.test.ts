@@ -37,6 +37,19 @@ test("the home page keeps the approved hero words", () => {
   assert.match(html, /href="\/cookie-policy"/);
   assert.doesNotMatch(html, /privacy\.html/);
   assert.doesNotMatch(html, /support@adiology\.io/);
+  assert.match(html, /theaitimemachine\.com\/dashboard/);
+  assert.doesNotMatch(html, /adiology\.io\/app/);
+  assert.match(html, /Plus 4 bonuses worth/);
+  assert.match(html, /₹5,996/);
+  assert.match(html, /\$72/);
+  assert.match(html, /₹4,999/);
+  assert.match(html, /₹1,999/);
+  assert.doesNotMatch(html, /5 bonuses/);
+  assert.doesNotMatch(html, /₹8,495/);
+  assert.doesNotMatch(html, /2× more views/);
+  assert.doesNotMatch(html, /₹1,800/);
+  assert.doesNotMatch(html, /lookalike buyers/);
+  assert.doesNotMatch(html, /listing views/);
 });
 
 test("Cashfree TEST uses the sandbox and PROD uses the live API", () => {

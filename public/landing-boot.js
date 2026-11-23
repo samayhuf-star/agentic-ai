@@ -125,12 +125,12 @@ var VIDEOS_LIVE = true;
 (function(){
   // ---- live dashboard demo (example data) ----
   var tasks=[
-    [["Testing a new audience: home-decor lovers","Running",""],["Found 120 lookalike buyers","Done","g"],["Wants to try a festive welcome offer","Needs yes","y"]],
-    [["Drafted 3 Diwali posts","Needs yes","y"],["Writing a festive WhatsApp offer","Running",""],["Product page rewritten","Done","g"]],
-    [["Checking 14 ads for waste","Running",""],["Found 2 ads that stopped working","Needs yes","y"],["Refreshed photos on 2 ads","Done","g"]],
-    [["Followed up 6 abandoned carts","Done","g"],["Qualifying 9 new leads","Running",""],["Quote ready for a bulk order","Needs yes","y"]],
-    [["Weekly numbers summary ready","Done","g"],["Sorting this week's returns","Running",""],["GST reminder set for Friday","Done","g"]],
-    [["Answered \u201cDo you ship to Pune?\u201d","Done","g"],["Replying to 3 new reviews","Running",""],["Resolved a late-delivery complaint","Done","g"]]];
+    [["Testing a new audience: home-decor lovers","Running",""],["Noted a possible new audience","Done","g"],["Wants to try a festive welcome offer","Needs yes","y"]],
+    [["Drafted Diwali posts","Needs yes","y"],["Writing a festive WhatsApp offer","Running",""],["Product page rewritten","Done","g"]],
+    [["Checking ads for waste","Running",""],["Found ads that stopped working","Needs yes","y"],["Refreshed photos on tired ads","Done","g"]],
+    [["Followed up people who left a cart","Done","g"],["Qualifying new leads","Running",""],["Quote ready for a bulk order","Needs yes","y"]],
+    [["Weekly summary ready","Done","g"],["Sorting this week's returns","Running",""],["GST reminder set for Friday","Done","g"]],
+    [["Answered \u201cDo you ship to Pune?\u201d","Done","g"],["Replying to new reviews","Running",""],["Resolved a late-delivery complaint","Done","g"]]];
   var cards=[].slice.call(document.querySelectorAll('.ag')),k=0,run=31,done=47,yes=2,pos=[0,0,0,0,0,0];
   function bump(id,v){var e=document.getElementById(id);e.textContent=v;e.classList.remove('bump');void e.offsetWidth;e.classList.add('bump');}
   function step(){var i=k%cards.length,c=cards[i],t=tasks[i][pos[i]++%3];k++;
@@ -138,11 +138,11 @@ var VIDEOS_LIVE = true;
     c.classList.add('flash');setTimeout(function(){c.classList.remove('flash');},700);
     if(t[1]==='Done'){done++;bump('cDone',done);}else{run=29+Math.floor(Math.random()*6);bump('cRun',run);}}
   cards.forEach(function(){step();});setInterval(step,1800);
-  var asks=[["Mira · Content","Post 3 Diwali Reels tomorrow at 7 pm?","Drafted in your brand voice. Your last two Reels got 2× more views than usual."],
-    ["Kabir · Sales","Send a friendly festive reminder to 38 shoppers who left their cart?","Message is written and ready for you to check."],
-    ["Rohan · Ads","Pause 2 ads that stopped working?","They've had no clicks for a week. You can switch them back on anytime."]],ai=0,ask=document.getElementById('ask');
+  var asks=[["Mira · Content","Post the Diwali Reels tomorrow at 7 pm?","Drafted in your brand voice. Nothing is posted until you say yes."],
+    ["Kabir · Sales","Send a friendly festive reminder to people who left their cart?","Message is written and ready for you to check."],
+    ["Rohan · Ads","Pause the ads that stopped working?","They have not been getting clicks. You can switch them back on anytime."]],ai=0,ask=document.getElementById('ask');
   function setAsk(){var a=asks[ai%asks.length];document.getElementById('askWho').textContent=a[0];document.getElementById('askT').textContent=a[1];document.getElementById('askD').textContent=a[2];ask.classList.remove('done');}
-  function answer(ok){if(ask.classList.contains('done'))return;document.getElementById('askOk').textContent=ok?'Approved. Live in 2 minutes. Undo anytime.':'Skipped. Nothing was spent.';ask.classList.add('done');
+  function answer(ok){if(ask.classList.contains('done'))return;document.getElementById('askOk').textContent=ok?'Approved. You can undo it anytime.':'Skipped. Nothing was spent.';ask.classList.add('done');
     yes=Math.max(0,yes-1);bump('cYes',yes);if(ok){done++;bump('cDone',done);}setTimeout(function(){ai++;yes++;bump('cYes',yes);setAsk();},3200);}
   document.getElementById('askYes').onclick=function(){answer(true);};document.getElementById('askNo').onclick=function(){answer(false);};
   // ---- auto-cycling walkthrough tabs ----
