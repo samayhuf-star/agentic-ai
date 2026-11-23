@@ -1,6 +1,24 @@
 import { agents, isGoal, type GoalId } from "@/data/agents";
 import { prisma } from "@/lib/prisma";
 
+export async function ensureTeam(userId: string) {
+  const count = await prisma.userAgent.count({ where: { userId } });
+  if (count > 0) return;
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) return;
+  const goal: GoalId = user.goal && isGoal(user.goal) ? user.goal : "everything";
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      goal,
+      businessName: user.businessName || "My business",
+      sells: user.sells || "everyday work",
+      onboardedAt: user.onboardedAt ?? new Date(),
+    },
+  });
+  await assembleTeam(userId, goal);
+}
+
 export async function assembleTeam(userId: string, goal: GoalId) {
   const existing = await prisma.agent.count();
   if (existing === 0) {

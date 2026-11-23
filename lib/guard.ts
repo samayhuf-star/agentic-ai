@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { isAdminEmail } from "@/lib/config";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/session";
+import { ensureTeam } from "@/lib/team";
 
 type ReadySession = {
   isAdmin: boolean;
@@ -22,6 +23,7 @@ export async function requireDashboardUser() {
   const session = await getSession();
   if (!session?.user) redirect(session?.isAdmin ? "/sup-admin" : "/login");
   if (!(await skipsOnboarding(session))) redirect("/onboarding");
+  await ensureTeam(session.user.id);
   return session;
 }
 

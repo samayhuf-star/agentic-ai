@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { YesQueue } from "@/components/YesQueue";
 import { requireDashboardUser } from "@/lib/guard";
 import { prisma } from "@/lib/prisma";
@@ -15,6 +16,9 @@ export default async function YesPage() {
     <div>
       <p className="br-kicker">Needs your yes</p>
       <h1>Nothing goes live until you tap yes.</h1>
+      <p className="muted">
+        When the list is clear, you can <Link href="/dashboard/chat">talk to an agent</Link>.
+      </p>
       <YesQueue
         items={items.map((item) => ({
           id: item.id,

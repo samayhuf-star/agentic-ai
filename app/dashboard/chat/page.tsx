@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ChatPanel } from "@/components/ChatPanel";
 import { requireDashboardUser } from "@/lib/guard";
 import { prisma } from "@/lib/prisma";
@@ -26,7 +27,10 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
       <p className="br-kicker">Talk to an agent</p>
       <h1>Plain words. No setup.</h1>
       {memberships.length === 0 ? (
-        <p className="muted">Your team is empty. Finish setup first.</p>
+        <p className="muted">
+          No agents are on this page yet. <Link href="/dashboard/team">Open my team</Link> or write to{" "}
+          <a href="mailto:support@theaitimemachine.com">support@theaitimemachine.com</a>.
+        </p>
       ) : (
         <ChatPanel
           activeId={active || memberships[0].agentId}

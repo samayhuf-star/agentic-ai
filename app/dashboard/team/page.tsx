@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { TeamGrid } from "@/components/TeamGrid";
 import { requireDashboardUser } from "@/lib/guard";
 import { prisma } from "@/lib/prisma";
@@ -15,7 +16,13 @@ export default async function TeamPage() {
     <div>
       <p className="br-kicker">My team</p>
       <h1>55 agents. You choose who is on.</h1>
-      <p className="muted">Ayaan turned on a starting group. The rest are here when you want them.</p>
+      <p className="muted">A starting group is on. The rest are here when you want them.</p>
+      {rows.length === 0 ? (
+        <p className="muted">
+          The team did not load. <Link href="/dashboard">Try the overview again</Link> or write to{" "}
+          <a href="mailto:support@theaitimemachine.com">support@theaitimemachine.com</a>.
+        </p>
+      ) : (
       <TeamGrid
         paused={session.user!.paused}
         cards={rows.map((row) => ({
@@ -29,6 +36,7 @@ export default async function TeamPage() {
           recommended: row.recommended,
         }))}
       />
+      )}
     </div>
   );
 }
