@@ -10,8 +10,13 @@ export function gatewayHasKeys(gateway: GatewayName) {
   return Boolean(process.env.PAYU_MERCHANT_KEY && process.env.PAYU_SALT);
 }
 
-function cashfreeBase() {
-  return process.env.CASHFREE_ENV === "production" ? "https://api.cashfree.com/pg" : "https://sandbox.cashfree.com/pg";
+export function cashfreeTarget() {
+  const raw = (process.env.CASHFREE_ENV || "TEST").trim().toUpperCase();
+  const production = raw === "PROD" || raw === "PRODUCTION";
+  return {
+    apiBase: production ? "https://api.cashfree.com/pg" : "https://sandbox.cashfree.com/pg",
+    mode: production ? "production" : "sandbox",
+  };
 }
 
 export async function createHostedCheckout(input: CheckoutInput): Promise<{ url: string }> {
@@ -21,7 +26,8 @@ export async function createHostedCheckout(input: CheckoutInput): Promise<{ url:
 }
 
 async function createCashfree(input: CheckoutInput) {
-  const response = await fetch(`${cashfreeBase()}/orders`, {
+  const cashfree = cashfreeTarget();
+  const response = await fetch(`${cashfree.apiBase}/orders`, {
     method: "POST",
     headers: {
       "content-type": "application/json",
@@ -47,8 +53,7 @@ async function createCashfree(input: CheckoutInput) {
   if (!response.ok || !body.payment_session_id) {
     throw new Error(body.message || "Cashfree did not open a checkout.");
   }
-  const mode = process.env.CASHFREE_ENV === "production" ? "production" : "sandbox";
-  return { url: `${input.origin}/checkout/start?session=${encodeURIComponent(body.payment_session_id)}&mode=${mode}` };
+  return { url: `${input.origin}/checkout/start?session=${encodeURIComponent(body.payment_session_id)}&mode=${cashfree.mode}` };
 }
 
 async function createRazorpay(input: CheckoutInput) {

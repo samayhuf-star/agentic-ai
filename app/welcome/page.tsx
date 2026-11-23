@@ -8,7 +8,7 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
     return (
       <div className="page prose">
         <h1>Link missing</h1>
-        <p>Open the link from your text message. If it is lost, write to support@adiology.io.</p>
+        <p>Open the link from your text message. If it is lost, write to support@theaitimemachine.com.</p>
       </div>
     );
   }

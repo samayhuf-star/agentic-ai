@@ -78,16 +78,16 @@ Copy `.env.example` to `.env`. Leave a line blank to keep that part in test mode
 | `DATABASE_URL` | Your Postgres host. Leave the sample value to use the local database. |
 | `APP_URL` | The public site address, like `https://adiology.io`. Used in text and email links. |
 | `AUTH_SECRET` | Make up a long random string. It locks the sign-in codes. |
-| `ADMIN_EMAILS` | Your email. Comma-separated if there are several. |
+| `ADMIN_EMAILS` | Emails that may open `/sup-admin`. Comma-separated if there are several. |
 | `PRICE_INR` | Price charged, in rupees. Default `1999`. |
 | `PRICE_USD` | Price shown outside India. Default `24`. The charge is still `PRICE_INR`. |
 | `COMPARE_PRICE_INR` / `COMPARE_PRICE_USD` | The crossed-out launch price. Defaults `4999` and `60`. |
 | `LAUNCH_OFFER_ENDS` | When the launch price ends. Default `2026-12-31T23:59:59+05:30`. |
 | `CHECKOUT_URL` | Optional. A Cashfree payment-form link used only when the Cashfree API keys are empty. |
-| `PAYMENT_GATEWAY` | `cashfree`, `razorpay`, or `payu`. Admin can change this later. |
-| `CASHFREE_APP_ID` | Cashfree merchant dashboard → API keys. |
+| `PAYMENT_GATEWAY` | `cashfree`, `razorpay`, or `payu`. Change it later at `/sup-admin`. |
+| `CASHFREE_APP_ID` | Cashfree merchant dashboard → API keys. When this and the secret are set, checkout is real, not a test page. |
 | `CASHFREE_SECRET_KEY` | Same place. Also used to check the webhook. |
-| `CASHFREE_ENV` | `sandbox` while testing. `production` for real money. |
+| `CASHFREE_ENV` | `TEST` for sandbox.cashfree.com. `PROD` for api.cashfree.com. |
 | `RAZORPAY_KEY_ID` | Razorpay dashboard → API keys. Backup gateway. |
 | `RAZORPAY_KEY_SECRET` | Same place. |
 | `RAZORPAY_WEBHOOK_SECRET` | Razorpay webhook secret. |
@@ -97,8 +97,8 @@ Copy `.env.example` to `.env`. Leave a line blank to keep that part in test mode
 | `SMS_PROVIDER` | `mock`, `msg91`, or `gupshup`. |
 | `MSG91_AUTH_KEY`, `MSG91_SENDER_ID`, `MSG91_TEMPLATE_ID` | MSG91. The template should print the message text. |
 | `GUPSHUP_API_KEY`, `GUPSHUP_SOURCE`, `GUPSHUP_APP_NAME` | Gupshup WhatsApp. |
-| `RESEND_API_KEY` | [resend.com](https://resend.com). Sends the code and the welcome email. |
-| `EMAIL_FROM` | A sender Resend has verified. Default `AI Time Machine <support@adiology.io>`. |
+| `RESEND_API_KEY` | [resend.com](https://resend.com). Sends the code and the welcome email. Leave blank and email stays in test mode. |
+| `RESEND_FROM` | Sender Resend has verified. Default `AI Time Machine <no-reply@adiology.io>`. Replies go to support@theaitimemachine.com. |
 | `LLM_API_KEY` | Optional. Any chat API that speaks the OpenAI format. |
 | `LLM_BASE_URL` | Optional. Default `https://api.openai.com/v1`. |
 | `LLM_MODEL` | Optional. Default `gpt-4o-mini`. |
@@ -108,7 +108,7 @@ Cashfree must allow your domain before their checkout script will open. Do that 
 
 ## Videos and GIFs
 
-The home page already animates. To replace a slot, add the file and reload:
+The 55 agents page (`/55-ai-agents`) already animates. To replace a slot, add the file and reload:
 
 - `public/videos/dashboard-tour.mp4`
 - `public/videos/step-01.mp4` through `public/videos/step-04.mp4`
@@ -129,4 +129,6 @@ npm run lint
 npm run build
 ```
 
-Privacy (`/privacy`) and terms (`/terms`) are drafts. Replace them with lawyer-approved pages before you take real payments. Support mail is support@adiology.io.
+Support mail is support@theaitimemachine.com. The seller is Rizwiz Enterprises, 261 A Bhim Street, Vishwas Nagar, Delhi, India, +91 99537 10111.
+
+Public routes: `/`, `/55-ai-agents`, `/pricing`, `/about`, `/contact`, `/privacy`, `/terms`, `/refund-policy`, `/shipping-policy`, `/disclaimer`, `/cookie-policy`, `/login`, `/dashboard`, `/sup-admin`. `/admin` is not a page.

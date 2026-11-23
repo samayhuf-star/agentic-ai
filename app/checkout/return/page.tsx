@@ -23,10 +23,10 @@ export default async function ReturnPage({ searchParams }: { searchParams: Promi
         <p>Look for a text message with a link. Open it, add your email, and type the one-time code. That is how you sign in.</p>
       ) : unassigned ? (
         <p>
-          The payment was saved, but the phone number was still the sample number. Write to support@adiology.io with this reference: {payment?.id}. We will not open a shared account on that sample number.
+          The payment was saved, but the phone number was still the sample number. Write to support@theaitimemachine.com with this reference: {payment?.id}. We will not open a shared account on that sample number.
         </p>
       ) : (
-        <p>If the payment went through, a text message will arrive with a link to add your email. If nothing arrives in a few minutes, write to support@adiology.io.</p>
+        <p>If the payment went through, a text message will arrive with a link to add your email. If nothing arrives in a few minutes, write to support@theaitimemachine.com.</p>
       )}
       <p>
         <Link href="/">Back to AI Time Machine</Link>

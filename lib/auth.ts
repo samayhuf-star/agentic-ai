@@ -72,7 +72,7 @@ export async function startWelcome(token: string, emailInput: string, request: R
   if (!token || !isEmail(email)) return { ok: false as const, status: 400, message: "Enter the email you want to use." };
   const user = await prisma.user.findUnique({ where: { emailTokenHash: hashSecret(token) } });
   if (!user || !user.emailTokenExpires || user.emailTokenExpires < new Date()) {
-    return { ok: false as const, status: 400, message: "This link has expired. Write to support@adiology.io and we will send another." };
+    return { ok: false as const, status: 400, message: "This link has expired. Write to support@theaitimemachine.com and we will send another." };
   }
   if (user.email && user.email !== email) {
     return { ok: false as const, status: 400, message: "This payment already has an email. Sign in with that email." };
@@ -141,7 +141,7 @@ export async function verifyLoginCode(emailInput: string, codeInput: string) {
       expiresAt: new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000),
     },
   });
-  const redirect = !user ? "/admin" : user.onboardedAt ? "/dashboard" : "/onboarding";
+  const redirect = !user ? "/sup-admin" : user.onboardedAt ? "/dashboard" : "/onboarding";
   return { ok: true as const, status: 200, token, redirect, isAdmin: admin };
 }
 

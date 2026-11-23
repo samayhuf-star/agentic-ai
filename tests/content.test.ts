@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import { agents, DEPARTMENTS } from "../data/agents";
+import { cashfreeTarget } from "../lib/payments/gateways";
 
 const expected: Record<string, number> = {
   "Marketing & ads": 10,
@@ -30,6 +31,22 @@ test("the home page keeps the approved hero words", () => {
   assert.match(html, /id="heroLine">at just</);
   assert.match(html, /One-time payment\./);
   assert.match(html, /No monthly subscription\./);
-  assert.match(html, /support@adiology\.io/);
+  assert.match(html, /support@theaitimemachine\.com/);
+  assert.match(html, /Rizwiz Enterprises/);
+  assert.match(html, /href="\/refund-policy"/);
+  assert.match(html, /href="\/cookie-policy"/);
   assert.doesNotMatch(html, /privacy\.html/);
+  assert.doesNotMatch(html, /support@adiology\.io/);
+});
+
+test("Cashfree TEST uses the sandbox and PROD uses the live API", () => {
+  const previous = process.env.CASHFREE_ENV;
+  process.env.CASHFREE_ENV = "TEST";
+  assert.equal(cashfreeTarget().apiBase, "https://sandbox.cashfree.com/pg");
+  assert.equal(cashfreeTarget().mode, "sandbox");
+  process.env.CASHFREE_ENV = "PROD";
+  assert.equal(cashfreeTarget().apiBase, "https://api.cashfree.com/pg");
+  assert.equal(cashfreeTarget().mode, "production");
+  if (previous === undefined) delete process.env.CASHFREE_ENV;
+  else process.env.CASHFREE_ENV = previous;
 });

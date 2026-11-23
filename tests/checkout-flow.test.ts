@@ -95,7 +95,7 @@ test("checkout, webhook, email code, and team setup in mock mode", async () => {
   if (!adminCode.ok) return;
   const admin = await verifyLoginCode("owner@adiology.io", adminCode.devCode!);
   assert.equal(admin.ok, true);
-  if (admin.ok) assert.equal(admin.redirect, "/admin");
+  if (admin.ok) assert.equal(admin.redirect, "/sup-admin");
 
   for (let i = 0; i < 6; i += 1) {
     await requestLoginCode(email, new Request("http://localhost/api/auth/request-code", { headers: { "x-forwarded-for": "203.0.113.30" } }));

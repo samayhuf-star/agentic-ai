@@ -38,7 +38,7 @@ export default function HelpPage() {
         ))}
       </div>
       <p style={{ marginTop: 22 }}>
-        Stuck? Write to <a href="mailto:support@adiology.io">support@adiology.io</a>. A real person replies.
+        Stuck? Write to <a href="mailto:support@theaitimemachine.com">support@theaitimemachine.com</a>. A real person replies.
       </p>
     </div>
   );

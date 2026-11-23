@@ -1,17 +1,21 @@
-export const metadata = { title: "Terms (draft) · AI Time Machine" };
+import { PolicyFrame } from "@/components/SiteChrome";
+import { BUSINESS } from "@/lib/business";
+
+export const metadata = { title: "Terms and Conditions · AI Time Machine" };
 
 export default function TermsPage() {
   return (
-    <main className="page prose">
-      <p className="draft">Draft. This is not a finished legal agreement. Replace it with lawyer-approved terms before you take real payments.</p>
-      <h1>Terms</h1>
-      <p>AI Time Machine is a one-time purchase. There is no monthly fee for the product described on the home page.</p>
-      <p>You stay in charge. Agents do not post, message customers, or spend money until you say yes. The Pause everything switch stops the team.</p>
-      <p>AI Time Machine is a tool for your business. It does not replace an accountant, a lawyer, or a person you hire. You are responsible for what you approve.</p>
-      <p>If something is wrong with a payment, write to support@adiology.io with the phone number you paid from.</p>
+    <PolicyFrame title="Terms and Conditions">
       <p>
-        Questions: <a href="mailto:support@adiology.io">support@adiology.io</a>.
+        These terms are between you and {BUSINESS.legalName}, {BUSINESS.address}. They cover AI Time Machine, a software tool sold for ₹1,999 once. There is no monthly fee for that purchase.
       </p>
-    </main>
+      <p>You stay in charge. The software does not post, message your customers, or spend money until you say yes. The pause switch stops the team.</p>
+      <p>
+        AI Time Machine does not promise sales, rankings, leads, or any business result. It is not medical advice and it does not treat, diagnose, or promise a health outcome. It does not replace an accountant, a lawyer, or a doctor. You are responsible for what you approve.
+      </p>
+      <p>Access is digital. After a successful payment we send a link by email and by WhatsApp or SMS. See the Shipping and Delivery page and the Refund and Cancellation page.</p>
+      <p>These terms follow the laws of India. Courts in Delhi, India, hear disputes about them.</p>
+      <p>If something is wrong with a payment, write to {BUSINESS.supportEmail} with the phone number you paid from.</p>
+    </PolicyFrame>
   );
 }

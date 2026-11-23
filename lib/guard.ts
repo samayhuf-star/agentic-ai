@@ -4,7 +4,7 @@ import { getSession } from "@/lib/session";
 
 export async function requireDashboardUser() {
   const session = await getSession();
-  if (!session?.user) redirect(session?.isAdmin ? "/admin" : "/login");
+  if (!session?.user) redirect(session?.isAdmin ? "/sup-admin" : "/login");
   if (!session.user.onboardedAt) redirect("/onboarding");
   return session;
 }

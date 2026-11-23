@@ -18,7 +18,7 @@ export function welcomeEmail(user: { businessName: string | null; onboardedAt: D
       "Nothing goes live, and no money is spent, until you say yes.",
       "",
       "— AI Time Machine",
-      "support@adiology.io",
+      "support@theaitimemachine.com",
     ].join("\n"),
   };
 }

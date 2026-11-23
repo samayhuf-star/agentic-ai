@@ -51,7 +51,7 @@ export function Shell({
             );
           })}
           {isAdmin ? (
-            <Link href="/admin" onClick={() => setOpen(false)}>
+            <Link href="/sup-admin" onClick={() => setOpen(false)}>
               Admin
             </Link>
           ) : null}
