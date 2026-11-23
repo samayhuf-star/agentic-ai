@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 export async function confirmPendingCashfreeOrder(orderId: string) {
   const payment = await prisma.payment.findUnique({ where: { id: orderId } });
   if (!payment || payment.gateway !== "cashfree") return payment;
+  if (payment.isTest) return payment;
   if (payment.status === "paid" && payment.userId) return payment;
 
   const body = await fetchCashfreeOrder(orderId);

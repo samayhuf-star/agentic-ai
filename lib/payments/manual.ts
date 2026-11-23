@@ -7,6 +7,7 @@ import type { GatewayName } from "@/lib/payments/signature";
 export async function fulfilOrder(orderId: string, extra?: { email?: string | null }) {
   const payment = await prisma.payment.findUnique({ where: { id: orderId } });
   if (!payment) return { ok: false as const, status: 404, message: "That order was not found." };
+  if (payment.isTest) return { ok: false as const, status: 409, message: "Test payments are not fulfilled.", cashfreeStatus: null };
 
   let cashfreeStatus: string | null = null;
   let remoteEmail: string | null = null;

@@ -223,3 +223,105 @@ test("a paid order can be fulfilled again and the code resent", async () => {
     delete process.env.CASHFREE_SECRET_KEY;
   }
 });
+
+test("an old pending, unpaid, or test order does not block the same email or phone", async () => {
+  const { fulfillPayment } = await import("../lib/payments/fulfill");
+  const { confirmPendingCashfreeOrder } = await import("../lib/payments/confirm");
+  const { KNOWN_TEST_ORDER_ID } = await import("../lib/payments/test-orders");
+  const stamp = Date.now();
+  const email = "samay@krosz.com";
+  const phone = `+919${String(stamp).slice(-9)}`;
+  const buyer = { name: "Samay", email, phone };
+
+  await prisma.payment.upsert({
+    where: { id: KNOWN_TEST_ORDER_ID },
+    create: { id: KNOWN_TEST_ORDER_ID, gateway: "cashfree", amountInr: 1999, status: "paid_unassigned", email, phone, name: buyer.name },
+    update: { status: "paid_unassigned", email, phone, name: buyer.name, userId: null, isTest: false },
+  });
+  await prisma.payment.updateMany({ where: { id: KNOWN_TEST_ORDER_ID }, data: { isTest: true } });
+
+  const pendingId = `brpending${stamp}`;
+  const unfulfilledId = `brunf${stamp}`;
+  await prisma.payment.create({ data: { id: pendingId, gateway: "cashfree", amountInr: 1999, status: "pending", ...buyer } });
+  await prisma.payment.create({ data: { id: unfulfilledId, gateway: "cashfree", amountInr: 1999, status: "paid", paidAt: new Date(), ...buyer } });
+
+  async function newCheckout() {
+    const checkout = await createCheckout(
+      new Request("http://localhost:3000/api/checkout", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(buyer),
+      }),
+    );
+    assert.equal(checkout.status, 303);
+    const orderId = new URL(checkout.redirect || "").searchParams.get("order");
+    assert.ok(orderId);
+    assert.notEqual(orderId, pendingId);
+    assert.notEqual(orderId, unfulfilledId);
+    assert.notEqual(orderId, KNOWN_TEST_ORDER_ID);
+    return orderId;
+  }
+
+  const firstId = await newCheckout();
+  const secondId = await newCheckout();
+  assert.notEqual(firstId, secondId);
+
+  await fulfillPayment("cashfree", {
+    orderId: firstId,
+    status: "paid",
+    amountInr: 1999,
+    phone,
+    email,
+    name: buyer.name,
+    gatewayPaymentId: "pay_new",
+    raw: { orderId: firstId },
+  });
+  const fresh = await prisma.payment.findUnique({ where: { id: firstId } });
+  assert.equal(fresh?.status, "paid");
+  assert.equal(fresh?.isTest, false);
+  assert.ok(fresh?.userId);
+  const user = await prisma.user.findUnique({ where: { email } });
+  assert.equal(fresh?.userId, user?.id);
+
+  const pending = await prisma.payment.findUnique({ where: { id: pendingId } });
+  assert.equal(pending?.status, "pending");
+  assert.equal(pending?.userId, null);
+  const unfulfilled = await prisma.payment.findUnique({ where: { id: unfulfilledId } });
+  assert.equal(unfulfilled?.userId, null);
+  const known = await prisma.payment.findUnique({ where: { id: KNOWN_TEST_ORDER_ID } });
+  assert.equal(known?.isTest, true);
+  assert.equal(known?.userId, null);
+  assert.equal(known?.status, "paid_unassigned");
+
+  process.env.CASHFREE_APP_ID = "test_id";
+  process.env.CASHFREE_SECRET_KEY = "test_secret";
+  process.env.CASHFREE_ENV = "TEST";
+  const original = globalThis.fetch;
+  globalThis.fetch = (async () =>
+    new Response(JSON.stringify({ order_status: "PAID", order_amount: 1999, customer_details: { customer_email: email, customer_phone: phone } }), { status: 200 })) as typeof fetch;
+  try {
+    const returned = await confirmPendingCashfreeOrder(KNOWN_TEST_ORDER_ID);
+    assert.equal(returned?.isTest, true);
+    assert.equal(returned?.userId, null);
+    assert.equal(returned?.status, "paid_unassigned");
+  } finally {
+    globalThis.fetch = original;
+    delete process.env.CASHFREE_APP_ID;
+    delete process.env.CASHFREE_SECRET_KEY;
+  }
+
+  await fulfillPayment("cashfree", {
+    orderId: secondId,
+    status: "paid",
+    amountInr: 1999,
+    phone,
+    email,
+    name: buyer.name,
+    gatewayPaymentId: "pay_newer",
+    raw: { orderId: secondId },
+  });
+  const newer = await prisma.payment.findUnique({ where: { id: secondId } });
+  assert.equal(newer?.userId, user?.id);
+  assert.equal(await prisma.payment.count({ where: { id: KNOWN_TEST_ORDER_ID, status: "paid", isTest: false } }), 0);
+  assert.equal(await prisma.payment.count({ where: { id: firstId, status: "paid", isTest: false } }), 1);
+});

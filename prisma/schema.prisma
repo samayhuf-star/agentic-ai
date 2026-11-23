@@ -38,6 +38,7 @@ model Payment {
   gateway         String
   amountInr       Int
   status          String
+  isTest          Boolean   @default(false)
   phone           String?
   email           String?
   name            String?

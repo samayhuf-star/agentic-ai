@@ -37,6 +37,7 @@ async function phoneIsFree(tx: Prisma.TransactionClient, phone: string, exceptUs
 export async function fulfillPayment(gateway: GatewayName, event: PaidEvent) {
   if (!event.orderId || event.status === "ignored") return { ok: true, ignored: true };
   const payment = await prisma.payment.findUnique({ where: { id: event.orderId } });
+  if (payment?.isTest) return { ok: true, ignored: true };
   if (event.status === "failed") {
     if (payment && payment.status === "pending") {
       await prisma.payment.update({

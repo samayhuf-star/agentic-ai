@@ -6,6 +6,7 @@ import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { getActiveGateway } from "@/lib/settings";
 import { FulfilButton } from "@/components/FulfilButton";
+import { MarkTestToggle } from "@/components/MarkTestToggle";
 import { displayPhone } from "@/lib/phone";
 import { TestAlertButton } from "@/components/TestAlertButton";
 
@@ -23,8 +24,8 @@ export default async function SuperAdminPage({ searchParams }: { searchParams: P
   ]);
   const [signups, paidCount, revenue, gateway, users, payments] = await Promise.all([
     prisma.user.count(),
-    prisma.payment.count({ where: { status: "paid" } }),
-    prisma.payment.aggregate({ where: { status: "paid" }, _sum: { amountInr: true } }),
+    prisma.payment.count({ where: { status: "paid", isTest: false } }),
+    prisma.payment.aggregate({ where: { status: "paid", isTest: false }, _sum: { amountInr: true } }),
     getActiveGateway(),
     prisma.user.findMany({
       where: query
@@ -38,7 +39,7 @@ export default async function SuperAdminPage({ searchParams }: { searchParams: P
         : undefined,
       orderBy: { createdAt: "desc" },
       take: 50,
-      include: { payments: { where: { status: "paid" }, select: { amountInr: true } } },
+      include: { payments: { where: { status: "paid", isTest: false }, select: { amountInr: true } } },
     }),
     prisma.payment.findMany({ orderBy: { createdAt: "desc" }, take: 30, include: { user: true } }),
   ]);
@@ -233,12 +234,20 @@ export default async function SuperAdminPage({ searchParams }: { searchParams: P
                 <td>{formatIst(payment.createdAt)}</td>
                 <td>{payment.gateway}</td>
                 <td>{formatInr(payment.amountInr)}</td>
-                <td>{payment.status}</td>
+                <td>
+                  {payment.status}
+                  {payment.isTest ? <span className="test-badge">TEST</span> : null}
+                </td>
                 <td>{payment.phone ? displayPhone(payment.phone) : payment.user?.phone ? displayPhone(payment.user.phone) : "—"}</td>
                 <td>{payment.email || payment.user?.email || "—"}</td>
                 <td>
                   <div className="muted">{payment.id}</div>
-                  <FulfilButton orderId={payment.id} email={payment.email || payment.user?.email || ""} />
+                  <MarkTestToggle orderId={payment.id} isTest={payment.isTest} />
+                  {payment.isTest ? (
+                    <p className="muted">Test payments are not fulfilled.</p>
+                  ) : (
+                    <FulfilButton orderId={payment.id} email={payment.email || payment.user?.email || ""} />
+                  )}
                 </td>
               </tr>
             ))}
