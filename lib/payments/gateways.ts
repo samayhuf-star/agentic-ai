@@ -64,7 +64,7 @@ async function createRazorpay(input: CheckoutInput) {
       amount: input.amountInr * 100,
       currency: "INR",
       accept_partial: false,
-      description: `Boardroom, one payment of ${pricing().inr} rupees`,
+      description: `AI Time Machine, one payment of ${pricing().inr} rupees`,
       notify: { sms: false, email: false },
       reminder_enable: false,
       notes: { order_id: input.orderId },
@@ -83,7 +83,7 @@ async function createPayu(input: CheckoutInput) {
   const key = process.env.PAYU_MERCHANT_KEY || "";
   const salt = process.env.PAYU_SALT || "";
   const amount = input.amountInr.toFixed(2);
-  const productinfo = "Boardroom";
+  const productinfo = "AI Time Machine";
   const firstname = "Owner";
   const email = "buyer@adiology.io";
   const hash = payuRequestHash({

@@ -1,6 +1,6 @@
-# Boardroom
+# AI Time Machine
 
-Boardroom is a one-time tool for a non-technical founder. A CEO agent picks a starting team from 55 agents. Nothing is posted, sent to a customer, or paid for until you tap yes.
+AI Time Machine is a one-time tool for a non-technical founder. A CEO agent picks a starting team from 55 agents. Nothing is posted, sent to a customer, or paid for until you tap yes.
 
 The price on the home page is **₹1,999 once** (shown as **$24** outside India, still charged in rupees). There is no monthly fee in the product.
 
@@ -20,7 +20,7 @@ Open http://localhost:3000
 
 ### What you can click without real keys
 
-1. Tap any **Get Boardroom** button. You land on a **test checkout**. No money moves.
+1. Tap any **Get AI Time Machine** button. You land on a **test checkout**. No money moves.
 2. Enter a mobile number and pay.
 3. The terminal where `npm run dev` is running prints the text message. Open the link.
 4. Add an email. The one-time code is shown on the page and printed in the terminal, because email is not connected yet.
@@ -29,20 +29,22 @@ Open http://localhost:3000
 
 To open the admin page, put your email in `ADMIN_EMAILS` in `.env`, restart, and sign in with that email at http://localhost:3000/login
 
-## Put it on the internet (Vercel)
+## Put it on Railway
+
+The site is set up for [Railway](https://railway.app). On each start it runs `prisma migrate deploy` (that creates the tables and the 55 agents) and then `next start` on Railway's `PORT`. A health check is at `/api/health`.
+
+You only need three variables for the first deploy. Everything else stays in test mode until you paste a key.
 
 1. Push this project to GitHub.
-2. Import it on [Vercel](https://vercel.com).
-3. Create a Postgres database (Neon, Supabase, or Vercel Postgres) and paste its URL as `DATABASE_URL`.
-4. Paste the other keys from the list below.
-5. After the first deploy, open a terminal in the project and run:
+2. On Railway, choose **New project** → **Deploy from GitHub repo** and pick this repo.
+3. In the same project, choose **New** → **Database** → **PostgreSQL**. Railway fills in `DATABASE_URL` for the app. Do not type that URL yourself.
+4. On the app service, open **Variables** and add:
+   - `APP_URL` = the public address Railway gives you (or `https://adiology.io` once the domain is connected)
+   - `AUTH_SECRET` = a long random string
+5. Deploy. Railway builds with Nixpacks and starts with `npm run start:railway`.
+6. Open the Railway URL. Buy still uses the test checkout until payment keys are set. The welcome link is shown on the page after the test payment, and the one-time code is shown on the sign-in page, until text and email keys are added.
 
-```bash
-npx prisma db push
-npx tsx prisma/seed.ts
-```
-
-Use the production `DATABASE_URL` when you run those two commands, so the 55 agents exist in the live database.
+Point a custom domain at the Railway service when you are ready, and set `APP_URL` to that domain.
 
 Set the Cashfree webhook to:
 
@@ -56,7 +58,7 @@ Razorpay webhook (event `payment.captured`):
 
 | Piece | Without keys | With keys |
 | --- | --- | --- |
-| Database | Temporary Postgres on your computer | Your `DATABASE_URL` |
+| Database | Temporary Postgres on your computer | Railway Postgres (`DATABASE_URL` from the plugin) |
 | Payment | Test checkout page. No money moves. | Cashfree order, or Razorpay / PayU if you switch them on in Admin |
 | Text / WhatsApp | Printed in the terminal | MSG91 or Gupshup |
 | Email and one-time code | Shown on screen and in the terminal | Resend |
@@ -96,7 +98,7 @@ Copy `.env.example` to `.env`. Leave a line blank to keep that part in test mode
 | `MSG91_AUTH_KEY`, `MSG91_SENDER_ID`, `MSG91_TEMPLATE_ID` | MSG91. The template should print the message text. |
 | `GUPSHUP_API_KEY`, `GUPSHUP_SOURCE`, `GUPSHUP_APP_NAME` | Gupshup WhatsApp. |
 | `RESEND_API_KEY` | [resend.com](https://resend.com). Sends the code and the welcome email. |
-| `EMAIL_FROM` | A sender Resend has verified. Default `Boardroom <support@adiology.io>`. |
+| `EMAIL_FROM` | A sender Resend has verified. Default `AI Time Machine <support@adiology.io>`. |
 | `LLM_API_KEY` | Optional. Any chat API that speaks the OpenAI format. |
 | `LLM_BASE_URL` | Optional. Default `https://api.openai.com/v1`. |
 | `LLM_MODEL` | Optional. Default `gpt-4o-mini`. |

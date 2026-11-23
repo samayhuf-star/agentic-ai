@@ -56,7 +56,7 @@ export async function POST(request: Request) {
           });
   const headers = new Headers({
     "content-type": "application/json",
-    "x-boardroom-mock-signature": mockSignature(payload),
+    "x-ai-time-machine-mock-signature": mockSignature(payload),
   });
   const gateway = payment.gateway === "cashfree" ? "cashfree" : payment.gateway;
   const result = await handleWebhook(gateway, payload, headers);

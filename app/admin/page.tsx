@@ -39,7 +39,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   return (
     <main className="page">
       <p className="br-kicker">Admin</p>
-      <h1>Boardroom</h1>
+      <h1>AI Time Machine</h1>
       <div className="stats">
         <div className="stat">
           <small>Signups</small>

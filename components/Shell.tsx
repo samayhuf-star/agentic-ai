@@ -35,7 +35,7 @@ export function Shell({
       <aside className={open ? "br-side open" : "br-side"}>
         <Link className="logo" href="/dashboard">
           <i />
-          Boardroom
+          AI Time Machine
         </Link>
         <button className="btn btn-g menu-toggle" type="button" onClick={() => setOpen((value) => !value)}>
           {open ? "Close menu" : "Menu"}

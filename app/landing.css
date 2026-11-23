@@ -770,5 +770,19 @@ s>span.amt-x{text-decoration:line-through!important;text-decoration-thickness:2p
 .vc-tiles div{height:72px}.vc-bar{margin:6px 0}.vc-set{padding:6px 10px}
 @media (max-width:760px){.wg-list em{position:static;display:inline-block;margin-top:8px}.wg-list b{padding-right:0}}
 .sl-stage{height:320px}
+/* Wordmark: "AI Time Machine" is longer than the old name. Keep it on one line on a phone. */
+.logo{white-space:nowrap;min-width:0}
+.ds-logo{font-size:12.5px;letter-spacing:-.04em;line-height:1.15}
+@media (max-width:760px){
+  .logo{font-size:15px;letter-spacing:-.045em;gap:6px}
+  .nav .wrap{gap:8px}
+  .nav-buy{padding:8px 10px!important}
+  .sbar .wrap{height:auto;min-height:68px;padding-top:8px;padding-bottom:8px}
+  .sbar .btn{white-space:normal;line-height:1.15;text-align:center}
+  body:has(.landing-root){padding-bottom:112px}
+}
+@media (max-width:380px){
+  .logo{font-size:13.5px}
+}
 
 .mdl .msg.err{background:rgba(255,110,110,.12);color:#ffb4b4}

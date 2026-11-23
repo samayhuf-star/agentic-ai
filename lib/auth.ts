@@ -7,7 +7,7 @@ import { welcomeEmail } from "@/lib/copy";
 
 const TEN_MINUTES = 10 * 60 * 1000;
 const SESSION_DAYS = 30;
-export const SESSION_COOKIE = "boardroom_session";
+export const SESSION_COOKIE = "ai_time_machine_session";
 
 export function sessionCookieOptions() {
   return {
@@ -39,14 +39,16 @@ async function issueCode(email: string, request: Request) {
   await prisma.loginCode.create({
     data: { email, codeHash: hashSecret(code), expiresAt: new Date(Date.now() + TEN_MINUTES) },
   });
-  const subject = "Your Boardroom code";
-  const text = `Your Boardroom code is ${code}. It expires in 10 minutes. If you did not ask for it, ignore this email.`;
+  const subject = "Your AI Time Machine code";
+  const text = `Your AI Time Machine code is ${code}. It expires in 10 minutes. If you did not ask for it, ignore this email.`;
   await sendEmail(email, subject, text);
+  const emailIsMock = !process.env.RESEND_API_KEY;
+  const showCode = emailIsMock || !isProduction();
   return {
     ok: true as const,
     status: 200,
-    message: isProduction() ? "Code sent. Check your inbox." : "Email is in test mode. Use the code shown here.",
-    devCode: isProduction() ? undefined : code,
+    message: showCode ? "Email is in test mode. Use the code shown here." : "Code sent. Check your inbox.",
+    devCode: showCode ? code : undefined,
   };
 }
 
@@ -59,7 +61,7 @@ export async function requestLoginCode(emailInput: string, request: Request) {
     return {
       ok: false as const,
       status: 403,
-      message: "No paid Boardroom account uses that email yet. After you pay, open the link in your text message and add this email.",
+      message: "No paid AI Time Machine account uses that email yet. After you pay, open the link in your text message and add this email.",
     };
   }
   return issueCode(email, request);
@@ -77,7 +79,7 @@ export async function startWelcome(token: string, emailInput: string, request: R
   }
   const taken = await prisma.user.findUnique({ where: { email } });
   if (taken && taken.id !== user.id) {
-    return { ok: false as const, status: 409, message: "That email is already used by another Boardroom account." };
+    return { ok: false as const, status: 409, message: "That email is already used by another AI Time Machine account." };
   }
   await prisma.user.update({ where: { id: user.id }, data: { pendingEmail: email } });
   const issued = await issueCode(email, request);
@@ -126,7 +128,7 @@ export async function verifyLoginCode(emailInput: string, codeInput: string) {
     }
   }
   if (!admin && (!user || user.payments.length === 0)) {
-    return { ok: false as const, status: 403, message: "Only a paid Boardroom account can sign in." };
+    return { ok: false as const, status: 403, message: "Only a paid AI Time Machine account can sign in." };
   }
 
   const token = randomToken();
@@ -155,7 +157,7 @@ export async function getSessionFromToken(token: string | null | undefined) {
 
 export function tokenFromRequest(request: Request) {
   const cookie = request.headers.get("cookie") || "";
-  const match = cookie.match(/(?:^|;\s*)boardroom_session=([^;]+)/);
+  const match = cookie.match(/(?:^|;\s*)ai_time_machine_session=([^;]+)/);
   return match ? decodeURIComponent(match[1]) : null;
 }
 

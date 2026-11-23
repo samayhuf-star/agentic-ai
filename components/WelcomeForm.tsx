@@ -70,7 +70,7 @@ export function WelcomeForm({ token }: { token: string }) {
           </label>
           {error ? <p className="error">{error}</p> : null}
           <button className="btn btn-p" type="submit" disabled={busy}>
-            Open Boardroom
+            Open AI Time Machine
           </button>
         </form>
       )}

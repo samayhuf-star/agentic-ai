@@ -93,7 +93,7 @@ export async function fulfillPayment(gateway: GatewayName, event: PaidEvent) {
 
   if (!user.email) {
     const origin = appOrigin();
-    const message = `Boardroom: payment received. Add your email to open your team: ${origin}/welcome?token=${token}`;
+    const message = `AI Time Machine: payment received. Add your email to open your team: ${origin}/welcome?token=${token}`;
     await sendText(phone, message);
     await prisma.payment.update({ where: { id: event.orderId }, data: { smsSentAt: new Date() } });
   }

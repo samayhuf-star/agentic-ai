@@ -30,7 +30,7 @@ export async function sendText(phone: string, body: string) {
         channel: "whatsapp",
         source: process.env.GUPSHUP_SOURCE || "",
         destination: phone.replace(/\D/g, ""),
-        "src.name": process.env.GUPSHUP_APP_NAME || "Boardroom",
+        "src.name": process.env.GUPSHUP_APP_NAME || "AI Time Machine",
         message: JSON.stringify({ type: "text", text: body }),
       }),
     });

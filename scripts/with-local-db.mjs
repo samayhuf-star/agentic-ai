@@ -90,7 +90,7 @@ try {
   if (push) {
     code = await run(["npx", "prisma", "generate"]);
     if (code !== 0) process.exit(code);
-    code = await run(["npx", "prisma", "db", "push", "--skip-generate"]);
+    code = await run(["npx", "prisma", "migrate", "deploy"]);
     if (code !== 0) process.exit(code);
   }
   if (seed) {

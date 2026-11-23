@@ -76,7 +76,7 @@ export function LoginForm() {
         </form>
       )}
       <p>
-        New here? <a href="/api/checkout">Get Boardroom</a>
+        New here? <a href="/api/checkout">Get AI Time Machine</a>
       </p>
     </div>
   );

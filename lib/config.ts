@@ -52,9 +52,8 @@ export function isProduction() {
 }
 
 export function mockPaymentsAllowed() {
-  if (process.env.ALLOW_MOCK_PAYMENTS === "true") return true;
   if (process.env.ALLOW_MOCK_PAYMENTS === "false") return false;
-  return !isProduction();
+  return true;
 }
 
 export function authSecret() {

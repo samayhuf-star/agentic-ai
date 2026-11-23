@@ -27,7 +27,7 @@ export async function agentReply(agent: Agent, user: User, history: { role: stri
   const base = process.env.LLM_BASE_URL || "https://api.openai.com/v1";
   const model = process.env.LLM_MODEL || "gpt-4o-mini";
   const system = [
-    `You are ${agent.name}, the ${agent.role} on the Boardroom team for ${user.businessName || "a small business"}.`,
+    `You are ${agent.name}, the ${agent.role} on the AI Time Machine team for ${user.businessName || "a small business"}.`,
     `They sell: ${user.sells || "not said yet"}. Their main goal: ${user.goal ? goalLabel(user.goal) : "not said yet"}.`,
     "Use plain everyday words. No technical jargon and no acronyms.",
     "Keep the reply under 120 words.",

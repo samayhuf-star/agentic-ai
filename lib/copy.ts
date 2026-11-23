@@ -6,7 +6,7 @@ export function welcomeEmail(user: { businessName: string | null; onboardedAt: D
   const link = user.onboardedAt ? `${origin}/dashboard` : `${origin}/onboarding`;
   const shop = user.businessName ? ` for ${user.businessName}` : "";
   return {
-    subject: "Your Boardroom team is ready",
+    subject: "Your AI Time Machine team is ready",
     text: [
       "Your payment is in.",
       "",
@@ -17,7 +17,7 @@ export function welcomeEmail(user: { businessName: string | null; onboardedAt: D
       "",
       "Nothing goes live, and no money is spent, until you say yes.",
       "",
-      "— Boardroom",
+      "— AI Time Machine",
       "support@adiology.io",
     ].join("\n"),
   };

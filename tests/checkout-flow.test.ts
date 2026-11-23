@@ -38,12 +38,12 @@ test("checkout, webhook, email code, and team setup in mock mode", async () => {
       customer_details: { customer_phone: phone },
     },
   });
-  const bad = await handleWebhook("cashfree", payload, new Headers({ "x-boardroom-mock-signature": "nope" }));
+  const bad = await handleWebhook("cashfree", payload, new Headers({ "x-ai-time-machine-mock-signature": "nope" }));
   assert.equal(bad.status, 401);
 
   const headers = new Headers({
     "content-type": "application/json",
-    "x-boardroom-mock-signature": mockSignature(payload),
+    "x-ai-time-machine-mock-signature": mockSignature(payload),
   });
   const first = await handleWebhook("cashfree", payload, headers);
   assert.equal(first.status, 200);
@@ -78,7 +78,7 @@ test("checkout, webhook, email code, and team setup in mock mode", async () => {
   const setup = await onboard(
     new Request("http://localhost/api/onboarding", {
       method: "POST",
-      headers: { "content-type": "application/json", cookie: `boardroom_session=${verified.token}` },
+      headers: { "content-type": "application/json", cookie: `ai_time_machine_session=${verified.token}` },
       body: JSON.stringify({ businessName: "Chai and Co", sells: "masala chai", goal: "posts" }),
     }),
   );

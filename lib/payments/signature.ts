@@ -15,7 +15,7 @@ export function mockSignature(raw: string) {
 
 function mockHeaderOk(raw: string, headers: Headers) {
   if (!mockPaymentsAllowed()) return false;
-  const got = headers.get("x-boardroom-mock-signature") || "";
+  const got = headers.get("x-ai-time-machine-mock-signature") || "";
   return safeEqual(mockSignature(raw), got);
 }
 

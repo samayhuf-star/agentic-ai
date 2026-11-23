@@ -2,9 +2,25 @@ import type { Metadata } from "next";
 import "./globals.css";
 import "./landing.css";
 
+const title = "AI Time Machine: 55 AI agents for your business. You just say yes.";
+const description = "55 AI agents across 8 teams, your own dashboard and 5 bonuses. ₹1,999 once. Live in 15 minutes, for any business.";
+
 export const metadata: Metadata = {
-  title: "Boardroom: 55 AI agents for your business. You just say yes.",
-  description: "55 AI agents across 8 teams, your own dashboard and 5 bonuses. ₹1,999 once. Live in 15 minutes, for any business.",
+  title,
+  description,
+  metadataBase: new URL(process.env.APP_URL || "https://adiology.io"),
+  openGraph: {
+    title,
+    description,
+    siteName: "AI Time Machine",
+    type: "website",
+    url: "/",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title,
+    description,
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
