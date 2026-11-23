@@ -40,6 +40,7 @@ model Payment {
   status          String
   phone           String?
   email           String?
+  name            String?
   gatewayPaymentId String?
   raw             Json?
   smsSentAt       DateTime?

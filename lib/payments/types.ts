@@ -4,6 +4,7 @@ export type PaidEvent = {
   orderId: string;
   phone: string | null;
   email?: string | null;
+  name?: string | null;
   amountInr: number | null;
   gatewayPaymentId: string | null;
   status: "paid" | "failed" | "ignored";
@@ -15,4 +16,5 @@ export type CheckoutInput = {
   amountInr: number;
   origin: string;
   gateway: GatewayName;
+  customer: { name: string; email: string; phone: string };
 };

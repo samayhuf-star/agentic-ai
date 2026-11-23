@@ -99,7 +99,7 @@ export async function requestLoginCode(emailInput: string, request: Request) {
     return {
       ok: false as const,
       status: 403,
-      message: "No paid AI Time Machine account uses that email yet. After you pay, open the link in your text message and add this email.",
+      message: "No paid AI Time Machine account uses that email yet. Pay first, then use the code we email you.",
     };
   }
   return issueCode(email, request);

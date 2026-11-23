@@ -118,10 +118,10 @@ window.startLanding = function (cfg) {
 })();
 
 // ===== Buy flow & geo-aware pricing =====
-var CASHFREE_CHECKOUT_URL = cfg.checkoutPath || '/api/checkout';
+var CASHFREE_CHECKOUT_URL = cfg.checkoutPath || '/checkout';
 var VIDEOS_LIVE = true;
 (function(){
-  document.querySelectorAll('[data-buy]').forEach(function(a){a.href=CASHFREE_CHECKOUT_URL;a.rel='nofollow';a.addEventListener('click',function(e){if(e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||e.button)return;e.preventDefault();var form=document.createElement('form');form.method='POST';form.action=CASHFREE_CHECKOUT_URL;document.body.appendChild(form);form.submit();});});
+  document.querySelectorAll('[data-buy]').forEach(function(a){a.href=CASHFREE_CHECKOUT_URL;});
   function setUSD(){document.querySelectorAll('.amt-x').forEach(function(e){e.textContent=e.getAttribute('data-usd')||'$24';});
     document.querySelectorAll('.geo-note').forEach(function(n){n.hidden=false;});document.documentElement.setAttribute('data-currency','USD');}
   var tz='';try{tz=Intl.DateTimeFormat().resolvedOptions().timeZone||'';}catch(e){}

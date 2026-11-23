@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { formatInr, mockPaymentsAllowed, pricing } from "@/lib/config";
+import { displayPhone } from "@/lib/phone";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -20,13 +21,11 @@ export default async function MockCheckoutPage({ searchParams }: { searchParams:
     <main className="page prose">
       <p className="draft">Test payment. No money moves. This stands in for the {payment.gateway} page.</p>
       <h1>Pay {formatInr(payment.amountInr || pricing().inr)}</h1>
-      <p>Put your mobile number. In the real checkout, the payment page asks for this. We text your login link there.</p>
-      <form className="stack" action="/api/checkout/mock-complete" method="post">
+      <p>
+        {payment.name || "Buyer"} · {payment.email || "No email"} · {payment.phone ? displayPhone(payment.phone) : "No mobile"}
+      </p>
+      <form action="/api/checkout/mock-complete" method="post">
         <input type="hidden" name="orderId" value={payment.id} />
-        <label className="field">
-          Mobile number
-          <input name="phone" type="tel" required placeholder="9876543210" autoComplete="tel" />
-        </label>
         <button className="btn btn-p" type="submit">
           Pay {formatInr(payment.amountInr)} (test)
         </button>

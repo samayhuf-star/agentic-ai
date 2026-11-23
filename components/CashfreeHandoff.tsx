@@ -26,7 +26,7 @@ export function CashfreeHandoff({ sessionId, mode }: { sessionId: string; mode: 
   return (
     <main className="page prose">
       <h1>Opening secure checkout…</h1>
-      <p>On the next page, replace the sample phone with your own mobile number. We text your login link there. No card details are typed on this site.</p>
+      <p>The next page is Cashfree. Your name, email, and mobile are already on the payment. No card details are typed on this site.</p>
     </main>
   );
 }

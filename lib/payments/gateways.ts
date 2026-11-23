@@ -2,8 +2,6 @@ import { pricing } from "@/lib/config";
 import { payuRequestHash, type GatewayName } from "@/lib/payments/signature";
 import type { CheckoutInput } from "@/lib/payments/types";
 
-const PLACEHOLDER_PHONE = "9999999999";
-
 export function gatewayHasKeys(gateway: GatewayName) {
   if (gateway === "cashfree") return Boolean(process.env.CASHFREE_APP_ID && process.env.CASHFREE_SECRET_KEY);
   if (gateway === "razorpay") return Boolean(process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET);
@@ -41,11 +39,12 @@ async function createCashfree(input: CheckoutInput) {
       order_currency: "INR",
       customer_details: {
         customer_id: input.orderId,
-        customer_phone: PLACEHOLDER_PHONE,
+        customer_name: input.customer.name,
+        customer_email: input.customer.email,
+        customer_phone: input.customer.phone,
       },
-      order_note: "Replace the sample phone with your own mobile before you pay.",
       order_meta: {
-        return_url: `${input.origin}/checkout/return?order_id=${input.orderId}`,
+        return_url: `${input.origin}/payment/success?order_id=${input.orderId}`,
         notify_url: `${input.origin}/api/webhooks/cashfree`,
         ...(cashfree.mode === "sandbox"
           ? {
@@ -79,8 +78,9 @@ async function createRazorpay(input: CheckoutInput) {
       description: `AI Time Machine, one payment of ${pricing().inr} rupees`,
       notify: { sms: false, email: false },
       reminder_enable: false,
+      customer: { name: input.customer.name, email: input.customer.email, contact: input.customer.phone },
       notes: { order_id: input.orderId },
-      callback_url: `${input.origin}/checkout/return?order_id=${input.orderId}`,
+      callback_url: `${input.origin}/payment/success?order_id=${input.orderId}`,
       callback_method: "get",
     }),
   });
@@ -96,8 +96,8 @@ async function createPayu(input: CheckoutInput) {
   const salt = process.env.PAYU_SALT || "";
   const amount = input.amountInr.toFixed(2);
   const productinfo = "AI Time Machine";
-  const firstname = "Owner";
-  const email = "buyer@adiology.io";
+  const firstname = input.customer.name.slice(0, 60);
+  const email = input.customer.email;
   const hash = payuRequestHash({
     key,
     txnid: input.orderId,
@@ -116,9 +116,9 @@ async function createPayu(input: CheckoutInput) {
     productinfo,
     firstname,
     email,
-    phone: PLACEHOLDER_PHONE,
-    surl: `${input.origin}/checkout/return?order_id=${input.orderId}`,
-    furl: `${input.origin}/checkout/return?order_id=${input.orderId}`,
+    phone: input.customer.phone,
+    surl: `${input.origin}/payment/success?order_id=${input.orderId}`,
+    furl: `${input.origin}/payment/success?order_id=${input.orderId}`,
     udf1: input.orderId,
     hash,
   });

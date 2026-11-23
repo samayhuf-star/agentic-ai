@@ -1,23 +1,24 @@
 import { queueOwnerAlert } from "@/lib/alerts/notify";
-import { isPlaceholderPhone } from "@/lib/phone";
 import { prisma } from "@/lib/prisma";
 
-export async function saveBuyerContact(input: { orderId: string; phone?: string | null; email?: string | null; amountInr?: number | null }) {
-  const phone = input.phone && !isPlaceholderPhone(input.phone) ? input.phone : null;
+export async function saveBuyerContact(input: { orderId: string; phone?: string | null; email?: string | null; name?: string | null; amountInr?: number | null }) {
+  const phone = input.phone?.trim() || null;
   const email = input.email?.trim().toLowerCase() || null;
-  if (!phone && !email) return;
+  const name = input.name?.trim() || null;
+  if (!phone && !email && !name) return;
   try {
     await prisma.payment.updateMany({
       where: { id: input.orderId },
-      data: { ...(phone ? { phone } : {}), ...(email ? { email } : {}) },
+      data: { ...(phone ? { phone } : {}), ...(email ? { email } : {}), ...(name ? { name } : {}) },
     });
     await prisma.lead.updateMany({
       where: { orderId: input.orderId },
-      data: { ...(phone ? { phone } : {}), ...(email ? { email } : {}) },
+      data: { ...(phone ? { phone } : {}), ...(email ? { email } : {}), ...(name ? { name } : {}) },
     });
     queueOwnerAlert({
       kind: "checkout_started",
       dedupeKey: `checkout_started:${input.orderId}`,
+      name,
       email,
       phone,
       amountInr: input.amountInr,
@@ -41,7 +42,11 @@ export async function openLead(input: { orderId: string; amountInr: number; phon
         email: input.email || null,
         name: input.name || null,
       },
-      update: {},
+      update: {
+        phone: input.phone || undefined,
+        email: input.email || undefined,
+        name: input.name || undefined,
+      },
     });
   } catch (error) {
     console.error("lead", error);

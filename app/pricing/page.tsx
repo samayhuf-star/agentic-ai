@@ -12,11 +12,11 @@ export default function PricingPage() {
         What is included, the launch countdown, and the buy button are on the <a href="/55-ai-agents">55 agents page</a>. The amount charged is ₹1,999 in rupees. Visitors outside India may see $24 on that page. The payment is still taken in rupees.
       </p>
       <p>
-        <a className="btn btn-p" href="/api/checkout">
+        <a className="btn btn-p" href="/checkout">
           Get AI Time Machine — ₹1,999
         </a>
       </p>
-      <p>Access is digital and is sent by email and WhatsApp or SMS right after payment. See Shipping and Delivery and Refund and Cancellation.</p>
+      <p>Access is digital. After payment we email a sign-in code. See Shipping and Delivery and Refund and Cancellation.</p>
     </PolicyFrame>
   );
 }

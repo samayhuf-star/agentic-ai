@@ -10,7 +10,7 @@ export default async function PayuPage({ searchParams }: { searchParams: Promise
   return (
     <main className="page prose">
       <h1>Opening PayU…</h1>
-      <p>Put your own mobile number on the PayU page if it shows the sample number.</p>
+      <p>Your name, email, and mobile go with this payment.</p>
       <PayuForm action={payuAction()} fields={fields} />
     </main>
   );

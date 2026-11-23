@@ -19,7 +19,7 @@ export function SiteHeader({ offer = false }: { offer?: boolean }) {
             Sign in
           </Link>
           {offer ? (
-            <a className="btn btn-p nav-buy" href="/api/checkout">
+            <a className="btn btn-p nav-buy" href="/checkout">
               Get ₹1,999 →
             </a>
           ) : (

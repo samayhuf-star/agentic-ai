@@ -51,7 +51,11 @@ export async function POST(request: Request) {
             data: {
               order: { order_id: payment.id, order_amount: payment.amountInr, order_currency: "INR" },
               payment: { cf_payment_id: `test_${payment.id}`, payment_status: "SUCCESS" },
-              customer_details: { customer_phone: phone },
+              customer_details: {
+                customer_phone: phone || payment.phone,
+                customer_email: payment.email,
+                customer_name: payment.name,
+              },
             },
           });
   const headers = new Headers({
@@ -61,5 +65,5 @@ export async function POST(request: Request) {
   const gateway = payment.gateway === "cashfree" ? "cashfree" : payment.gateway;
   const result = await handleWebhook(gateway, payload, headers);
   if (result.status !== 200) return NextResponse.json(result.body, { status: result.status });
-  return NextResponse.redirect(new URL(`/checkout/return?order_id=${payment.id}`, appOrigin(request)), 303);
+  return NextResponse.redirect(new URL(`/payment/success?order_id=${payment.id}`, appOrigin(request)), 303);
 }

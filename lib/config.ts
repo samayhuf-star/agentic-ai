@@ -36,7 +36,7 @@ export function publicConfig(): PublicConfig {
     compareInrLabel: formatInr(price.compareInr),
     compareUsdLabel: formatUsd(price.compareUsd),
     offerEnds: process.env.LAUNCH_OFFER_ENDS || "2026-12-31T23:59:59+05:30",
-    checkoutPath: "/api/checkout",
+    checkoutPath: "/checkout",
   };
 }
 

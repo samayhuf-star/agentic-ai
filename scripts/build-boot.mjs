@@ -5,7 +5,7 @@ let js = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1]).jo
 
 js = js.replace(
   "var CASHFREE_CHECKOUT_URL = 'https://payments.cashfree.com/forms/boardroom'; // REPLACE with real Cashfree payment link",
-  "var CASHFREE_CHECKOUT_URL = cfg.checkoutPath || '/api/checkout';",
+  "var CASHFREE_CHECKOUT_URL = cfg.checkoutPath || '/checkout';",
 );
 js = js.replace("var VIDEOS_LIVE = false; // set to true once videos/step-01.mp4 ... step-04.mp4 are uploaded", "var VIDEOS_LIVE = true;");
 js = js.replace(
@@ -18,7 +18,7 @@ js = js.replace(
 );
 js = js.replace(
   `document.querySelectorAll('[data-buy]').forEach(function(a){a.href=CASHFREE_CHECKOUT_URL;a.rel='noopener';});`,
-  `document.querySelectorAll('[data-buy]').forEach(function(a){a.href=CASHFREE_CHECKOUT_URL;a.rel='nofollow';a.addEventListener('click',function(e){if(e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||e.button)return;e.preventDefault();var form=document.createElement('form');form.method='POST';form.action=CASHFREE_CHECKOUT_URL;document.body.appendChild(form);form.submit();});});`,
+  `document.querySelectorAll('[data-buy]').forEach(function(a){a.href=CASHFREE_CHECKOUT_URL;});`,
 );
 js = js.replace(
   `var sf=document.getElementById('siForm'),step=0;

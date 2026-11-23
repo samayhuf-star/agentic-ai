@@ -1,13 +1,38 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { appOrigin } from "@/lib/config";
-import { hashSecret, randomToken } from "@/lib/crypto";
-import { isPlaceholderPhone, normalizePhone } from "@/lib/phone";
-import { sendText } from "@/lib/messaging/sms";
+import { isEmail, requestLoginCode } from "@/lib/auth";
 import { queueOwnerAlert } from "@/lib/alerts/notify";
 import { markLeadFailed, markLeadPaid, saveBuyerContact } from "@/lib/leads";
+import { indianMobile } from "@/lib/phone";
+import { ensureTeam } from "@/lib/team";
 import type { PaidEvent } from "@/lib/payments/types";
 import type { GatewayName } from "@/lib/payments/signature";
+
+function chosenEmail(remote?: string | null, stored?: string | null) {
+  const storedEmail = (stored || "").trim().toLowerCase();
+  if (isEmail(storedEmail)) return storedEmail;
+  const remoteEmail = (remote || "").trim().toLowerCase();
+  return isEmail(remoteEmail) ? remoteEmail : null;
+}
+
+function chosenPhone(remote?: string | null, stored?: string | null) {
+  const storedMobile = indianMobile(stored);
+  if (storedMobile.ok) return storedMobile.e164;
+  const remoteMobile = indianMobile(remote);
+  return remoteMobile.ok ? remoteMobile.e164 : null;
+}
+
+function chosenName(remote?: string | null, stored?: string | null) {
+  const storedName = (stored || "").trim();
+  if (storedName) return storedName.slice(0, 80);
+  const remoteName = (remote || "").trim();
+  return remoteName ? remoteName.slice(0, 80) : null;
+}
+
+async function phoneIsFree(tx: Prisma.TransactionClient, phone: string, exceptUserId?: string) {
+  const owner = await tx.user.findUnique({ where: { phone } });
+  return !owner || owner.id === exceptUserId;
+}
 
 export async function fulfillPayment(gateway: GatewayName, event: PaidEvent) {
   if (!event.orderId || event.status === "ignored") return { ok: true, ignored: true };
@@ -19,12 +44,19 @@ export async function fulfillPayment(gateway: GatewayName, event: PaidEvent) {
         data: { status: "failed", raw: event.raw as Prisma.InputJsonValue, gatewayPaymentId: event.gatewayPaymentId },
       });
       await markLeadFailed(payment.id, "failed");
-      await saveBuyerContact({ orderId: payment.id, phone: event.phone, email: event.email, amountInr: event.amountInr ?? payment.amountInr });
+      await saveBuyerContact({
+        orderId: payment.id,
+        phone: event.phone || payment.phone,
+        email: event.email || payment.email,
+        name: event.name || payment.name,
+        amountInr: event.amountInr ?? payment.amountInr,
+      });
       queueOwnerAlert({
         kind: "payment_failed",
         dedupeKey: `payment_failed:${payment.id}`,
+        name: event.name || payment.name,
         phone: event.phone || payment.phone,
-        email: event.email,
+        email: event.email || payment.email,
         amountInr: event.amountInr ?? payment.amountInr,
         orderId: payment.id,
         status: "failed",
@@ -33,17 +65,21 @@ export async function fulfillPayment(gateway: GatewayName, event: PaidEvent) {
     return { ok: true, failed: true };
   }
 
-  if (payment?.status === "paid") return { ok: true, duplicate: true };
+  if (payment?.status === "paid" && payment.userId) return { ok: true, duplicate: true, userId: payment.userId };
 
-  const phone = normalizePhone(event.phone);
+  const phone = chosenPhone(event.phone, payment?.phone);
+  const email = chosenEmail(event.email, payment?.email);
+  const name = chosenName(event.name, payment?.name);
   const amountInr = event.amountInr ?? payment?.amountInr ?? 0;
-  if (!phone || isPlaceholderPhone(phone)) {
+
+  if (!email) {
     await prisma.payment.upsert({
       where: { id: event.orderId },
       update: {
-        status: "paid_unassigned",
+        status: "paid",
         paidAt: new Date(),
-        phone: phone || event.phone,
+        phone,
+        name,
         raw: event.raw as Prisma.InputJsonValue,
         gatewayPaymentId: event.gatewayPaymentId,
       },
@@ -51,42 +87,48 @@ export async function fulfillPayment(gateway: GatewayName, event: PaidEvent) {
         id: event.orderId,
         gateway,
         amountInr,
-        status: "paid_unassigned",
-        phone: phone || event.phone,
+        status: "paid",
+        phone,
+        name,
         paidAt: new Date(),
         raw: event.raw as Prisma.InputJsonValue,
         gatewayPaymentId: event.gatewayPaymentId,
       },
     });
-    await markLeadPaid({ orderId: event.orderId, amountInr, phone: phone || event.phone });
-    await saveBuyerContact({ orderId: event.orderId, phone: event.phone, email: event.email, amountInr });
+    await markLeadPaid({ orderId: event.orderId, amountInr, phone, name });
     queueOwnerAlert({
       kind: "payment_received",
       dedupeKey: `payment_received:${event.orderId}`,
-      phone: phone || event.phone,
-      email: event.email,
+      name,
+      phone,
       amountInr,
       orderId: event.orderId,
-      status: "paid, phone not saved",
+      status: "paid, email not saved",
     });
-    return { ok: true, unassigned: true };
+    return { ok: true, needsEmail: true };
   }
 
-  const token = randomToken();
-  const tokenHash = hashSecret(token);
-  const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-
   const user = await prisma.$transaction(async (tx) => {
-    const existing = await tx.user.findUnique({ where: { phone } });
+    const existing = await tx.user.findUnique({ where: { email } });
+    const canUsePhone = phone ? await phoneIsFree(tx, phone, existing?.id) : false;
     const saved = existing
       ? await tx.user.update({
           where: { id: existing.id },
-          data: existing.email
-            ? {}
-            : { emailTokenHash: tokenHash, emailTokenExpires: expires },
+          data: {
+            phone: existing.phone || (canUsePhone ? phone : undefined),
+            businessName: existing.businessName || name,
+            onboardedAt: existing.onboardedAt ?? new Date(),
+            goal: existing.goal || "everything",
+          },
         })
       : await tx.user.create({
-          data: { phone, emailTokenHash: tokenHash, emailTokenExpires: expires },
+          data: {
+            email,
+            phone: canUsePhone ? phone : null,
+            businessName: name,
+            onboardedAt: new Date(),
+            goal: "everything",
+          },
         });
     await tx.payment.upsert({
       where: { id: event.orderId },
@@ -94,7 +136,9 @@ export async function fulfillPayment(gateway: GatewayName, event: PaidEvent) {
         status: "paid",
         userId: saved.id,
         phone,
-        paidAt: new Date(),
+        email,
+        name,
+        paidAt: payment?.paidAt ?? new Date(),
         amountInr: amountInr || undefined,
         gateway,
         raw: event.raw as Prisma.InputJsonValue,
@@ -107,6 +151,8 @@ export async function fulfillPayment(gateway: GatewayName, event: PaidEvent) {
         status: "paid",
         userId: saved.id,
         phone,
+        email,
+        name,
         paidAt: new Date(),
         raw: event.raw as Prisma.InputJsonValue,
         gatewayPaymentId: event.gatewayPaymentId,
@@ -115,24 +161,20 @@ export async function fulfillPayment(gateway: GatewayName, event: PaidEvent) {
     return saved;
   });
 
-  await markLeadPaid({ orderId: event.orderId, amountInr, phone, userId: user.id, email: user.email, name: user.businessName });
-  await saveBuyerContact({ orderId: event.orderId, phone, email: event.email || user.email, amountInr });
+  await ensureTeam(user.id);
+  await markLeadPaid({ orderId: event.orderId, amountInr, phone, userId: user.id, email, name });
   queueOwnerAlert({
     kind: "payment_received",
     dedupeKey: `payment_received:${event.orderId}`,
-    name: user.businessName,
-    email: event.email || user.email,
+    name: user.businessName || name,
+    email,
     phone,
     amountInr,
     orderId: event.orderId,
     status: "paid",
   });
 
-  if (!user.email) {
-    const origin = appOrigin();
-    const message = `AI Time Machine: payment received. Add your email to open your team: ${origin}/welcome?token=${token}`;
-    await sendText(phone, message);
-    await prisma.payment.update({ where: { id: event.orderId }, data: { smsSentAt: new Date() } });
-  }
-  return { ok: true, userId: user.id };
+  const mailed = await requestLoginCode(email, new Request("http://localhost/internal/payment-code"));
+  if (!mailed.ok) console.error("sign-in code", mailed.message);
+  return { ok: true, userId: user.id, email };
 }

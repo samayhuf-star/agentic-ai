@@ -16,16 +16,14 @@ npm run dev
 
 Open http://localhost:3000
 
-`npm run dev` starts a small database on this computer, loads the 55 agents, and opens the site. No payment, text message, or email account is required.
+`npm run dev` starts a small database on this computer, loads the 55 agents, and opens the site. No payment or email account is required.
 
 ### What you can click without real keys
 
-1. Tap any **Get AI Time Machine** button. You land on a **test checkout**. No money moves.
-2. Enter a mobile number and pay.
-3. The terminal where `npm run dev` is running prints the text message. Open the link.
-4. Add an email. The one-time code is shown on the page and printed in the terminal, because email is not connected yet.
-5. Answer three questions. Ayaan picks a starting team.
-6. Use the dashboard: team on/off, chat, Needs your yes, and Pause everything.
+1. Tap any **Get AI Time Machine** button. You land on `/checkout`.
+2. Enter a name, email, and Indian mobile number, then pay. No money moves.
+3. The next page says the payment was received. The one-time code is on that page and in the terminal, because email is not connected yet.
+4. Type the code. The dashboard opens with the 55-agent team already set up.
 
 To open the product and the admin page, put your email in `ADMIN_EMAILS` in `.env`, restart, and sign in with that email at http://localhost:3000/login. No payment is required for those addresses. The first sign-in creates the account.
 
@@ -65,7 +63,7 @@ Razorpay webhook (event `payment.captured`):
 | Talk to an agent | Built-in demo replies | Your language model, if `LLM_API_KEY` is set |
 | Home page videos and GIFs | Animated stand-ins | Drop files in `public/videos` and `public/assets` |
 
-Real checkout does **not** ask for a name or email first. The Buy button opens checkout. Cashfree's page shows a sample phone (`9999999999`). The buyer must replace it with their own mobile before paying. That number is where the login link is sent. If they leave the sample number, the payment is saved but an account is not opened, so two people never share a login.
+Buy buttons open `/checkout` on this site. The buyer enters their name, email, and Indian mobile number. That is what Cashfree receives, and it is what we store on the order. After payment, Cashfree returns to `/payment/success`. We confirm the order, open the account, build the 55-agent team, and email a sign-in code. The same page accepts the code. `/sup-admin` can fulfil a paid order again and resend the code.
 
 Outside accounts (Instagram, ads, WhatsApp to customers) are not connected. Saying yes records the decision. It does not publish a post or spend money.
 

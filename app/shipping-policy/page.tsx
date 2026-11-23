@@ -8,9 +8,9 @@ export default function ShippingPage() {
     <PolicyFrame title="Shipping and Delivery">
       <p>AI Time Machine is a digital product. Nothing is posted by courier. There is no physical shipment, shipping fee, or delivery address to enter.</p>
       <p>
-        After a successful payment, access is delivered instantly. You get a link by email and by WhatsApp or SMS on the phone number used at checkout. You add your email, type a one-time code, and open your account.
+        After a successful payment, access is delivered on this site. We email a one-time code to the address you entered before paying. Type that code to open your account.
       </p>
-      <p>If the link does not arrive within a few minutes, check the phone number you paid with, then write to {BUSINESS.supportEmail}. Support is by email only. We will resend access.</p>
+      <p>If the code does not arrive within a few minutes, check the email you entered, then write to {BUSINESS.supportEmail}. Support is by email only. We will resend access.</p>
     </PolicyFrame>
   );
 }

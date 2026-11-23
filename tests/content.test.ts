@@ -51,6 +51,8 @@ test("the home page keeps the approved hero words", () => {
   assert.doesNotMatch(html, /₹1,800/);
   assert.doesNotMatch(html, /lookalike buyers/);
   assert.doesNotMatch(html, /listing views/);
+  assert.doesNotMatch(html, /9999999999/);
+  assert.match(html, /href="\/checkout"/);
 });
 
 test("public links use APP_URL and never a Railway host", () => {
@@ -75,4 +77,9 @@ test("Cashfree TEST uses the sandbox and PROD uses the live API", () => {
   assert.equal(cashfreeTarget().mode, "production");
   if (previous === undefined) delete process.env.CASHFREE_ENV;
   else process.env.CASHFREE_ENV = previous;
+  const gateways = fs.readFileSync(path.join(process.cwd(), "lib/payments/gateways.ts"), "utf8");
+  assert.doesNotMatch(gateways, /9999999999/);
+  const returned = fs.readFileSync(path.join(process.cwd(), "app/checkout/return/page.tsx"), "utf8");
+  assert.doesNotMatch(returned, /sample number/);
+  assert.doesNotMatch(returned, /We need your real number/);
 });

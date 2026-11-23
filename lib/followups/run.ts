@@ -45,7 +45,7 @@ function checkoutLetter(amountInr: number, id: string) {
       "",
       `You started checkout and the payment is not finished. The price is ${formatInr(amountInr)} once.`,
       "",
-      `Continue here: ${appOrigin()}/api/checkout`,
+      `Continue here: ${appOrigin()}/checkout`,
       "",
       "If you already paid, you can ignore this note.",
       footer(id),

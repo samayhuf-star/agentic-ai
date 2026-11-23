@@ -732,8 +732,46 @@ button.btn:disabled {
   height: 18px;
 }
 
-.onboard .field-error {
+.onboard .field-error,
+.checkout .field-error {
   color: #ffb4b4;
-  font-size: 13px;
-  margin: 0;
+  font-size: 14px;
+  margin: 6px 0 0;
+  display: block;
+}
+
+.checkout {
+  max-width: 560px;
+}
+
+.checkout-form .btn {
+  width: 100%;
+  justify-content: center;
+}
+
+button.text-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--lime);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+button.text-link:disabled {
+  color: var(--dim);
+  cursor: default;
+}
+
+.fulfil-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-width: 220px;
+}
+
+.fulfil-row input {
+  width: 180px;
+  max-width: 100%;
 }

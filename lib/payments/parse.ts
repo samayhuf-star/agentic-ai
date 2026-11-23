@@ -29,6 +29,7 @@ export function parseCashfreeEvent(payload: unknown): PaidEvent {
     orderId: text(order?.order_id),
     phone: text(customer?.customer_phone) || text(asRecord(payment?.customer_details)?.customer_phone) || null,
     email: text(customer?.customer_email) || text(asRecord(payment?.customer_details)?.customer_email) || null,
+    name: text(customer?.customer_name) || text(asRecord(payment?.customer_details)?.customer_name) || null,
     amountInr: order?.order_amount != null ? Math.round(Number(order.order_amount)) : null,
     gatewayPaymentId: text(payment?.cf_payment_id) || null,
     status: success ? "paid" : failed ? "failed" : "ignored",
