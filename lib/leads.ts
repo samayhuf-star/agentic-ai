@@ -1,5 +1,33 @@
 import { queueOwnerAlert } from "@/lib/alerts/notify";
+import { isPlaceholderPhone } from "@/lib/phone";
 import { prisma } from "@/lib/prisma";
+
+export async function saveBuyerContact(input: { orderId: string; phone?: string | null; email?: string | null; amountInr?: number | null }) {
+  const phone = input.phone && !isPlaceholderPhone(input.phone) ? input.phone : null;
+  const email = input.email?.trim().toLowerCase() || null;
+  if (!phone && !email) return;
+  try {
+    await prisma.payment.updateMany({
+      where: { id: input.orderId },
+      data: { ...(phone ? { phone } : {}), ...(email ? { email } : {}) },
+    });
+    await prisma.lead.updateMany({
+      where: { orderId: input.orderId },
+      data: { ...(phone ? { phone } : {}), ...(email ? { email } : {}) },
+    });
+    queueOwnerAlert({
+      kind: "checkout_started",
+      dedupeKey: `checkout_started:${input.orderId}`,
+      email,
+      phone,
+      amountInr: input.amountInr,
+      orderId: input.orderId,
+      status: "checkout started",
+    });
+  } catch (error) {
+    console.error("buyer contact", error);
+  }
+}
 
 export async function openLead(input: { orderId: string; amountInr: number; phone?: string | null; email?: string | null; name?: string | null }) {
   try {
@@ -14,16 +42,6 @@ export async function openLead(input: { orderId: string; amountInr: number; phon
         name: input.name || null,
       },
       update: {},
-    });
-    queueOwnerAlert({
-      kind: "checkout_started",
-      dedupeKey: `checkout_started:${input.orderId}`,
-      name: input.name,
-      email: input.email,
-      phone: input.phone,
-      amountInr: input.amountInr,
-      orderId: input.orderId,
-      status: "checkout started",
     });
   } catch (error) {
     console.error("lead", error);

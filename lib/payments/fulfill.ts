@@ -5,7 +5,7 @@ import { hashSecret, randomToken } from "@/lib/crypto";
 import { isPlaceholderPhone, normalizePhone } from "@/lib/phone";
 import { sendText } from "@/lib/messaging/sms";
 import { queueOwnerAlert } from "@/lib/alerts/notify";
-import { markLeadFailed, markLeadPaid } from "@/lib/leads";
+import { markLeadFailed, markLeadPaid, saveBuyerContact } from "@/lib/leads";
 import type { PaidEvent } from "@/lib/payments/types";
 import type { GatewayName } from "@/lib/payments/signature";
 
@@ -19,10 +19,12 @@ export async function fulfillPayment(gateway: GatewayName, event: PaidEvent) {
         data: { status: "failed", raw: event.raw as Prisma.InputJsonValue, gatewayPaymentId: event.gatewayPaymentId },
       });
       await markLeadFailed(payment.id, "failed");
+      await saveBuyerContact({ orderId: payment.id, phone: event.phone, email: event.email, amountInr: event.amountInr ?? payment.amountInr });
       queueOwnerAlert({
         kind: "payment_failed",
         dedupeKey: `payment_failed:${payment.id}`,
         phone: event.phone || payment.phone,
+        email: event.email,
         amountInr: event.amountInr ?? payment.amountInr,
         orderId: payment.id,
         status: "failed",
@@ -57,10 +59,12 @@ export async function fulfillPayment(gateway: GatewayName, event: PaidEvent) {
       },
     });
     await markLeadPaid({ orderId: event.orderId, amountInr, phone: phone || event.phone });
+    await saveBuyerContact({ orderId: event.orderId, phone: event.phone, email: event.email, amountInr });
     queueOwnerAlert({
       kind: "payment_received",
       dedupeKey: `payment_received:${event.orderId}`,
       phone: phone || event.phone,
+      email: event.email,
       amountInr,
       orderId: event.orderId,
       status: "paid, phone not saved",
@@ -112,11 +116,12 @@ export async function fulfillPayment(gateway: GatewayName, event: PaidEvent) {
   });
 
   await markLeadPaid({ orderId: event.orderId, amountInr, phone, userId: user.id, email: user.email, name: user.businessName });
+  await saveBuyerContact({ orderId: event.orderId, phone, email: event.email || user.email, amountInr });
   queueOwnerAlert({
     kind: "payment_received",
     dedupeKey: `payment_received:${event.orderId}`,
     name: user.businessName,
-    email: user.email,
+    email: event.email || user.email,
     phone,
     amountInr,
     orderId: event.orderId,

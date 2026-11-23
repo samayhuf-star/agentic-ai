@@ -27,7 +27,8 @@ export function parseCashfreeEvent(payload: unknown): PaidEvent {
   const failed = type === "PAYMENT_FAILED_WEBHOOK" || paymentStatus === "FAILED";
   return {
     orderId: text(order?.order_id),
-    phone: text(customer?.customer_phone) || null,
+    phone: text(customer?.customer_phone) || text(asRecord(payment?.customer_details)?.customer_phone) || null,
+    email: text(customer?.customer_email) || text(asRecord(payment?.customer_details)?.customer_email) || null,
     amountInr: order?.order_amount != null ? Math.round(Number(order.order_amount)) : null,
     gatewayPaymentId: text(payment?.cf_payment_id) || null,
     status: success ? "paid" : failed ? "failed" : "ignored",

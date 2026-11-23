@@ -21,7 +21,7 @@ section{padding:110px 0}
 .sbar .wrap{display:flex;align-items:center;justify-content:space-between;gap:14px;height:74px}
 .sbar .l{display:flex;align-items:center;gap:16px;min-width:0}
 .sbar .l b{font-family:var(--head);font-size:26px;font-weight:var(--head-w,800);white-space:nowrap}
-.sbar .l small{color:var(--dim);font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sbar .l small{color:var(--dim);font-size:13.5px;white-space:normal;overflow:visible;text-overflow:unset;line-height:1.25}
 .sbar .btn{padding:13px 20px;font-size:15px}
 @media (max-width:760px){body{font-size:16px}.wrap{padding:0 18px}section{padding:80px 0}.sbar .l small{display:none}.sbar .btn{padding:12px 14px;font-size:14px}.sbar .wrap{height:68px}}
 

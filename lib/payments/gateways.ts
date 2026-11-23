@@ -47,7 +47,12 @@ async function createCashfree(input: CheckoutInput) {
       order_meta: {
         return_url: `${input.origin}/checkout/return?order_id=${input.orderId}`,
         notify_url: `${input.origin}/api/webhooks/cashfree`,
-        ...(cashfree.mode === "sandbox" ? { payment_methods: "cc,dc,upi" } : {}),
+        ...(cashfree.mode === "sandbox"
+          ? {
+              payment_methods: "cc,dc,upi",
+              payment_methods_filters: { methods: { action: "ALLOW", values: ["credit_card", "debit_card", "upi"] } },
+            }
+          : {}),
       },
     }),
   });

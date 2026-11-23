@@ -5,7 +5,7 @@ import { formatInr, formatIst } from "@/lib/config";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { getActiveGateway } from "@/lib/settings";
-import { displayPhone } from "@/lib/phone";
+import { displayPhone, isPlaceholderPhone } from "@/lib/phone";
 import { TestAlertButton } from "@/components/TestAlertButton";
 
 export const dynamic = "force-dynamic";
@@ -111,7 +111,7 @@ export default async function SuperAdminPage({ searchParams }: { searchParams: P
                     <tr key={lead.id}>
                       <td>{formatIst(lead.createdAt)}</td>
                       <td>{lead.email || "—"}</td>
-                      <td>{lead.phone ? displayPhone(lead.phone) : "—"}</td>
+                      <td>{lead.phone && !isPlaceholderPhone(lead.phone) ? displayPhone(lead.phone) : "—"}</td>
                       <td>{lead.orderId}</td>
                     </tr>
                   ))
@@ -222,6 +222,7 @@ export default async function SuperAdminPage({ searchParams }: { searchParams: P
               <th>Amount</th>
               <th>Status</th>
               <th>Phone</th>
+              <th>Email</th>
             </tr>
           </thead>
           <tbody>
@@ -231,7 +232,14 @@ export default async function SuperAdminPage({ searchParams }: { searchParams: P
                 <td>{payment.gateway}</td>
                 <td>{formatInr(payment.amountInr)}</td>
                 <td>{payment.status}</td>
-                <td>{payment.phone ? displayPhone(payment.phone) : payment.user ? displayPhone(payment.user.phone) : "—"}</td>
+                <td>{
+                  payment.phone && !isPlaceholderPhone(payment.phone)
+                    ? displayPhone(payment.phone)
+                    : payment.user?.phone && !isPlaceholderPhone(payment.user.phone)
+                      ? displayPhone(payment.user.phone)
+                      : "—"
+                }</td>
+                <td>{payment.email || payment.user?.email || "—"}</td>
               </tr>
             ))}
           </tbody>

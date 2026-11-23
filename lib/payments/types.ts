@@ -3,6 +3,7 @@ import type { GatewayName } from "@/lib/payments/signature";
 export type PaidEvent = {
   orderId: string;
   phone: string | null;
+  email?: string | null;
   amountInr: number | null;
   gatewayPaymentId: string | null;
   status: "paid" | "failed" | "ignored";

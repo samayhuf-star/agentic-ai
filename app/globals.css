@@ -674,10 +674,24 @@ button.btn:disabled {
   width: 100%;
 }
 
-.chat-form input {
-  flex: 1;
-  width: auto;
+.br-main .chat-form {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
   min-width: 0;
+}
+
+.br-main .chat-form input {
+  flex: 1 1 auto;
+  width: 1%;
+  min-width: 0;
+  max-width: none;
+}
+
+.br-main .chat-form .btn {
+  flex: 0 0 auto;
 }
 
 .onboard {
