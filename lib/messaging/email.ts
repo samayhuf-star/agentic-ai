@@ -1,9 +1,13 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { isProduction } from "@/lib/config";
 import { BUSINESS } from "@/lib/business";
 
-export async function sendEmail(to: string, subject: string, text: string) {
+type EmailWriter = Prisma.TransactionClient | typeof prisma;
+
+export async function sendEmail(to: string, subject: string, text: string, db: EmailWriter = prisma) {
   const from = process.env.RESEND_FROM || "AI Time Machine <no-reply@adiology.io>";
+  const provider = process.env.RESEND_API_KEY ? "resend" : "mock";
   if (process.env.RESEND_API_KEY) {
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -18,10 +22,9 @@ export async function sendEmail(to: string, subject: string, text: string) {
       console.error("Resend error", detail);
       throw new Error("Email could not be sent.");
     }
-    await prisma.emailLog.create({ data: { toEmail: to, subject, body: text, provider: "resend" } });
-    return { provider: "resend" as const };
+  } else {
+    console.log(`[email:mock] to ${to}\n${subject}\n${text}`);
   }
-  console.log(`[email:mock] to ${to}\n${subject}\n${text}`);
-  await prisma.emailLog.create({ data: { toEmail: to, subject, body: text, provider: "mock" } });
-  return { provider: "mock" as const, devCode: isProduction() ? undefined : text };
+  await db.emailLog.create({ data: { toEmail: to, subject, body: text, provider } });
+  return { provider: provider as "resend" | "mock", devCode: isProduction() ? undefined : text };
 }

@@ -5,6 +5,8 @@ import { createCheckout } from "../lib/payments/checkout";
 import { handleWebhook } from "../lib/payments/webhook";
 import { mockSignature } from "../lib/payments/signature";
 import { requestLoginCode, verifyLoginCode } from "../lib/auth";
+import { hashSecret } from "../lib/crypto";
+import { fulfillPayment } from "../lib/payments/fulfill";
 import { POST as onboard } from "../app/api/onboarding/route";
 
 process.env.NODE_ENV = "test";
@@ -324,4 +326,44 @@ test("an old pending, unpaid, or test order does not block the same email or pho
   assert.equal(newer?.userId, user?.id);
   assert.equal(await prisma.payment.count({ where: { id: KNOWN_TEST_ORDER_ID, status: "paid", isTest: false } }), 0);
   assert.equal(await prisma.payment.count({ where: { id: firstId, status: "paid", isTest: false } }), 1);
+});
+
+test("the return page and the webhook share one sign-in code", async () => {
+  const { sendFulfilmentCode } = await import("../lib/payments/sign-in-code");
+  const stamp = Date.now();
+  const email = `race-${stamp}@shop.test`;
+  const orderId = `brrace${stamp}`;
+  const phone = `+918${String(stamp).slice(-9)}`;
+  await prisma.payment.create({
+    data: { id: orderId, gateway: "cashfree", amountInr: 1999, status: "pending", email, phone, name: "Race Buyer" },
+  });
+  const event = {
+    orderId,
+    status: "paid" as const,
+    amountInr: 1999,
+    phone,
+    email,
+    name: "Race Buyer",
+    gatewayPaymentId: null,
+    raw: { source: "race" },
+  };
+  const settled = await Promise.allSettled([fulfillPayment("cashfree", event), fulfillPayment("cashfree", event)]);
+  assert.ok(settled.some((item) => item.status === "fulfilled"));
+  const notes = await prisma.emailLog.findMany({ where: { toEmail: email, subject: "Your AI Time Machine code" } });
+  assert.equal(notes.length, 1);
+  const code = notes[0].body.match(/code is (\d{6})/)?.[1];
+  assert.equal(code?.length, 6);
+  const saved = await prisma.loginCode.findFirst({ where: { email } });
+  assert.equal(saved?.codeHash, hashSecret(code!));
+  await fulfillPayment("cashfree", event);
+  assert.equal(await prisma.emailLog.count({ where: { toEmail: email, subject: "Your AI Time Machine code" } }), 1);
+  assert.equal((await prisma.loginCode.findFirst({ where: { email } }))?.codeHash, saved?.codeHash);
+  const resent = await sendFulfilmentCode(orderId, email, "resend");
+  assert.equal(resent.ok, true);
+  const again = await prisma.emailLog.findMany({ where: { toEmail: email, subject: "Your AI Time Machine code" }, orderBy: { createdAt: "desc" } });
+  assert.equal(again.length, 2);
+  assert.match(again[0].body, new RegExp(`code is ${code}`));
+  assert.equal((await prisma.loginCode.findFirst({ where: { email } }))?.codeHash, hashSecret(code!));
+  const verified = await verifyLoginCode(email, code!);
+  assert.equal(verified.ok, true);
 });

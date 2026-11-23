@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { isEmail, requestLoginCode } from "@/lib/auth";
+import { isEmail } from "@/lib/auth";
+import { sendFulfilmentCode } from "@/lib/payments/sign-in-code";
 import { queueOwnerAlert } from "@/lib/alerts/notify";
 import { markLeadFailed, markLeadPaid, saveBuyerContact } from "@/lib/leads";
 import { indianMobile } from "@/lib/phone";
@@ -66,7 +67,11 @@ export async function fulfillPayment(gateway: GatewayName, event: PaidEvent) {
     return { ok: true, failed: true };
   }
 
-  if (payment?.status === "paid" && payment.userId) return { ok: true, duplicate: true, userId: payment.userId };
+  if (payment?.status === "paid" && payment.userId) {
+    const already = chosenEmail(event.email, payment.email);
+    if (already) await sendFulfilmentCode(event.orderId, already, "once");
+    return { ok: true, duplicate: true, userId: payment.userId };
+  }
 
   const phone = chosenPhone(event.phone, payment?.phone);
   const email = chosenEmail(event.email, payment?.email);
@@ -109,7 +114,9 @@ export async function fulfillPayment(gateway: GatewayName, event: PaidEvent) {
     return { ok: true, needsEmail: true };
   }
 
-  const user = await prisma.$transaction(async (tx) => {
+  let user;
+  try {
+    user = await prisma.$transaction(async (tx) => {
     const existing = await tx.user.findUnique({ where: { email } });
     const canUsePhone = phone ? await phoneIsFree(tx, phone, existing?.id) : false;
     const saved = existing
@@ -161,6 +168,27 @@ export async function fulfillPayment(gateway: GatewayName, event: PaidEvent) {
     });
     return saved;
   });
+  } catch (error) {
+    if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== "P2002") throw error;
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (!existing) throw error;
+    await prisma.payment.update({
+      where: { id: event.orderId },
+      data: {
+        status: "paid",
+        userId: existing.id,
+        phone,
+        email,
+        name,
+        paidAt: new Date(),
+        amountInr: amountInr || undefined,
+        gateway,
+        raw: event.raw as Prisma.InputJsonValue,
+        gatewayPaymentId: event.gatewayPaymentId,
+      },
+    });
+    user = existing;
+  }
 
   await ensureTeam(user.id);
   await markLeadPaid({ orderId: event.orderId, amountInr, phone, userId: user.id, email, name });
@@ -175,7 +203,7 @@ export async function fulfillPayment(gateway: GatewayName, event: PaidEvent) {
     status: "paid",
   });
 
-  const mailed = await requestLoginCode(email, new Request("http://localhost/internal/payment-code"));
+  const mailed = await sendFulfilmentCode(event.orderId, email, "once");
   if (!mailed.ok) console.error("sign-in code", mailed.message);
   return { ok: true, userId: user.id, email };
 }

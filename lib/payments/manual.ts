@@ -1,4 +1,5 @@
-import { isEmail, requestLoginCode } from "@/lib/auth";
+import { isEmail } from "@/lib/auth";
+import { sendFulfilmentCode } from "@/lib/payments/sign-in-code";
 import { fetchCashfreeOrder } from "@/lib/payments/cashfree-order";
 import { fulfillPayment } from "@/lib/payments/fulfill";
 import { prisma } from "@/lib/prisma";
@@ -64,7 +65,7 @@ export async function fulfilOrder(orderId: string, extra?: { email?: string | nu
   const updated = await prisma.payment.findUnique({ where: { id: orderId } });
   const target = updated?.email || email;
   if (hadUser && target && isEmail(target)) {
-    const mailed = await requestLoginCode(target, new Request("http://localhost/internal/resend-code"));
+    const mailed = await sendFulfilmentCode(orderId, target, "resend");
     if (!mailed.ok) return { ok: false as const, status: mailed.status, message: mailed.message, cashfreeStatus };
   }
   if (!updated?.userId) {
