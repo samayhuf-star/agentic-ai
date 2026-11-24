@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { GatewaySwitch, ResendButton, TestEmailForm } from "@/components/AdminPanel";
+import { AdminKicker } from "@/components/admin/AdminKicker";
 import { formatInr, formatIst } from "@/lib/config";
 import { requireAdminPage } from "@/lib/admin/guard";
+import { overviewSignupCount } from "@/lib/admin/stats";
 import { prisma } from "@/lib/prisma";
 import { getActiveGateway } from "@/lib/settings";
 import { FulfilButton } from "@/components/FulfilButton";
@@ -12,7 +14,7 @@ import { TestAlertButton } from "@/components/TestAlertButton";
 export const dynamic = "force-dynamic";
 
 export default async function SuperAdminPage({ searchParams }: { searchParams: Promise<{ q?: string; tab?: string }> }) {
-  const session = await requireAdminPage();
+  const { session, readOnly } = await requireAdminPage();
   const { q, tab } = await searchParams;
   const query = (q || "").trim();
   const [alerts, followups, leads] = await Promise.all([
@@ -21,11 +23,7 @@ export default async function SuperAdminPage({ searchParams }: { searchParams: P
     prisma.lead.findMany({ where: { status: "pending" }, orderBy: { createdAt: "desc" }, take: 50 }),
   ]);
   const [signups, paidCount, revenue, gateway, users, payments] = await Promise.all([
-    prisma.user.count({
-      where: {
-        OR: [{ payments: { none: { status: "paid" } } }, { payments: { some: { status: "paid", isTest: false } } }],
-      },
-    }),
+    overviewSignupCount(),
     prisma.payment.count({ where: { status: "paid", isTest: false } }),
     prisma.payment.aggregate({ where: { status: "paid", isTest: false }, _sum: { amountInr: true } }),
     getActiveGateway(),
@@ -48,7 +46,7 @@ export default async function SuperAdminPage({ searchParams }: { searchParams: P
 
   return (
     <main className="page">
-      <p className="br-kicker">Admin</p>
+      <AdminKicker kicker="Admin" readOnly={readOnly} />
       <h1>AI Time Machine</h1>
       <p className="row-actions">
         <Link href="/sup-admin">Home</Link>
@@ -62,7 +60,7 @@ export default async function SuperAdminPage({ searchParams }: { searchParams: P
       {tab === "alerts" ? (
         <section>
           <h2 style={{ fontSize: 28 }}>Alerts</h2>
-          <TestAlertButton />
+          <TestAlertButton readOnly={readOnly} />
           <div className="table-wrap">
             <table>
               <thead>
@@ -175,12 +173,12 @@ export default async function SuperAdminPage({ searchParams }: { searchParams: P
       <div className="card" style={{ marginBottom: 18 }}>
         <h2 style={{ fontSize: 24 }}>Active gateway</h2>
         <p className="muted">New Buy buttons use this. Cashfree is the main one. Razorpay and PayU are backups.</p>
-        <GatewaySwitch current={gateway} />
+        <GatewaySwitch current={gateway} readOnly={readOnly} />
       </div>
       <div className="card" style={{ marginBottom: 18 }}>
         <h2 style={{ fontSize: 24 }}>Test email</h2>
         <p className="muted">Sends from the configured sender. Replies go to support@theaitimemachine.com.</p>
-        <TestEmailForm defaultTo={session.email} />
+        <TestEmailForm defaultTo={session.email} readOnly={readOnly} />
       </div>
       <form className="row-actions" action="/sup-admin" method="get" style={{ margin: "18px 0" }}>
         <input name="q" defaultValue={query} placeholder="Search phone, email or business" aria-label="Search people" style={{ maxWidth: 360 }} />
@@ -213,7 +211,7 @@ export default async function SuperAdminPage({ searchParams }: { searchParams: P
                   </td>
                   <td>{formatIst(user.createdAt)}</td>
                   <td>{formatInr(user.payments.reduce((sum, payment) => sum + payment.amountInr, 0))}</td>
-                  <td>{user.email ? <ResendButton userId={user.id} /> : <span className="muted">Waiting for email</span>}</td>
+                  <td>{user.email ? <ResendButton userId={user.id} readOnly={readOnly} /> : <span className="muted">Waiting for email</span>}</td>
                 </tr>
               ))
             )}
@@ -248,11 +246,11 @@ export default async function SuperAdminPage({ searchParams }: { searchParams: P
                 <td>{payment.email || payment.user?.email || "—"}</td>
                 <td>
                   <div className="muted">{payment.id}</div>
-                  <MarkTestToggle orderId={payment.id} isTest={payment.isTest} />
+                  <MarkTestToggle orderId={payment.id} isTest={payment.isTest} readOnly={readOnly} />
                   {payment.isTest ? (
                     <p className="muted">Test payments are not fulfilled.</p>
                   ) : (
-                    <FulfilButton orderId={payment.id} email={payment.email || payment.user?.email || ""} />
+                    <FulfilButton orderId={payment.id} email={payment.email || payment.user?.email || ""} readOnly={readOnly} />
                   )}
                 </td>
               </tr>

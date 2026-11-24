@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/api";
+import { denyStaffMutation, requireAdmin } from "@/lib/api";
 import { readStatsRange } from "@/lib/admin/range";
 import { orderRows } from "@/lib/admin/stats";
 import { formatIst } from "@/lib/config";
@@ -13,6 +13,8 @@ function cell(value: string | number | boolean | null) {
 }
 
 export async function GET(request: Request) {
+  const staffDenied = await denyStaffMutation(request);
+  if (staffDenied) return staffDenied;
   const session = await requireAdmin(request);
   if (!session) return NextResponse.json({ message: "Sign in as an admin first." }, { status: 401 });
   const url = new URL(request.url);

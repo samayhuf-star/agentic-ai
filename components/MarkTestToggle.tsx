@@ -3,12 +3,13 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export function MarkTestToggle({ orderId, isTest }: { orderId: string; isTest: boolean }) {
+export function MarkTestToggle({ orderId, isTest, readOnly = false }: { orderId: string; isTest: boolean; readOnly?: boolean }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
 
   async function toggle() {
+    if (readOnly) return;
     setBusy(true);
     setMessage("");
     const response = await fetch("/api/admin/test-payment", {
@@ -24,7 +25,7 @@ export function MarkTestToggle({ orderId, isTest }: { orderId: string; isTest: b
 
   return (
     <div>
-      <button className="btn btn-g" type="button" onClick={toggle} disabled={busy}>
+      <button className="btn btn-g" type="button" onClick={toggle} disabled={busy || readOnly}>
         {busy ? "Saving…" : isTest ? "Unmark test" : "Mark as test"}
       </button>
       {message ? <p className="muted">{message}</p> : null}

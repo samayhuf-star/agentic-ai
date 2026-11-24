@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 
-export function FulfilButton({ orderId, email }: { orderId: string; email: string }) {
+export function FulfilButton({ orderId, email, readOnly = false }: { orderId: string; email: string; readOnly?: boolean }) {
   const [value, setValue] = useState(email);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
   async function fulfil() {
+    if (readOnly) return;
     setBusy(true);
     setMessage("");
     const response = await fetch("/api/admin/fulfil", {
@@ -24,8 +25,8 @@ export function FulfilButton({ orderId, email }: { orderId: string; email: strin
   return (
     <div>
       <div className="fulfil-row">
-        <input value={value} onChange={(event) => setValue(event.target.value)} aria-label={`Email for ${orderId}`} autoComplete="off" />
-        <button className="btn btn-g" type="button" onClick={fulfil} disabled={busy}>
+        <input value={value} onChange={(event) => setValue(event.target.value)} aria-label={`Email for ${orderId}`} autoComplete="off" disabled={readOnly} />
+        <button className="btn btn-g" type="button" onClick={fulfil} disabled={busy || readOnly}>
           {busy ? "Working…" : "Fulfil / resend code"}
         </button>
       </div>

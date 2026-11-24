@@ -27,6 +27,8 @@ Open http://localhost:3000
 
 To open the product and the admin page, put your email in `ADMIN_EMAILS` in `.env`, restart, and sign in with that email at http://localhost:3000/login. No payment is required for those addresses. The first sign-in creates the account.
 
+Put a teammate's email in `STAFF_EMAILS` and they can sign in the same way. They land on `/sup-admin` and can look at sales, orders, customers, the funnel, alerts and follow-ups. They cannot refund, switch the gateway, export a CSV, change settings, or mark test orders. An email listed in both is an admin.
+
 ## Put it on Railway
 
 The site is set up for [Railway](https://railway.app). On each start it runs `prisma migrate deploy` (that creates the tables and the 55 agents) and then `next start` on Railway's `PORT`. A health check is at `/api/health`.
@@ -77,6 +79,7 @@ Copy `.env.example` to `.env`. Leave a line blank to keep that part in test mode
 | `APP_URL` | The public site address, like `https://adiology.io`. Used in text and email links. |
 | `AUTH_SECRET` | Make up a long random string. It locks the sign-in codes. |
 | `ADMIN_EMAILS` | Comma-separated owner emails. They can sign in without a payment, use the dashboard, and open `/sup-admin`. |
+| `STAFF_EMAILS` | Comma-separated staff emails. They can sign in without a payment and open `/sup-admin` to look. They cannot change orders, the gateway, settings, or export a CSV. An email in both lists is an admin. |
 | `PRICE_INR` | Price charged, in rupees. Default `1999`. |
 | `PRICE_USD` | Price shown outside India. Default `24`. The charge is still `PRICE_INR`. |
 | `COMPARE_PRICE_INR` / `COMPARE_PRICE_USD` | The crossed-out launch price. Defaults `4999` and `60`. |

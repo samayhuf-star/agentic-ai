@@ -1,6 +1,6 @@
 import { json, readJson, requireUser } from "@/lib/api";
 import { getSessionFromRequest } from "@/lib/auth";
-import { isAdminEmail } from "@/lib/config";
+import { isAdminEmail, isStaffEmail } from "@/lib/config";
 import { publicKeyFor } from "@/lib/ai/keys";
 import { prisma } from "@/lib/prisma";
 import { assembleTeam, readGoal } from "@/lib/team";
@@ -12,7 +12,8 @@ export async function POST(request: Request) {
   const user = await requireUser(request);
   if (!user) return json({ message: "Sign in first." }, 401);
   const session = await getSessionFromRequest(request);
-  const admin = Boolean(session?.isAdmin || isAdminEmail(user.email || session?.email || ""));
+  const identity = user.email || session?.email || "";
+  const admin = Boolean(session?.isAdmin || isAdminEmail(identity) || isStaffEmail(identity));
   if (user.onboardedAt || user.compAccess || admin) return json({ ok: true, redirect: "/dashboard" });
   const body = await readJson(request);
   if (body.step === "finish") {

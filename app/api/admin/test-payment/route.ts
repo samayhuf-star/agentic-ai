@@ -1,10 +1,12 @@
-import { json, readJson, requireAdmin } from "@/lib/api";
+import { denyStaffMutation, json, readJson, requireAdmin } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+  const staffDenied = await denyStaffMutation(request);
+  if (staffDenied) return staffDenied;
   const admin = await requireAdmin(request);
   if (!admin) return json({ message: "Admins only." }, 403);
   const body = await readJson(request);

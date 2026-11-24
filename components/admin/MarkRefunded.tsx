@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export function MarkRefunded({ orderId, status }: { orderId: string; status: string }) {
+export function MarkRefunded({ orderId, status, readOnly = false }: { orderId: string; status: string; readOnly?: boolean }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -11,6 +11,7 @@ export function MarkRefunded({ orderId, status }: { orderId: string; status: str
   if (status !== "paid") return null;
 
   async function mark() {
+    if (readOnly) return;
     setBusy(true);
     setMessage("");
     const response = await fetch("/api/admin/refund", {
@@ -29,7 +30,7 @@ export function MarkRefunded({ orderId, status }: { orderId: string; status: str
 
   return (
     <div>
-      <button className="btn btn-g" type="button" onClick={() => setOpen(true)} disabled={busy}>
+      <button className="btn btn-g" type="button" onClick={() => setOpen(true)} disabled={busy || readOnly}>
         {busy ? "Saving…" : "Mark refunded"}
       </button>
       {message ? <p className="muted">{message}</p> : null}

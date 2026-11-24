@@ -1,3 +1,4 @@
+import { AdminKicker } from "@/components/admin/AdminKicker";
 import { StatsBar } from "@/components/admin/StatsBar";
 import { requireAdminPage } from "@/lib/admin/guard";
 import { readStatsRange } from "@/lib/admin/range";
@@ -10,14 +11,14 @@ export default async function FunnelPage({
 }: {
   searchParams: Promise<{ range?: string; from?: string; to?: string; tests?: string }>;
 }) {
-  await requireAdminPage();
+  const { readOnly } = await requireAdminPage();
   const range = readStatsRange(await searchParams);
   const steps = await funnelSnapshot(range);
   const base = steps.find((step) => step.label === "Checkout submitted")?.count || 0;
   const empty = base === 0;
   return (
     <main className="page stats-page">
-      <p className="br-kicker">Funnel</p>
+      <AdminKicker kicker="Funnel" readOnly={readOnly} />
       <h1>From checkout to first chat</h1>
       <p className="muted">Percents are of checkout submitted. Landing and Buy click are not stored yet.</p>
       <StatsBar range={range} path="/sup-admin/stats/funnel" />
