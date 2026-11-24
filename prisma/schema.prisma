@@ -53,6 +53,7 @@ model Payment {
   paidAt          DateTime?
   refundedAt      DateTime?
   refundedBy      String?
+  bonusEmails     BonusEmailLog[]
 
   @@index([status])
   @@index([userId])
@@ -228,6 +229,50 @@ model FollowupSend {
   leadId    String?
   lead      Lead?    @relation(fields: [leadId], references: [id], onDelete: SetNull)
   createdAt DateTime @default(now())
+}
+
+model BonusEmailLog {
+  id                String    @id @default(cuid())
+  orderId           String
+  payment           Payment   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  bonusKey          String
+  status            String
+  scheduledFor      DateTime
+  sentAt            DateTime?
+  attempts          Int       @default(0)
+  providerMessageId String?
+  error             String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@unique([orderId, bonusKey])
+  @@index([status, scheduledFor])
+}
+
+model PromptUpdate {
+  id          String             @id @default(cuid())
+  slug        String             @unique
+  title       String
+  summary     String
+  body        String
+  publishedAt DateTime           @default(now())
+  sends       PromptUpdateSend[]
+}
+
+model PromptUpdateSend {
+  id                String    @id @default(cuid())
+  updateId          String
+  update            PromptUpdate @relation(fields: [updateId], references: [id], onDelete: Cascade)
+  userId            String?
+  email             String
+  status            String
+  sentAt            DateTime?
+  providerMessageId String?
+  error             String?
+  createdAt         DateTime  @default(now())
+
+  @@unique([updateId, email])
+  @@index([updateId, status])
 }
 
 model AlertLog {

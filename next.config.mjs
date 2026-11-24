@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  serverExternalPackages: ["pdfkit"],
   async headers() {
     const noStore = [{ key: "Cache-Control", value: "no-store" }];
     return [
