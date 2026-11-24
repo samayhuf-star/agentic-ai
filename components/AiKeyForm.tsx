@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AI_MODELS, AI_PROVIDERS, PROVIDER_HELP, PROVIDER_LABEL, defaultModel, type AiProvider } from "@/lib/ai/models";
+import { AI_MODELS, AI_PROVIDERS, PROVIDER_HELP, PROVIDER_LABEL, defaultModel, keyStatusCopy, type AiProvider } from "@/lib/ai/models";
 
 export type PublicKey = {
   provider: AiProvider;
@@ -96,7 +96,7 @@ export function AiKeyForm({
     <form className="stack" onSubmit={testAndSave}>
       {saved ? (
         <p className="muted">
-          {PROVIDER_LABEL[saved.provider]} · {saved.model} · …{saved.keyLast4} · {saved.isValid ? "Working" : "Not confirmed"}
+          {keyStatusCopy(saved.provider, saved.keyLast4, saved.isValid)}
         </p>
       ) : (
         <p className="muted">No key connected yet.</p>

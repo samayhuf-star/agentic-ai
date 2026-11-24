@@ -33,6 +33,24 @@ export function SiteHeader({ offer = false }: { offer?: boolean }) {
   );
 }
 
+export function AccountHeader() {
+  return (
+    <header className="nav">
+      <div className="wrap">
+        <Link className="logo" href="/onboarding" aria-label="AI Time Machine">
+          <i />
+          AI Time Machine
+        </Link>
+        <form className="nav-cta" action="/api/auth/logout" method="post">
+          <button className="btn btn-g" type="submit">
+            Sign out
+          </button>
+        </form>
+      </div>
+    </header>
+  );
+}
+
 export function SiteFooter() {
   return (
     <footer>

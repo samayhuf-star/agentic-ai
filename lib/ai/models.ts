@@ -27,6 +27,11 @@ export const PROVIDER_LABEL: Record<AiProvider, string> = {
   xai: "Grok",
 };
 
+export function keyStatusCopy(provider: AiProvider, keyLast4: string, isValid: boolean) {
+  const status = isValid ? "Working" : "Not confirmed";
+  return `${PROVIDER_LABEL[provider]}, key ending …${keyLast4}. ${status}.`;
+}
+
 export const PROVIDER_HELP: Record<AiProvider, string> = {
   anthropic: "Create a key at console.anthropic.com, then paste it here.",
   openai: "Create a key at platform.openai.com/api-keys, then paste it here.",

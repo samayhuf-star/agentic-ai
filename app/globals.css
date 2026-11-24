@@ -45,6 +45,29 @@
   grid-template-columns: 240px 1fr;
 }
 
+@media (min-width: 861px) {
+  .br-shell {
+    height: 100vh;
+    max-height: 100vh;
+    overflow: hidden;
+  }
+
+  .br-shell > .br-side,
+  .br-shell > .br-main {
+    height: 100vh;
+    max-height: 100vh;
+    min-height: 0;
+  }
+
+  .br-shell > .br-side {
+    overflow: auto;
+  }
+
+  .br-shell > .br-main {
+    overflow: auto;
+  }
+}
+
 .br-side {
   border-right: 1px solid var(--line);
   background: #0b0f12;
