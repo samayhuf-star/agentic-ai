@@ -26,7 +26,7 @@ export default async function OrdersStatsPage({
       <p className="br-kicker">Orders</p>
       <h1>Orders</h1>
       <StatsBar range={range} path="/sup-admin/stats/orders" status={status} />
-      <p className="row-actions">
+      <p className="row-actions chip-row">
         {statuses.map((item) => (
           <Link key={item} href={`/sup-admin/stats/orders?${rangeQuery(range, { status: item })}`} className={status === item ? "on" : ""}>
             {item}
@@ -40,7 +40,7 @@ export default async function OrdersStatsPage({
           <li className="order-card" key={row.id}>
             <b>{formatInr(row.amountInr)}</b>
             <span>{row.status}</span>
-            <span>{formatIst(row.createdAt)}</span>
+            <span>{formatIst(row.shownAt)}</span>
             <span>{row.email || "No email"}</span>
             {row.isTest ? <span className="test-badge">TEST</span> : <span className="muted">Live</span>}
             <span className="muted">
@@ -71,7 +71,7 @@ export default async function OrdersStatsPage({
           <tbody>
             {rows.map((row) => (
               <tr key={row.id}>
-                <td>{formatIst(row.createdAt)}</td>
+                <td>{formatIst(row.shownAt)}</td>
                 <td>
                   {row.id}
                   <div className="muted">{row.gateway}{row.isTest ? " · test" : " · live"}</div>

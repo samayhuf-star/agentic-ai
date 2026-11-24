@@ -1120,6 +1120,24 @@ button.text-link:disabled {
   text-align: center;
 }
 
+.chart-caption {
+  color: var(--dim);
+  margin: 0 0 8px;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  max-width: 100%;
+}
+
+.chip-row a {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
 .funnel {
   list-style: none;
   padding: 0;
@@ -1193,8 +1211,19 @@ button.text-link:disabled {
   .chart-axis .tick:not(.tick-major) {
     font-size: 0;
   }
-  .stats-filters {
-    display: grid;
+  .stats-filters,
+  .chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .stats-filters .chip-row {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    width: 100%;
+  }
+  .stats-filters input[type="date"] {
+    max-width: 148px;
   }
   .funnel li {
     grid-template-columns: 1fr;

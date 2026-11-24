@@ -34,7 +34,7 @@ function loadEnvFile() {
 loadEnvFile();
 
 const LOCAL_PORT = 54329;
-const LOCAL_URL = `postgresql://postgres:postgres@127.0.0.1:${LOCAL_PORT}/postgres?sslmode=disable&pgbouncer=true`;
+const LOCAL_URL = `postgresql://postgres:postgres@127.0.0.1:${LOCAL_PORT}/postgres?sslmode=disable&pgbouncer=true&connection_limit=1`;
 
 function wantsLocal(url) {
   if (!url) return true;

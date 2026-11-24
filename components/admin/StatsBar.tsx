@@ -11,7 +11,7 @@ const links = [
 export function StatsBar({ range, path, status = "" }: { range: StatsRange; path: string; status?: string }) {
   return (
     <div className="stats-bar">
-      <p className="row-actions">
+      <p className="row-actions chip-row">
         {links.map((link) => (
           <Link key={link.href} href={`${link.href}?${rangeQuery(range, link.href.endsWith("/orders") && status ? { status } : {})}`} className={path === link.href ? "on" : ""}>
             {link.label}
@@ -20,11 +20,13 @@ export function StatsBar({ range, path, status = "" }: { range: StatsRange; path
         <Link href="/sup-admin">Admin home</Link>
       </p>
       <form className="stats-filters" action={path} method="get">
-        {["today", "7d", "30d", "all"].map((key) => (
-          <Link key={key} className={range.key === key ? "on" : ""} href={`${path}?${rangeQuery({ ...range, key: key as StatsRange["key"] }, status ? { status } : {})}`}>
-            {key === "today" ? "Today" : key === "7d" ? "7d" : key === "30d" ? "30d" : "All"}
-          </Link>
-        ))}
+        <div className="chip-row">
+          {["today", "7d", "30d", "all"].map((key) => (
+            <Link key={key} className={range.key === key ? "on" : ""} href={`${path}?${rangeQuery({ ...range, key: key as StatsRange["key"] }, status ? { status } : {})}`}>
+              {key === "today" ? "Today" : key === "7d" ? "7d" : key === "30d" ? "30d" : "All"}
+            </Link>
+          ))}
+        </div>
         <input type="hidden" name="range" value="custom" />
         <label>
           From

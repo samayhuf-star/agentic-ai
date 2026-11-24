@@ -24,6 +24,8 @@ export function RevenueChart({ days }: { days: DayPoint[] }) {
   const gap = 6;
   const barWidth = Math.max(4, (width - gap * (days.length - 1)) / days.length);
   const step = Math.max(1, Math.ceil(days.length / 4));
+  const active = days.filter((day) => day.orders > 0 || day.revenue > 0);
+  const caption = active.map((day) => `${dayLabel(day.day)} gross ${rupees(day.revenue)}, ${day.orders} ${day.orders === 1 ? "order" : "orders"}`).join(". ");
   const points = days
     .map((day, index) => {
       const x = index * (barWidth + gap) + barWidth / 2;
@@ -32,10 +34,11 @@ export function RevenueChart({ days }: { days: DayPoint[] }) {
     })
     .join(" ");
   const selected = picked == null ? peak : days[picked];
-  const summary = `${days.length} days. Highest ${dayLabel(peak.day)}, gross ${rupees(peak.revenue)}, ${peak.orders} orders. Bars are gross paid and include orders later marked refunded.`;
+  const summary = `${caption}. Bars are gross paid and include orders later marked refunded. Days are India time.`;
   return (
     <div>
       <p className="muted">Highest {dayLabel(peak.day)}: gross {rupees(peak.revenue)}.</p>
+      <p className="chart-caption">{caption}</p>
       <p className="muted">
         {dayLabel(selected.day)} · gross {rupees(selected.revenue)} · {selected.orders} {selected.orders === 1 ? "order" : "orders"}
       </p>
@@ -54,10 +57,11 @@ export function RevenueChart({ days }: { days: DayPoint[] }) {
       </svg>
       <div className="chart-axis">
         {days.map((day, index) => {
-          const major = index % step === 0 || index === days.length - 1;
+          const activeDay = day.orders > 0 || day.revenue > 0;
+          const major = activeDay || index % step === 0 || index === days.length - 1;
           return (
             <span className={major ? "tick tick-major" : "tick"} key={day.day}>
-              {dayLabel(day.day)}
+              {major ? dayLabel(day.day) : ""}
             </span>
           );
         })}

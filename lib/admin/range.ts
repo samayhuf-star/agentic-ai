@@ -1,4 +1,5 @@
 import { startOfTodayIst } from "@/lib/guard";
+import { istDayKey, istDayStart } from "@/lib/ist";
 
 export type RangeKey = "today" | "7d" | "30d" | "all" | "custom";
 
@@ -13,17 +14,8 @@ export type StatsRange = {
 
 const DAY = 24 * 60 * 60 * 1000;
 
-export function istDayStart(date: Date) {
-  const ist = new Date(date.getTime() + 5.5 * 60 * 60 * 1000);
-  return new Date(Date.UTC(ist.getUTCFullYear(), ist.getUTCMonth(), ist.getUTCDate()) - 5.5 * 60 * 60 * 1000);
-}
-
 function istDateInput(date: Date) {
-  const ist = new Date(date.getTime() + 5.5 * 60 * 60 * 1000);
-  const year = ist.getUTCFullYear();
-  const month = String(ist.getUTCMonth() + 1).padStart(2, "0");
-  const day = String(ist.getUTCDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  return istDayKey(date);
 }
 
 function parseIstDate(value: string | undefined, end: boolean) {

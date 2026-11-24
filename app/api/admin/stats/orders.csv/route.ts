@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api";
 import { readStatsRange } from "@/lib/admin/range";
 import { orderRows } from "@/lib/admin/stats";
+import { formatIst } from "@/lib/config";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,7 +26,7 @@ export async function GET(request: Request) {
   const { rows } = await orderRows(range, status);
   const header = ["when", "order", "email", "amount_inr", "status", "gateway", "test", "refunded_at", "refunded_by"];
   const lines = rows.map((row) =>
-    [row.createdAt.toISOString(), row.id, row.email, row.amountInr, row.status, row.gateway, row.isTest, row.refundedAt?.toISOString() || "", row.refundedBy || ""].map(cell).join(","),
+    [formatIst(row.shownAt), row.id, row.email, row.amountInr, row.status, row.gateway, row.isTest, row.refundedAt ? formatIst(row.refundedAt) : "", row.refundedBy || ""].map(cell).join(","),
   );
   return new NextResponse([header.join(","), ...lines].join("\n"), {
     headers: {

@@ -1,7 +1,8 @@
 import { Prisma } from "@prisma/client";
 import { adminEmails } from "@/lib/config";
 import { prisma } from "@/lib/prisma";
-import { fixedWindows, type StatsRange } from "@/lib/admin/range";
+import { daysInRange, fixedWindows, type StatsRange } from "@/lib/admin/range";
+import { istDayExpr, istDayKey, istDayStart, orderInstant } from "@/lib/ist";
 
 export type DayPoint = { day: string; revenue: number; orders: number };
 export type SalesSnapshot = {
@@ -22,8 +23,9 @@ function live(includeTest: boolean) {
 }
 
 function since(column: string, from: Date | null, to: Date) {
-  if (!from) return Prisma.sql`${Prisma.raw(column)} <= ${to}`;
-  return Prisma.sql`${Prisma.raw(column)} >= ${from} AND ${Prisma.raw(column)} <= ${to}`;
+  const expr = () => Prisma.raw(column);
+  if (!from) return Prisma.sql`${expr()} <= ${to}`;
+  return Prisma.sql`${expr()} >= ${from} AND ${expr()} <= ${to}`;
 }
 
 function ageOf(createdAt: Date) {
@@ -32,15 +34,42 @@ function ageOf(createdAt: Date) {
   return `${Math.floor(hours / 24)}d`;
 }
 
-async function money(status: "paid" | "refunded", column: "paidAt" | "refundedAt", from: Date | null, to: Date, includeTest: boolean) {
-  const rows = await prisma.$queryRaw<Array<{ revenue: number; orders: number }>>`
-    SELECT COALESCE(SUM("amountInr"), 0)::int AS revenue, COUNT(*)::int AS orders
+const paidAtExpr = `COALESCE("paidAt", "createdAt")`;
+
+async function paidGross(from: Date | null, to: Date, includeTest: boolean) {
+  const rows = await prisma.$queryRaw<Array<{ revenue: number; orders: number; kept: number }>>`
+    SELECT COALESCE(SUM("amountInr"), 0)::int AS revenue,
+           COUNT(*)::int AS orders,
+           COALESCE(SUM("amountInr") FILTER (WHERE status = 'paid'), 0)::int AS kept
     FROM "Payment"
-    WHERE status = ${status}
-      AND ${since(`"${column}"`, from, to)}
+    WHERE status IN ('paid', 'refunded')
+      AND ${since(paidAtExpr, from, to)}
       ${live(includeTest)}
   `;
-  return rows[0] || { revenue: 0, orders: 0 };
+  const row = rows[0] || { revenue: 0, orders: 0, kept: 0 };
+  return { revenue: Number(row.revenue), orders: Number(row.orders), kept: Number(row.kept) };
+}
+
+async function refundedTotal(from: Date | null, to: Date, includeTest: boolean) {
+  const rows = await prisma.$queryRaw<Array<{ revenue: number }>>`
+    SELECT COALESCE(SUM("amountInr"), 0)::int AS revenue
+    FROM "Payment"
+    WHERE status = 'refunded'
+      AND ${since('"refundedAt"', from, to)}
+      ${live(includeTest)}
+  `;
+  return Number(rows[0]?.revenue || 0);
+}
+
+function chartSeries(points: DayPoint[], from: Date | null, to: Date) {
+  if (points.length === 0) return [];
+  const end = istDayStart(to);
+  const first = istDayStart(new Date(`${points[0].day}T12:00:00Z`));
+  let start = from ? istDayStart(from) : first;
+  const span = Math.floor((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)) + 1;
+  if (span > 90) start = new Date(end.getTime() - 89 * 24 * 60 * 60 * 1000);
+  const byDay = new Map(points.map((point) => [point.day, point]));
+  return daysInRange(start, end).map((day) => byDay.get(istDayKey(day)) || { day: istDayKey(day), revenue: 0, orders: 0 });
 }
 
 export async function salesSnapshot(range: StatsRange): Promise<SalesSnapshot> {
@@ -53,14 +82,14 @@ export async function salesSnapshot(range: StatsRange): Promise<SalesSnapshot> {
   ];
   const windowRows = await Promise.all(
     spans.map(async (span) => {
-      const paid = await money("paid", "paidAt", span.from, windows.now, range.includeTest);
-      const refunded = await money("refunded", "refundedAt", span.from, windows.now, range.includeTest);
-      return { label: span.label, revenue: paid.revenue, orders: paid.orders, refunded: refunded.revenue, net: paid.revenue - refunded.revenue };
+      const paid = await paidGross(span.from, windows.now, range.includeTest);
+      const refunded = await refundedTotal(span.from, windows.now, range.includeTest);
+      return { label: span.label, revenue: paid.kept, orders: paid.orders, refunded, net: paid.kept - refunded };
     }),
   );
   const [paid, refunded, pendingRows, failedRows, dayRows] = await Promise.all([
-    money("paid", "paidAt", range.from, range.to, range.includeTest),
-    money("refunded", "refundedAt", range.from, range.to, range.includeTest),
+    paidGross(range.from, range.to, range.includeTest),
+    refundedTotal(range.from, range.to, range.includeTest),
     prisma.payment.findMany({
       where: {
         status: "pending",
@@ -78,33 +107,34 @@ export async function salesSnapshot(range: StatsRange): Promise<SalesSnapshot> {
         createdAt: range.from ? { gte: range.from, lte: range.to } : { lte: range.to },
       },
     }),
-    prisma.$queryRaw<Array<{ day: Date; revenue: number; orders: number }>>`
-      SELECT (timezone('Asia/Kolkata', "paidAt"))::date AS day,
+    prisma.$queryRaw<Array<{ day: string; revenue: number; orders: number }>>`
+      SELECT ${Prisma.raw(istDayExpr(paidAtExpr))} AS day,
              COALESCE(SUM("amountInr"), 0)::int AS revenue,
              COUNT(*)::int AS orders
       FROM "Payment"
       WHERE status IN ('paid', 'refunded')
-        AND ${since('"paidAt"', range.from, range.to)}
+        AND ${since(paidAtExpr, range.from, range.to)}
         ${live(range.includeTest)}
       GROUP BY 1
       ORDER BY 1
     `,
   ]);
+  const days = chartSeries(
+    dayRows.map((row) => ({ day: String(row.day).slice(0, 10), revenue: Number(row.revenue), orders: Number(row.orders) })),
+    range.from,
+    range.to,
+  );
   return {
     windows: windowRows,
     rangePaid: paid.revenue,
     rangeOrders: paid.orders,
-    rangeRefunded: refunded.revenue,
-    rangeNet: paid.revenue - refunded.revenue,
+    rangeRefunded: refunded,
+    rangeNet: paid.kept - refunded,
     aov: paid.orders ? Math.round(paid.revenue / paid.orders) : 0,
     pending: pendingRows.map((row) => ({ ...row, age: ageOf(row.createdAt) })),
     pendingCount: pendingRows.length,
     failedCount: failedRows,
-    days: dayRows.map((row) => ({
-      day: row.day.toISOString().slice(0, 10),
-      revenue: row.revenue,
-      orders: row.orders,
-    })),
+    days,
   };
 }
 
@@ -131,7 +161,7 @@ export async function customerSnapshot(range: StatsRange) {
       FROM "Payment" p
       JOIN "User" u ON u.id = p."userId"
       WHERE p.status = 'paid'
-        AND ${since('p."paidAt"', range.from, range.to)}
+        AND ${since('COALESCE(p."paidAt", p."createdAt")', range.from, range.to)}
         ${range.includeTest ? Prisma.sql`` : Prisma.sql`AND p."isTest" = false`}
         AND ${realUser()}
     `,
@@ -188,12 +218,13 @@ async function activeCustomers(days: number, includeTest: boolean, admins: strin
 
 export async function funnelSnapshot(range: StatsRange) {
   const created = since('p."createdAt"', range.from, range.to);
+  const paidInWindow = await paidGross(range.from, range.to, range.includeTest);
   const rows = await prisma.$queryRaw<
     Array<{ submitted: number; paid: number; coded: number; loggedIn: number; onboarded: number; keyed: number; chatted: number }>
   >`
     SELECT
       COUNT(*)::int AS submitted,
-      COUNT(*) FILTER (WHERE p.status IN ('paid', 'refunded'))::int AS paid,
+      0::int AS paid,
       COUNT(*) FILTER (WHERE EXISTS (
         SELECT 1 FROM "EmailLog" e
         WHERE lower(e."toEmail") = lower(p.email)
@@ -217,6 +248,7 @@ export async function funnelSnapshot(range: StatsRange) {
       ${live(range.includeTest)}
   `;
   const row = rows[0] || { submitted: 0, paid: 0, coded: 0, loggedIn: 0, onboarded: 0, keyed: 0, chatted: 0 };
+  row.paid = paidInWindow.orders;
   return [
     { label: "Landing page", count: null as number | null, note: "Tracking starts in Phase 1" },
     { label: "Buy click", count: null, note: "Tracking starts in Phase 1" },
@@ -230,13 +262,25 @@ export async function funnelSnapshot(range: StatsRange) {
   ];
 }
 
-export async function orderRows(range: StatsRange, status: string) {
-  const where = {
-    ...(range.includeTest ? {} : { isTest: false }),
-    ...(status && status !== "all" ? { status } : {}),
-    createdAt: range.from ? { gte: range.from, lte: range.to } : { lte: range.to },
+function orderWhere(range: StatsRange, status: string): Prisma.PaymentWhereInput {
+  const time = range.from ? { gte: range.from, lte: range.to } : { lte: range.to };
+  const liveOnly = range.includeTest ? {} : { isTest: false };
+  const paidTime: Prisma.PaymentWhereInput = { OR: [{ paidAt: time }, { AND: [{ paidAt: null }, { createdAt: time }] }] };
+  const createdTime: Prisma.PaymentWhereInput = { createdAt: time };
+  if (status === "paid" || status === "refunded") return { ...liveOnly, status, ...paidTime };
+  if (status === "pending" || status === "failed") return { ...liveOnly, status, ...createdTime };
+  return {
+    ...liveOnly,
+    OR: [
+      { status: { in: ["paid", "refunded"] }, ...paidTime },
+      { NOT: { status: { in: ["paid", "refunded"] } }, ...createdTime },
+    ],
   };
-  const [rows, total] = await Promise.all([
+}
+
+export async function orderRows(range: StatsRange, status: string) {
+  const where = orderWhere(range, status);
+  const [found, total] = await Promise.all([
     prisma.payment.findMany({
       where,
       orderBy: { createdAt: "desc" },
@@ -256,5 +300,8 @@ export async function orderRows(range: StatsRange, status: string) {
     }),
     prisma.payment.count({ where }),
   ]);
+  const rows = found
+    .map((row) => ({ ...row, shownAt: orderInstant(row) }))
+    .sort((a, b) => b.shownAt.getTime() - a.shownAt.getTime());
   return { rows, total };
 }

@@ -37,7 +37,7 @@ export default async function SalesStatsPage({
       {empty ? <p className="banner">No data yet.</p> : null}
       <div className="stats">
         <div className="stat">
-          <small>Paid in this range</small>
+          <small>Gross paid in this range</small>
           <b>{formatInr(sales.rangePaid)}</b>
         </div>
         <div className="stat">
@@ -62,7 +62,7 @@ export default async function SalesStatsPage({
         </div>
       </div>
       <h2>Daily revenue</h2>
-      <p className="muted">Bars are gross paid, including orders later marked refunded. The line is how many of those orders were paid that day. Refunds stay in the Net figures above and are not taken out of the bars. Days are India time.</p>
+      <p className="muted">Bars are gross paid, including orders later marked refunded, on the India day they were paid. The same count is the “paid” number on the cards. Refunds stay in the Net figures and are not taken out of the bars.</p>
       <RevenueChart days={sales.days} />
       <h2>Pending payments</h2>
       {sales.pending.length === 0 ? (
