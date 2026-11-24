@@ -1,10 +1,8 @@
 import Link from "next/link";
-import { headers } from "next/headers";
 import { ChatPanel } from "@/components/ChatPanel";
 import { requireDashboardUser } from "@/lib/guard";
 import { publicKeyFor } from "@/lib/ai/keys";
 import { prisma } from "@/lib/prisma";
-import { PREVIEW_LAYOUT_HEADER, parsePreviewLayout } from "@/lib/preview-layout";
 import { chatHasUsableKey } from "@/lib/chat-view";
 import { attentionMap, teamOrder } from "@/lib/team";
 
@@ -37,12 +35,11 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
     : [];
   const key = await publicKeyFor(userId);
   const platform = Boolean(process.env.LLM_API_KEY || process.env.OPENAI_API_KEY);
-  const layout = parsePreviewLayout((await headers()).get(PREVIEW_LAYOUT_HEADER));
 
   return (
     <div className="chat-page">
       <p className="br-kicker">Talk to an agent</p>
-      <h1>{layout ? "Talk to an agent" : "Plain words. Connect your AI key once."}</h1>
+      <h1>Talk to an agent</h1>
       {memberships.length === 0 ? (
         <p className="muted">
           No agents are on this page yet. <Link href="/dashboard/team">Open my team</Link> or write to{" "}

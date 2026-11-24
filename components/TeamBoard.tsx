@@ -8,7 +8,6 @@ import { CSS } from "@dnd-kit/utilities";
 import { GripIcon, PinIcon } from "@/components/icons";
 import { useAfterMount, usePublishDetail } from "@/components/layout/context";
 import type { TeamCard } from "@/components/TeamGrid";
-import type { PreviewLayout } from "@/lib/preview-layout";
 import { filterTeam, sortTeam, splitTeamGroups, summaryLine, teamSummary, type TeamFilter } from "@/lib/team-view";
 
 const filters: { id: TeamFilter; label: string }[] = [
@@ -95,7 +94,7 @@ function TeamCardView({
   );
 }
 
-export function TeamBoard({ cards, paused, layout }: { cards: TeamCard[]; paused: boolean; layout: PreviewLayout }) {
+export function TeamBoard({ cards, paused }: { cards: TeamCard[]; paused: boolean }) {
   const [rows, setRows] = useState(cards);
   const [filter, setFilter] = useState<TeamFilter>("all");
   const [query, setQuery] = useState("");
@@ -112,16 +111,48 @@ export function TeamBoard({ cards, paused, layout }: { cards: TeamCard[]; paused
 
   usePublishDetail(
     selected ? (
-      <div className="detail-card">
-        <p className="br-kicker">{selected.department}</p>
-        <strong>{selected.name}</strong>
-        <p>{selected.role}</p>
-        <p className="muted">{selected.blurb}</p>
-        {selected.needsYou ? <p className="needs-flag">Needs you</p> : null}
+      <div className="agent-detail">
+        <div className="team-id">
+          <span className="avatar" style={{ background: selected.color }}>
+            {selected.name.slice(0, 1)}
+          </span>
+          <span className="team-id-text">
+            <b className="team-name">{selected.name}</b>
+            <small className="team-role">{selected.role}</small>
+          </span>
+        </div>
+        <p className="muted">{selected.department}</p>
+        <p className="blurb">{selected.blurb}</p>
+        {selected.recommended ? <span className="pill">Picked for you</span> : null}
+        <div className="detail-actions">
+          <button type="button" className={selected.enabled ? "switch on" : "switch"} onClick={() => toggle(selected.id, !selected.enabled)} aria-pressed={selected.enabled}>
+            <i />
+            <span>{selected.enabled ? "On" : "Off"}</span>
+          </button>
+          <button className={selected.pinned ? "pin-corner on" : "pin-corner"} type="button" aria-label={selected.pinned ? `Unpin ${selected.name}` : `Pin ${selected.name}`} aria-pressed={selected.pinned} onClick={() => pin(selected.id, !selected.pinned)}>
+            <PinIcon filled={selected.pinned} />
+          </button>
+        </div>
+        {selected.needsItems && selected.needsItems.length > 0 ? (
+          <div>
+            <p className="needs-flag">
+              <span className="needs-dot" aria-hidden="true" />
+              Needs you
+            </p>
+            <ul className="needs-list">
+              {selected.needsItems.map((item, index) => (
+                <li key={`${index}-${item}`}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+        <Link className="btn btn-p" href={`/dashboard/chat?agent=${selected.id}`}>
+          Talk to this agent
+        </Link>
       </div>
     ) : null,
-    selected ? `${selected.id}:${selected.enabled}:${selected.pinned}:${selected.needsYou}` : "none",
-    layout === "c",
+    selected ? `${selected.id}:${selected.enabled}:${selected.pinned}:${selected.needsYou}:${(selected.needsItems || []).join("|")}` : "none",
+    true,
   );
 
   async function toggle(id: string, enabled: boolean) {
@@ -167,7 +198,7 @@ export function TeamBoard({ cards, paused, layout }: { cards: TeamCard[]; paused
     if (group.length === 0) return null;
     return (
       <section className="team-section">
-        {layout === "b" ? null : <h2>{title}</h2>}
+        <h2>{title}</h2>
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(event) => reorder(group, event)}>
           <SortableContext items={group.map((row) => row.id)} strategy={rectSortingStrategy}>
             <div className="agent-grid team-grid">
@@ -201,59 +232,6 @@ export function TeamBoard({ cards, paused, layout }: { cards: TeamCard[]; paused
       {section("Off", groups.off)}
     </div>
   );
-
-  if (layout === "b") {
-    return (
-      <div className="split-inbox team-workspace">
-        <div className="split-list">{board}</div>
-        <div className="split-detail">
-          {selected ? (
-            <div className="agent-detail">
-              <div className="team-id">
-                <span className="avatar" style={{ background: selected.color }}>
-                  {selected.name.slice(0, 1)}
-                </span>
-                <span className="team-id-text">
-                  <b className="team-name">{selected.name}</b>
-                  <small className="team-role">{selected.role}</small>
-                </span>
-              </div>
-              <p className="muted">{selected.department}</p>
-              <p className="blurb">{selected.blurb}</p>
-              {selected.recommended ? <span className="pill">Picked for you</span> : null}
-              <div className="detail-actions">
-                <button type="button" className={selected.enabled ? "switch on" : "switch"} onClick={() => toggle(selected.id, !selected.enabled)} aria-pressed={selected.enabled}>
-                  <i />
-                  <span>{selected.enabled ? "On" : "Off"}</span>
-                </button>
-                <button className={selected.pinned ? "pin-corner on" : "pin-corner"} type="button" aria-label={selected.pinned ? `Unpin ${selected.name}` : `Pin ${selected.name}`} aria-pressed={selected.pinned} onClick={() => pin(selected.id, !selected.pinned)}>
-                  <PinIcon filled={selected.pinned} />
-                </button>
-              </div>
-              {selected.needsItems && selected.needsItems.length > 0 ? (
-                <div>
-                  <p className="needs-flag">
-                    <span className="needs-dot" aria-hidden="true" />
-                    Needs you
-                  </p>
-                  <ul className="needs-list">
-                    {selected.needsItems.map((item, index) => (
-                      <li key={`${index}-${item}`}>{item}</li>
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
-              <Link className="btn btn-p" href={`/dashboard/chat?agent=${selected.id}&layout=b`}>
-                Talk to this agent
-              </Link>
-            </div>
-          ) : (
-            <p className="muted">Pick someone from the list.</p>
-          )}
-        </div>
-      </div>
-    );
-  }
 
   return <div className="team-workspace">{board}</div>;
 }

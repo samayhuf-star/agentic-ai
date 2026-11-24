@@ -1,17 +1,6 @@
 "use client";
 
 import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { PreviewLayout } from "@/lib/preview-layout";
-
-const LayoutContext = createContext<PreviewLayout | null>(null);
-
-export function LayoutProvider({ value, children }: { value: PreviewLayout | null; children: React.ReactNode }) {
-  return <LayoutContext.Provider value={value}>{children}</LayoutContext.Provider>;
-}
-
-export function usePreviewLayout() {
-  return useContext(LayoutContext);
-}
 
 export function useAfterMount() {
   const [ready, setReady] = useState(false);

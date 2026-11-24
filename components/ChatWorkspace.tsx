@@ -7,7 +7,7 @@ import { DndContext, KeyboardSensor, PointerSensor, TouchSensor, closestCenter, 
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripIcon, PinIcon, SendIcon } from "@/components/icons";
-import { useAfterMount, usePreviewLayout, usePublishDetail } from "@/components/layout/context";
+import { useAfterMount, usePublishDetail } from "@/components/layout/context";
 import { composerState, groupChatAgents, shouldSendOnEnter } from "@/lib/chat-view";
 
 type AgentOption = {
@@ -81,7 +81,6 @@ export function ChatWorkspace({
   initial: Bubble[];
   hasKey: boolean;
 }) {
-  const layout = usePreviewLayout();
   const router = useRouter();
   const params = useSearchParams();
   const logRef = useRef<HTMLDivElement>(null);
@@ -120,9 +119,7 @@ export function ChatWorkspace({
   function choose(id: string) {
     setSelectedId(id);
     setListOpen(false);
-    const layoutParam = params.get("layout");
-    const next = layoutParam ? `/dashboard/chat?agent=${id}&layout=${layoutParam}` : `/dashboard/chat?agent=${id}`;
-    router.push(next);
+    router.push(`/dashboard/chat?agent=${id}`);
   }
 
   async function pin(id: string, nextPinned: boolean) {
@@ -251,7 +248,7 @@ export function ChatWorkspace({
     </div>
   );
 
-  usePublishDetail(thread, `${selectedId}:${messages.map((message) => message.id).join(",")}:${text}:${busy}:${error}:${hasKey}`, layout === "c");
+  usePublishDetail(thread, `${selectedId}:${messages.map((message) => message.id).join(",")}:${text}:${busy}:${error}:${hasKey}`, true);
 
   const list = (
     <div className={listOpen ? "chat-list open" : "chat-list"} role="listbox" aria-label="Your agents">
@@ -268,7 +265,6 @@ export function ChatWorkspace({
         {listOpen ? "Close agents" : active?.name || "Choose an agent"}
       </button>
       {list}
-      {layout === "c" ? null : thread}
     </div>
   );
 }
