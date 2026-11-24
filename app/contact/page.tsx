@@ -16,7 +16,7 @@ export default function ContactPage() {
         <br />
         {BUSINESS.address}
       </p>
-      <p>For a payment problem, include the phone number you paid with.</p>
+      <p>For a payment problem, write from the email address you paid with.</p>
     </PolicyFrame>
   );
 }

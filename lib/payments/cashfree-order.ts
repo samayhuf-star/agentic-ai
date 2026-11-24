@@ -3,6 +3,7 @@ import { cashfreeTarget } from "@/lib/payments/gateways";
 export type CashfreeOrderView = {
   order_status?: string;
   order_amount?: number;
+  order_currency?: string;
   customer_details?: { customer_phone?: string; customer_email?: string; customer_name?: string };
 };
 

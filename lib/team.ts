@@ -1,4 +1,5 @@
 import { agents, isGoal, type GoalId } from "@/data/agents";
+import { approvalDetail as approvalCopy } from "@/lib/approval-copy";
 import { prisma } from "@/lib/prisma";
 
 async function ensureCatalog() {
@@ -68,8 +69,8 @@ export async function assembleTeam(userId: string, goal: GoalId, options?: { app
         userId,
         agentId: agent.id,
         status: "pending",
-        title: `${agent.name} has a starting idea`,
-        detail: approvalDetail(agent, shop, sells),
+        title: "Suggestion to get you started",
+        detail: approvalCopy(agent, shop, sells),
       })),
     });
   }
@@ -81,12 +82,6 @@ export async function assembleTeam(userId: string, goal: GoalId, options?: { app
     department: agent.department,
     color: agent.color,
   }));
-}
-
-function approvalDetail(agent: { name: string; role: string; blurb: string }, shop: string, sells: string) {
-  const body = `${agent.name}, your ${agent.role.toLowerCase()}, can help ${shop} with ${sells}. ${agent.blurb}`;
-  if (/nothing goes out/i.test(agent.blurb)) return body;
-  return `${body} This is only a suggestion. Nothing goes out, and no money is spent, until you tap yes.`;
 }
 
 export function readGoal(value: unknown) {

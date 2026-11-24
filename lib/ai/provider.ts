@@ -54,14 +54,14 @@ async function callProvider(provider: AiProvider, model: string, apiKey: string,
     });
   }
   const url = provider === "xai" ? "https://api.x.ai/v1/chat/completions" : "https://api.openai.com/v1/chat/completions";
+  const body =
+    provider === "xai"
+      ? { model, max_completion_tokens: 1, temperature: 0, messages: [{ role: "user", content: "Hi" }] }
+      : { model, max_completion_tokens: 1, messages: [{ role: "user", content: "Hi" }] };
   return fetch(url, {
     method: "POST",
     signal,
     headers: { "content-type": "application/json", authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({
-      model,
-      max_tokens: 1,
-      messages: [{ role: "user", content: "Hi" }],
-    }),
+    body: JSON.stringify(body),
   });
 }

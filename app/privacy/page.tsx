@@ -10,11 +10,12 @@ export default function PrivacyPage() {
         {BUSINESS.legalName} (“we”) runs AI Time Machine. This page says what we keep and why.
       </p>
       <ul>
-        <li>Your phone number, from the payment, so we can send the access link.</li>
+        <li>Your name, email and mobile from checkout. We email a 6-digit sign-in code to that address.</li>
         <li>The email you add, so we can send a one-time code and the welcome note.</li>
         <li>Your business name, what you sell, and the goal you pick.</li>
         <li>A record of the payment from the payment company. We do not store your card number or UPI pin.</li>
-        <li>Messages you type to an agent, and the yes or no you give.</li>
+        <li>Messages you type to an agent, and the yes or no you give. Chat text is sent to the AI provider whose key you connect.</li>
+        <li>Your AI key, stored encrypted. We use it only to send your chats to that provider.</li>
         <li>A sign-in cookie on your browser so you stay signed in.</li>
       </ul>
       <p>

@@ -55,6 +55,7 @@ export async function fulfilOrder(orderId: string, extra?: { email?: string | nu
     orderId,
     status: "paid",
     amountInr: remoteAmount ?? payment.amountInr,
+    currency: "INR",
     phone: remotePhone || payment.phone,
     email: email || remoteEmail || payment.email,
     name: remoteName || payment.name,

@@ -3,7 +3,8 @@ import test from "node:test";
 import { prisma } from "../lib/prisma";
 import { createCheckout } from "../lib/payments/checkout";
 import { handleWebhook } from "../lib/payments/webhook";
-import { mockSignature } from "../lib/payments/signature";
+import { mockSignature, verifyPayuSignature, verifyRazorpaySignature } from "../lib/payments/signature";
+import { mockPaymentsAllowed } from "../lib/config";
 import { requestLoginCode, verifyLoginCode } from "../lib/auth";
 import { hashSecret } from "../lib/crypto";
 import { fulfillPayment } from "../lib/payments/fulfill";
@@ -287,6 +288,7 @@ test("an old pending, unpaid, or test order does not block the same email or pho
     orderId: firstId,
     status: "paid",
     amountInr: 1999,
+    currency: "INR",
     phone,
     email,
     name: buyer.name,
@@ -331,6 +333,7 @@ test("an old pending, unpaid, or test order does not block the same email or pho
     orderId: secondId,
     status: "paid",
     amountInr: 1999,
+    currency: "INR",
     phone,
     email,
     name: buyer.name,
@@ -356,6 +359,7 @@ test("the return page and the webhook share one sign-in code", async () => {
     orderId,
     status: "paid" as const,
     amountInr: 1999,
+    currency: "INR",
     phone,
     email,
     name: "Race Buyer",
@@ -381,4 +385,37 @@ test("the return page and the webhook share one sign-in code", async () => {
   assert.equal((await prisma.loginCode.findFirst({ where: { email } }))?.codeHash, hashSecret(code!));
   const verified = await verifyLoginCode(email, code!);
   assert.equal(verified.ok, true);
+});
+
+test("fulfilment rejects a gateway, amount, or currency that does not match the order", async () => {
+  const stamp = Date.now();
+  const orderId = `brmatch${stamp}`;
+  const email = `match-${stamp}@shop.test`;
+  await prisma.payment.create({
+    data: { id: orderId, gateway: "cashfree", amountInr: 1999, status: "pending", email, phone: `+917${String(stamp).slice(-9)}`, name: "Match" },
+  });
+  const base = { orderId, status: "paid" as const, phone: null, email, name: "Match", gatewayPaymentId: null, raw: {} };
+  assert.equal((await fulfillPayment("cashfree", { ...base, amountInr: 1, currency: "INR" })).ok, false);
+  assert.equal((await fulfillPayment("razorpay", { ...base, amountInr: 1999, currency: "INR" })).ok, false);
+  assert.equal((await fulfillPayment("cashfree", { ...base, amountInr: 1999, currency: "USD" })).ok, false);
+  const still = await prisma.payment.findUnique({ where: { id: orderId } });
+  assert.equal(still?.status, "pending");
+  assert.equal(still?.userId, null);
+});
+
+test("production refuses mock checkout and an unconfigured Razorpay or PayU webhook", async () => {
+  const previousAllow = process.env.ALLOW_MOCK_PAYMENTS;
+  Reflect.set(process.env, "NODE_ENV", "production");
+  delete process.env.ALLOW_MOCK_PAYMENTS;
+  try {
+    assert.equal(mockPaymentsAllowed(), false);
+    assert.equal(verifyRazorpaySignature("{}", new Headers()), false);
+    assert.equal(verifyPayuSignature("status=success", new Headers(), "application/json"), false);
+    const { POST } = await import("../app/api/checkout/mock-complete/route");
+    const response = await POST(new Request("http://localhost/api/checkout/mock-complete", { method: "POST", headers: { "content-type": "application/json" }, body: "{}" }));
+    assert.equal(response.status, 404);
+  } finally {
+    Reflect.set(process.env, "NODE_ENV", "test");
+    process.env.ALLOW_MOCK_PAYMENTS = previousAllow;
+  }
 });

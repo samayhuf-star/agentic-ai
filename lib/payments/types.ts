@@ -6,6 +6,7 @@ export type PaidEvent = {
   email?: string | null;
   name?: string | null;
   amountInr: number | null;
+  currency?: string | null;
   gatewayPaymentId: string | null;
   status: "paid" | "failed" | "ignored";
   raw: unknown;

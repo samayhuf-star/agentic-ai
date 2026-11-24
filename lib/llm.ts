@@ -69,11 +69,20 @@ export async function agentReply(agent: Agent, user: User, history: ChatTurn[], 
         : await fetch(`${(key.base || (key.provider === "xai" ? "https://api.x.ai/v1" : "https://api.openai.com/v1")).replace(/\/$/, "")}/chat/completions`, {
             method: "POST",
             headers: { "content-type": "application/json", authorization: `Bearer ${key.apiKey}` },
-            body: JSON.stringify({
-              model: key.model,
-              temperature: 0.4,
-              messages: [{ role: "system", content: systemPrompt(agent, user) }, ...messages],
-            }),
+            body: JSON.stringify(
+              key.provider === "xai"
+                ? {
+                    model: key.model,
+                    max_completion_tokens: 400,
+                    temperature: 0.7,
+                    messages: [{ role: "system", content: systemPrompt(agent, user) }, ...messages],
+                  }
+                : {
+                    model: key.model,
+                    max_completion_tokens: 400,
+                    messages: [{ role: "system", content: systemPrompt(agent, user) }, ...messages],
+                  },
+            ),
           });
     if (!response.ok) {
       const body = await response.text().catch(() => "");

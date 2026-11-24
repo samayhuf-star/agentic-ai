@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { hmacBase64, hmacHex, safeEqual } from "@/lib/crypto";
-import { mockPaymentsAllowed } from "@/lib/config";
+import { isProduction, mockPaymentsAllowed } from "@/lib/config";
 
 export type GatewayName = "cashfree" | "razorpay" | "payu";
 
@@ -9,8 +9,10 @@ export function isGateway(value: string): value is GatewayName {
 }
 
 export function mockSignature(raw: string) {
-  const secret = process.env.MOCK_WEBHOOK_SECRET || "dev-only-mock-secret";
-  return hmacHex(secret, raw);
+  const secret = process.env.MOCK_WEBHOOK_SECRET;
+  if (secret) return hmacHex(secret, raw);
+  if (isProduction()) throw new Error("MOCK_WEBHOOK_SECRET is not set.");
+  return hmacHex("dev-only-mock-secret", raw);
 }
 
 function mockHeaderOk(raw: string, headers: Headers) {
