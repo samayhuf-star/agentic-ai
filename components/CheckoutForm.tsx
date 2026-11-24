@@ -72,6 +72,7 @@ export function CheckoutForm({ price }: { price: string }) {
       <button className="btn btn-p" type="submit" disabled={busy || !ready}>
         {busy ? "Opening secure payment…" : `Pay ${price}`}
       </button>
+      <p className="key-note">You connect your own AI key (Claude, ChatGPT or Grok) for AI tasks. AI usage is billed by your AI provider. AI Time Machine provides the skills and the platform to manage everything in one place.</p>
     </form>
   );
 }

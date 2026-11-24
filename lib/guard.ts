@@ -12,7 +12,7 @@ type ReadySession = {
 
 export async function skipsOnboarding(session: ReadySession) {
   if (!session.user) return false;
-  if (session.isAdmin || isAdminEmail(session.user.email || session.email)) return true;
+  if (session.isAdmin || isAdminEmail(session.user.email || session.email) || session.user.compAccess) return true;
   return Boolean(session.user.onboardedAt);
 }
 

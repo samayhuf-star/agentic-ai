@@ -5,6 +5,12 @@ import { useRouter } from "next/navigation";
 
 type Item = { id: string; title: string; detail: string; agent: string; role: string };
 
+function showOnce(detail: string) {
+  const parts = detail.split(/(?=Nothing goes out)/i);
+  if (parts.length < 3) return detail;
+  return parts.slice(0, 2).join("").trim();
+}
+
 export function YesQueue({ items }: { items: Item[] }) {
   const router = useRouter();
   const [rows, setRows] = useState(items);
@@ -39,7 +45,7 @@ export function YesQueue({ items }: { items: Item[] }) {
             {item.agent} · {item.role}
           </small>
           <h3>{item.title}</h3>
-          <p className="muted">{item.detail}</p>
+          <p className="muted">{showOnce(item.detail)}</p>
           <div className="row-actions">
             <button className="btn btn-p" type="button" onClick={() => decide(item.id, "approved")}>
               Yes, approve

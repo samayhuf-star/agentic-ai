@@ -16,6 +16,7 @@ export default function PricingPage() {
           Get AI Time Machine — ₹1,999
         </a>
       </p>
+      <p className="key-note">You connect your own AI key (Claude, ChatGPT or Grok) for AI tasks. AI usage is billed by your AI provider. AI Time Machine provides the skills and the platform to manage everything in one place.</p>
       <p>Access is digital. After payment we email a sign-in code. See Shipping and Delivery and Refund and Cancellation.</p>
     </PolicyFrame>
   );

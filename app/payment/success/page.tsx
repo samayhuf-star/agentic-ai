@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { PaymentCodeForm } from "@/components/PaymentCodeForm";
-import { SiteFooter, SiteHeader } from "@/components/SiteChrome";
+import { QuietHeader, SiteFooter } from "@/components/SiteChrome";
 import { confirmPendingCashfreeOrder } from "@/lib/payments/confirm";
 import { prisma } from "@/lib/prisma";
 
@@ -17,7 +17,7 @@ export default async function PaymentSuccessPage({ searchParams }: { searchParam
 
   return (
     <>
-      <SiteHeader />
+      <QuietHeader />
       <main className="wrap onboard checkout">
         {!payment ? (
           <>

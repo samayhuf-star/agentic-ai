@@ -196,7 +196,7 @@ export async function verifyLoginCode(emailInput: string, codeInput: string) {
       expiresAt: new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000),
     },
   });
-  const redirect = admin || user?.onboardedAt ? "/dashboard" : "/onboarding";
+  const redirect = admin || user?.compAccess || user?.onboardedAt ? "/dashboard" : "/onboarding";
   return { ok: true as const, status: 200, token, redirect, isAdmin: admin };
 }
 

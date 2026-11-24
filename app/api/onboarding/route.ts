@@ -13,7 +13,7 @@ export async function POST(request: Request) {
   if (!user) return json({ message: "Sign in first." }, 401);
   const session = await getSessionFromRequest(request);
   const admin = Boolean(session?.isAdmin || isAdminEmail(user.email || session?.email || ""));
-  if (user.onboardedAt || admin) return json({ ok: true, redirect: "/dashboard" });
+  if (user.onboardedAt || user.compAccess || admin) return json({ ok: true, redirect: "/dashboard" });
   const body = await readJson(request);
   if (body.step === "finish") {
     await prisma.user.update({ where: { id: user.id }, data: { onboardedAt: new Date() } });
