@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { PauseSwitch } from "@/components/PauseSwitch";
+import { PreviewShell } from "@/components/dashboard/PreviewShell";
+import type { PreviewLayout } from "@/lib/dashboard/preview";
 
 const links = [
   { href: "/dashboard", label: "Overview" },
@@ -19,16 +21,25 @@ export function Shell({
   paused,
   needsYes,
   isAdmin,
+  layout = null,
   children,
 }: {
   businessName: string;
   paused: boolean;
   needsYes: number;
   isAdmin: boolean;
+  layout?: PreviewLayout | null;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  if (layout) {
+    return (
+      <PreviewShell layout={layout} businessName={businessName} paused={paused} needsYes={needsYes} isAdmin={isAdmin}>
+        {children}
+      </PreviewShell>
+    );
+  }
 
   return (
     <div className="br-shell">

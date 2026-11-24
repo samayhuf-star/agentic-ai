@@ -1,5 +1,6 @@
 import { PauseSwitch } from "@/components/PauseSwitch";
 import { goalLabel } from "@/data/agents";
+import { previewLayout } from "@/lib/dashboard/preview";
 import { requireDashboardUser, startOfTodayIst } from "@/lib/guard";
 import { prisma } from "@/lib/prisma";
 
@@ -15,9 +16,10 @@ export default async function OverviewPage() {
     prisma.task.findMany({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, take: 6 }),
   ]);
   const active = user.paused ? 0 : running;
+  const layout = await previewLayout();
 
   return (
-    <div>
+    <div className={layout ? `overview-preview layout-${layout}` : undefined}>
       <p className="br-kicker">{user.businessName?.trim() || "Your business"}</p>
       <h1>Good to see you.</h1>
       <p className="muted">Goal: {user.goal ? goalLabel(user.goal) : "Not set"}. Nothing goes live until you say yes.</p>

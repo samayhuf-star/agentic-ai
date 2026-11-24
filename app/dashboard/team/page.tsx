@@ -2,6 +2,7 @@ import Link from "next/link";
 import { TeamGrid } from "@/components/TeamGrid";
 import { requireDashboardUser } from "@/lib/guard";
 import { prisma } from "@/lib/prisma";
+import { previewLayout } from "@/lib/dashboard/preview";
 import { attentionMap, teamOrder } from "@/lib/team";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +16,7 @@ export default async function TeamPage() {
     orderBy: teamOrder,
   });
   const attention = await attentionMap(userId);
+  const layout = await previewLayout();
   return (
     <div>
       <p className="br-kicker">My team</p>
@@ -27,6 +29,7 @@ export default async function TeamPage() {
         </p>
       ) : (
         <TeamGrid
+          layout={layout}
           paused={session.user!.paused}
           cards={rows.map((row) => ({
             id: row.agentId,
