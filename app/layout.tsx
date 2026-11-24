@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { TawkChat } from "@/components/TawkChat";
 import "./globals.css";
 import "./landing.css";
 import "./layouts.css";
@@ -37,10 +36,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body>
-        {children}
-        <TawkChat />
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
