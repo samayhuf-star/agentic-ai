@@ -8,7 +8,10 @@ export function hasReassurance(text: string) {
 }
 
 export function approvalDetail(agent: { name: string; role: string; blurb: string }, shop: string, sells: string) {
-  const body = `${agent.name}, your ${agent.role.toLowerCase()}, can help ${shop} with ${sells}. ${agent.blurb}`;
+  const name = shop.trim();
+  const work = sells.trim();
+  const help = name && work ? `can help ${name} with ${work}` : name ? `can help ${name}` : work ? `can help with ${work}` : "can help";
+  const body = `${agent.name}, your ${agent.role.toLowerCase()}, ${help}. ${agent.blurb}`;
   if (hasReassurance(agent.blurb)) return body;
   return `${body} This is only a suggestion. Nothing goes out, and no money is spent, until you tap yes.`;
 }

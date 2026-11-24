@@ -4,13 +4,19 @@ import { useState } from "react";
 import { GOALS } from "@/data/agents";
 import { keyStatusCopy } from "@/lib/ai/models";
 import { AiKeyForm, type PublicKey } from "@/components/AiKeyForm";
+import { BusinessPicker } from "@/components/dashboard/BusinessPicker";
+import { parseBusinessChoice } from "@/lib/business-catalog";
+import type { PreviewLayout } from "@/lib/dashboard/preview";
 
 type Picked = { id: string; name: string; role: string; department: string; color: string };
 
-export function OnboardingForm() {
+export function OnboardingForm({ layout = null }: { layout?: PreviewLayout | null }) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [businessName, setBusinessName] = useState("");
   const [sells, setSells] = useState("");
+  const [category, setCategory] = useState("");
+  const [businessType, setBusinessType] = useState("");
+  const [custom, setCustom] = useState("");
   const [goal, setGoal] = useState("");
   const [error, setError] = useState("");
   const [nameError, setNameError] = useState("");
@@ -20,13 +26,14 @@ export function OnboardingForm() {
   const [team, setTeam] = useState<Picked[]>([]);
   const [key, setKey] = useState<PublicKey | null>(null);
   const nameOk = businessName.trim().length >= 2;
-  const sellsOk = sells.trim().length >= 2;
+  const choice = layout ? parseBusinessChoice({ category, businessType, businessCustom: custom }) : null;
+  const sellsOk = layout ? Boolean(choice?.ok) : sells.trim().length >= 2;
   const goalOk = GOALS.some((item) => item.id === goal);
 
   async function saveBusiness(event: React.FormEvent) {
     event.preventDefault();
     setNameError(nameOk ? "" : "Enter the business name.");
-    setSellsError(sellsOk ? "" : "Say what you sell, in a short line.");
+    setSellsError(sellsOk ? "" : layout ? choice && !choice.ok ? choice.message : "Pick a category and a business type." : "Say what you sell, in a short line.");
     setGoalError(goalOk ? "" : "Pick one.");
     if (!nameOk || !sellsOk || !goalOk) return;
     setBusy(true);
@@ -34,7 +41,7 @@ export function OnboardingForm() {
     const response = await fetch("/api/onboarding", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ businessName, sells, goal }),
+      body: JSON.stringify(layout && choice?.ok ? { businessName, goal, category: choice.category, businessType: choice.businessType, businessCustom: choice.businessCustom } : { businessName, sells, goal }),
     });
     const data = (await response.json().catch(() => ({}))) as { message?: string; team?: Picked[]; redirect?: string; key?: PublicKey | null };
     setBusy(false);
@@ -88,21 +95,32 @@ export function OnboardingForm() {
           />
           {nameError ? <span className="field-error">{nameError}</span> : null}
         </label>
-        <label className="field">
-          What do you sell or do?
-          <input
-            type="text"
-            name="sells"
-            autoComplete="off"
-            value={sells}
-            onChange={(event) => {
-              setSells(event.target.value);
-              if (sellsError) setSellsError("");
-            }}
-            maxLength={200}
+        {layout ? (
+          <BusinessPicker
+            category={category}
+            businessType={businessType}
+            custom={custom}
+            onCategory={(id) => { setCategory(id); setSellsError(""); }}
+            onType={(id) => { setBusinessType(id); setSellsError(""); }}
+            onCustom={(value) => { setCustom(value); setSellsError(""); }}
           />
-          {sellsError ? <span className="field-error">{sellsError}</span> : null}
-        </label>
+        ) : (
+          <label className="field">
+            What do you sell or do?
+            <input
+              type="text"
+              name="sells"
+              autoComplete="off"
+              value={sells}
+              onChange={(event) => {
+                setSells(event.target.value);
+                if (sellsError) setSellsError("");
+              }}
+              maxLength={200}
+            />
+          </label>
+        )}
+        {sellsError ? <span className="field-error">{sellsError}</span> : null}
         <fieldset className="choices" style={{ border: 0, padding: 0, margin: 0 }}>
           <legend>Main goal</legend>
           {GOALS.map((item) => (

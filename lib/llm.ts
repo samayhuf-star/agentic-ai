@@ -3,6 +3,7 @@ import { goalLabel } from "@/data/agents";
 import { savedKeySecret } from "@/lib/ai/keys";
 import { defaultModel, type AiProvider } from "@/lib/ai/models";
 import { plainProviderError } from "@/lib/ai/provider";
+import { businessContext } from "@/lib/business-catalog";
 
 export type ChatTurn = { role: string; body: string };
 
@@ -25,16 +26,14 @@ async function resolveKey(userId: string): Promise<ResolvedKey | null> {
   };
 }
 
-function systemPrompt(agent: Agent, user: User) {
-  const shop = user.businessName?.trim() || "not set yet";
-  const sells = user.sells?.trim() || "not set yet";
-  const goal = user.goal ? goalLabel(user.goal) : "not set yet";
+export function systemPrompt(agent: Agent, user: User) {
+  const context = businessContext(user, user.goal ? goalLabel(user.goal) : null);
   return [
     `You are ${agent.name}, the ${agent.role} in ${agent.department} on the AI Time Machine team.`,
     agent.blurb,
     `You help with: ${agent.goals.replace(/,/g, ", ")}.`,
-    `The business is ${shop}. They sell or do: ${sells}. Their main goal: ${goal}.`,
-    "Use plain everyday words. No jargon.",
+    context,
+    "Use plain words. No jargon.",
     "Keep the reply under 120 words.",
     "Nothing goes out, and no money is spent, until they say yes.",
     "Do not invent numbers, reviews, rankings, or results. If you do not know, say so.",
