@@ -649,6 +649,7 @@ s>span.amt-x{text-decoration:line-through!important;text-decoration-thickness:2p
 @keyframes hpDraw{from{transform:scaleX(0)}}
 .hp-terms{margin:clamp(18px,2vw,26px) 0 0;font-size:clamp(15px,1.4vw,19px);color:var(--dim);font-weight:500}.hp-terms b{color:var(--text)}
 .hp-top .key-note,.vc .key-note,.icta .key-note,.pr-card .key-note,.final .key-note{margin:12px auto 0;max-width:68ch;text-align:center;color:var(--dim);font-size:12.5px;line-height:1.5;font-weight:500}
+.example-note{margin:8px 4px 0;color:var(--dim);font-size:12px;line-height:1.4}
 .hp-ctas{margin-top:28px;display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
 .hp-btn{padding:18px 30px;font-size:18px;border-radius:14px}.hp-btn2{padding:18px 24px;font-size:16px;border-radius:14px}
 .hp-row{display:grid;grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr);gap:28px;align-items:start;margin-top:56px;scroll-margin-top:80px}

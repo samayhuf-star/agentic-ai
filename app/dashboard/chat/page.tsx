@@ -38,7 +38,7 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
   return (
     <div className="chat-page">
       <p className="br-kicker">Talk to an agent</p>
-      <h1>Plain words. No setup.</h1>
+      <h1>Plain words. Connect your AI key once.</h1>
       {memberships.length === 0 ? (
         <p className="muted">
           No agents are on this page yet. <Link href="/dashboard/team">Open my team</Link> or write to{" "}

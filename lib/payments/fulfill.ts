@@ -35,10 +35,20 @@ async function phoneIsFree(tx: Prisma.TransactionClient, phone: string, exceptUs
   return !owner || owner.id === exceptUserId;
 }
 
+function eventMatchesOrder(payment: { gateway: string; amountInr: number } | null, gateway: GatewayName, event: PaidEvent) {
+  if (!payment) return false;
+  if (payment.gateway !== gateway) return false;
+  if (event.amountInr == null || event.amountInr !== payment.amountInr) return false;
+  return (event.currency || "").toUpperCase() === "INR";
+}
+
 export async function fulfillPayment(gateway: GatewayName, event: PaidEvent) {
   if (!event.orderId || event.status === "ignored") return { ok: true, ignored: true };
   const payment = await prisma.payment.findUnique({ where: { id: event.orderId } });
   if (payment?.isTest) return { ok: true, ignored: true };
+  if (event.status === "paid" || event.status === "failed") {
+    if (!eventMatchesOrder(payment, gateway, event)) return { ok: false, rejected: true };
+  }
   if (event.status === "failed") {
     if (payment && payment.status === "pending") {
       await prisma.payment.update({

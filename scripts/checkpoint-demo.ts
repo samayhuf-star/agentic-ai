@@ -44,7 +44,7 @@ async function main() {
       userId: ready.id,
       agentId: "arjun",
       status: "pending",
-      title: "Arjun has a starting idea",
+      title: "Suggestion to get you started",
       detail: "Nothing goes out, and no money is spent, until you tap yes.",
     },
   });

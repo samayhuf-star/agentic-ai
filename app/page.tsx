@@ -45,8 +45,9 @@ export default function HomePage() {
             <article className="card">
               <small>One payment</small>
               <h2>₹1,999 once</h2>
-              <p>No monthly fee. After you pay, access is sent by email and WhatsApp. Details are on the pricing page.</p>
+              <p>No monthly fee. After you pay, we email you a sign-in code. Details are on the pricing page.</p>
               <p className="key-note">You connect your own AI key (Claude, ChatGPT or Grok) for AI tasks. AI usage is billed by your AI provider. AI Time Machine provides the skills and the platform to manage everything in one place.</p>
+              <p className="key-note">Your AI team prepares drafts and ideas for you. Nothing goes out without your yes. Agents do not run on their own in the background yet.</p>
               <Link href="/pricing">Read the price</Link>
             </article>
           </div>

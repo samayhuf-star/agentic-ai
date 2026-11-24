@@ -68,7 +68,7 @@ export async function assembleTeam(userId: string, goal: GoalId, options?: { app
         userId,
         agentId: agent.id,
         status: "pending",
-        title: `${agent.name} has a starting idea`,
+        title: "Suggestion to get you started",
         detail: approvalDetail(agent, shop, sells),
       })),
     });

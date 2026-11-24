@@ -17,6 +17,9 @@ export default async function YesPage() {
       <p className="br-kicker">Needs your yes</p>
       <h1>Nothing goes live until you tap yes.</h1>
       <p className="muted">
+        Your AI team prepares drafts and ideas for you. Nothing goes out without your yes. Agents do not run on their own in the background yet.
+      </p>
+      <p className="muted">
         When the list is clear, you can <Link href="/dashboard/chat">talk to an agent</Link>.
       </p>
       <YesQueue

@@ -24,7 +24,7 @@ export default async function OverviewPage() {
       {user.paused ? <div className="banner">Paused. No posts, no messages, no spending.</div> : null}
       <div className="stats">
         <div className="stat">
-          <small>Running</small>
+          <small>Switched on</small>
           <b>{active}</b>
         </div>
         <div className="stat y">
@@ -32,12 +32,12 @@ export default async function OverviewPage() {
           <b>{waiting}</b>
         </div>
         <div className="stat">
-          <small>Done today</small>
+          <small>Approved today</small>
           <b>{doneToday}</b>
         </div>
       </div>
       <div className="note">
-        <small>NOTE FROM YOUR CEO</small>
+        <small>Summary</small>
         <p>
           Ayaan here. {waiting > 0 ? `${waiting} thing${waiting === 1 ? "" : "s"} need your yes.` : "Nothing is waiting on you."} I will not invent results. When a job is only an idea, it stays in Needs your yes.
         </p>
@@ -49,7 +49,7 @@ export default async function OverviewPage() {
         </div>
         <PauseSwitch key={`overview-${String(user.paused)}`} initial={user.paused} big />
       </div>
-      <h2 style={{ marginTop: 28, fontSize: 28 }}>Done</h2>
+      <h2 style={{ marginTop: 28, fontSize: 28 }}>Your yes decisions</h2>
       {recent.length === 0 ? (
         <p className="muted">Nothing finished yet. Your team waits for your yes before anything goes out.</p>
       ) : (

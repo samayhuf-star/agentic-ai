@@ -23,7 +23,11 @@ export default async function SuperAdminPage({ searchParams }: { searchParams: P
     prisma.lead.findMany({ where: { status: "pending" }, orderBy: { createdAt: "desc" }, take: 50 }),
   ]);
   const [signups, paidCount, revenue, gateway, users, payments] = await Promise.all([
-    prisma.user.count(),
+    prisma.user.count({
+      where: {
+        OR: [{ payments: { none: { status: "paid" } } }, { payments: { some: { status: "paid", isTest: false } } }],
+      },
+    }),
     prisma.payment.count({ where: { status: "paid", isTest: false } }),
     prisma.payment.aggregate({ where: { status: "paid", isTest: false }, _sum: { amountInr: true } }),
     getActiveGateway(),
