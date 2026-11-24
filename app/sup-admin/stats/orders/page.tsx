@@ -35,7 +35,28 @@ export default async function OrdersStatsPage({
         <a href={csv}>Download CSV</a>
       </p>
       {rows.length === 0 ? <p className="banner">No data yet.</p> : null}
-      <div className="table-wrap">
+      <ul className="order-cards">
+        {rows.map((row) => (
+          <li className="order-card" key={row.id}>
+            <b>{formatInr(row.amountInr)}</b>
+            <span>{row.status}</span>
+            <span>{formatIst(row.createdAt)}</span>
+            <span>{row.email || "No email"}</span>
+            {row.isTest ? <span className="test-badge">TEST</span> : <span className="muted">Live</span>}
+            <span className="muted">
+              {row.id} · {row.gateway}
+            </span>
+            {row.refundedAt ? (
+              <span className="muted">
+                Refunded {formatIst(row.refundedAt)} by {row.refundedBy || "—"}
+              </span>
+            ) : (
+              <MarkRefunded orderId={row.id} status={row.status} />
+            )}
+          </li>
+        ))}
+      </ul>
+      <div className="table-wrap orders-table">
         <table>
           <thead>
             <tr>

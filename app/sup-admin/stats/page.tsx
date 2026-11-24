@@ -27,8 +27,10 @@ export default async function SalesStatsPage({
         {sales.windows.map((window) => (
           <div className="stat" key={window.label}>
             <small>{window.label}</small>
-            <b>{formatInr(window.net)}</b>
-            <span className="muted">{window.orders} paid</span>
+            <b>Net {formatInr(window.net)}</b>
+            <span className="muted">
+              {window.orders} paid · {formatInr(window.refunded)} refunded
+            </span>
           </div>
         ))}
       </div>
@@ -60,13 +62,25 @@ export default async function SalesStatsPage({
         </div>
       </div>
       <h2>Daily revenue</h2>
-      <p className="muted">Bars are revenue. The line is the number of paid orders. Days are India time.</p>
+      <p className="muted">Bars are gross paid, including orders later marked refunded. The line is how many of those orders were paid that day. Refunds stay in the Net figures above and are not taken out of the bars. Days are India time.</p>
       <RevenueChart days={sales.days} />
       <h2>Pending payments</h2>
       {sales.pending.length === 0 ? (
         <p className="muted">No data yet.</p>
       ) : (
-        <div className="table-wrap">
+        <>
+        <ul className="order-cards">
+          {sales.pending.map((row) => (
+            <li className="order-card" key={row.id}>
+              <b>{formatInr(row.amountInr)}</b>
+              <span>Pending · {row.age}</span>
+              <span>{formatIst(row.createdAt)}</span>
+              <span>{row.email || "No email"}</span>
+              <span className="muted">{row.id}</span>
+            </li>
+          ))}
+        </ul>
+        <div className="table-wrap orders-table">
           <table>
             <thead>
               <tr>
@@ -88,8 +102,9 @@ export default async function SalesStatsPage({
             </tbody>
           </table>
         </div>
+        </>
       )}
-      <p className="muted">Opened {formatIst(range.to)} IST window. {range.includeTest ? "Test orders are included." : "Live orders only."}</p>
+      <p className="muted">As of {formatIst(range.to)}. {range.includeTest ? "Test orders are included." : "Live orders only."}</p>
       <p>
         <Link href={`/sup-admin/stats/orders?${rangeQuery(range)}`}>Open the orders table</Link>
       </p>

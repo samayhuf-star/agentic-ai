@@ -83,7 +83,7 @@ export async function salesSnapshot(range: StatsRange): Promise<SalesSnapshot> {
              COALESCE(SUM("amountInr"), 0)::int AS revenue,
              COUNT(*)::int AS orders
       FROM "Payment"
-      WHERE status = 'paid'
+      WHERE status IN ('paid', 'refunded')
         AND ${since('"paidAt"', range.from, range.to)}
         ${live(range.includeTest)}
       GROUP BY 1
