@@ -1,3 +1,4 @@
+import { AdminKicker } from "@/components/admin/AdminKicker";
 import { StatsBar } from "@/components/admin/StatsBar";
 import { PROVIDER_LABEL, isProvider } from "@/lib/ai/models";
 import { requireAdminPage } from "@/lib/admin/guard";
@@ -11,15 +12,15 @@ export default async function CustomerStatsPage({
 }: {
   searchParams: Promise<{ range?: string; from?: string; to?: string; tests?: string }>;
 }) {
-  await requireAdminPage();
+  const { readOnly } = await requireAdminPage();
   const range = readStatsRange(await searchParams);
   const customers = await customerSnapshot(range);
   const empty = customers.signups === 0 && customers.paid === 0 && customers.keys.length === 0;
   return (
     <main className="page stats-page">
-      <p className="br-kicker">Customers</p>
+      <AdminKicker kicker="Customers" readOnly={readOnly} />
       <h1>Real customers</h1>
-      <p className="muted">Admin emails, free-access accounts, and people who only have a test payment are left out. Keys are counted, never shown.</p>
+      <p className="muted">Admin emails, staff emails, free-access accounts, and people who only have a test payment are left out. Keys are counted, never shown.</p>
       <StatsBar range={range} path="/sup-admin/stats/customers" />
       {empty ? <p className="banner">No data yet.</p> : null}
       <div className="stats">

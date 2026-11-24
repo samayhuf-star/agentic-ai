@@ -1,9 +1,10 @@
 import { redirect } from "next/navigation";
-import { isAdminEmail } from "@/lib/config";
+import { resolveAccessRole, type AccessRole } from "@/lib/config";
 import { getSession } from "@/lib/session";
 
 export async function requireAdminPage() {
   const session = await getSession();
-  if (!session?.isAdmin || !isAdminEmail(session.email)) redirect("/login");
-  return session;
+  const role: AccessRole = session ? resolveAccessRole(session.email, Boolean(session.userId)) : "none";
+  if (!session || (role !== "admin" && role !== "staff")) redirect("/login");
+  return { session, role, readOnly: role === "staff" };
 }

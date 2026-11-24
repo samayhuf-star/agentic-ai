@@ -89,13 +89,39 @@ export function authSecret() {
   return process.env.AUTH_SECRET || (isProduction() ? "" : "dev-auth-secret");
 }
 
-export function adminEmails() {
-  return (process.env.ADMIN_EMAILS || "")
+function emailList(value: string | undefined) {
+  return (value || "")
     .split(",")
     .map((email) => email.trim().toLowerCase())
     .filter(Boolean);
 }
 
+export function adminEmails() {
+  return emailList(process.env.ADMIN_EMAILS);
+}
+
+export function staffEmails() {
+  return emailList(process.env.STAFF_EMAILS);
+}
+
+export function privilegedEmails() {
+  return Array.from(new Set([...adminEmails(), ...staffEmails()]));
+}
+
 export function isAdminEmail(email: string) {
   return adminEmails().includes(email.trim().toLowerCase());
+}
+
+export function isStaffEmail(email: string) {
+  return staffEmails().includes(email.trim().toLowerCase());
+}
+
+export type AccessRole = "admin" | "staff" | "customer" | "none";
+
+export function resolveAccessRole(email: string | null | undefined, hasAccount = false): AccessRole {
+  const value = (email || "").trim().toLowerCase();
+  if (value && isAdminEmail(value)) return "admin";
+  if (value && isStaffEmail(value)) return "staff";
+  if (hasAccount) return "customer";
+  return "none";
 }

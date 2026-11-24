@@ -1,5 +1,5 @@
 import { Prisma } from "@prisma/client";
-import { adminEmails } from "@/lib/config";
+import { privilegedEmails } from "@/lib/config";
 import { prisma } from "@/lib/prisma";
 import { daysInRange, fixedWindows, type StatsRange } from "@/lib/admin/range";
 import { istDayExpr, istDayKey, istDayStart, orderInstant } from "@/lib/ist";
@@ -35,6 +35,34 @@ function ageOf(createdAt: Date) {
 }
 
 const paidAtExpr = `COALESCE("paidAt", "createdAt")`;
+
+function privilegedSqlList() {
+  const emails = privilegedEmails();
+  if (emails.length === 0) return Prisma.sql`'__no_privileged__'`;
+  return Prisma.join(emails);
+}
+
+function paymentNotPrivileged(alias: string) {
+  const list = privilegedSqlList();
+  const email = Prisma.raw(`${alias}.email`);
+  const userId = Prisma.raw(`${alias}."userId"`);
+  return Prisma.sql`AND lower(COALESCE(${email}, '')) NOT IN (${list}) AND NOT EXISTS (SELECT 1 FROM "User" pu WHERE pu.id = ${userId} AND lower(COALESCE(pu.email, '')) IN (${list}))`;
+}
+
+export async function overviewSignupCount() {
+  const list = privilegedSqlList();
+  const rows = await prisma.$queryRaw<Array<{ count: number }>>`
+    SELECT COUNT(*)::int AS count
+    FROM "User" u
+    WHERE u."compAccess" = false
+      AND (u.email IS NULL OR lower(u.email) NOT IN (${list}))
+      AND (
+        NOT EXISTS (SELECT 1 FROM "Payment" p WHERE p."userId" = u.id AND p.status = 'paid')
+        OR EXISTS (SELECT 1 FROM "Payment" p WHERE p."userId" = u.id AND p.status = 'paid' AND p."isTest" = false)
+      )
+  `;
+  return rows[0]?.count || 0;
+}
 
 async function paidGross(from: Date | null, to: Date, includeTest: boolean) {
   const rows = await prisma.$queryRaw<Array<{ revenue: number; orders: number; kept: number }>>`
@@ -147,12 +175,12 @@ const customerSql = (includeTest: boolean) =>
       )`;
 
 export async function customerSnapshot(range: StatsRange) {
-  const admins = adminEmails();
+  const hidden = privilegedEmails();
   const created = () => (range.from ? Prisma.sql`u."createdAt" >= ${range.from} AND u."createdAt" <= ${range.to}` : Prisma.sql`u."createdAt" <= ${range.to}`);
   const onboarded = () => (range.from ? Prisma.sql`u."onboardedAt" >= ${range.from} AND u."onboardedAt" <= ${range.to}` : Prisma.sql`u."onboardedAt" <= ${range.to}`);
   const realUser = () => {
-    const adminList = admins.length ? Prisma.join(admins) : Prisma.sql`'__no_admin__'`;
-    return Prisma.sql`u."compAccess" = false AND (u.email IS NULL OR lower(u.email) NOT IN (${adminList})) AND ${customerSql(range.includeTest)}`;
+    const hiddenList = hidden.length ? Prisma.join(hidden) : Prisma.sql`'__no_privileged__'`;
+    return Prisma.sql`u."compAccess" = false AND (u.email IS NULL OR lower(u.email) NOT IN (${hiddenList})) AND ${customerSql(range.includeTest)}`;
   };
   const [signups, paid, onboardedCount, keys, firstChat, active7, active30] = await Promise.all([
     prisma.$queryRaw<Array<{ count: number }>>`SELECT COUNT(*)::int AS count FROM "User" u WHERE ${created()} AND ${realUser()}`,
@@ -185,8 +213,8 @@ export async function customerSnapshot(range: StatsRange) {
       ) firsts
       WHERE ${since("first_at", range.from, range.to)}
     `,
-    activeCustomers(7, range.includeTest, admins),
-    activeCustomers(30, range.includeTest, admins),
+    activeCustomers(7, range.includeTest, hidden),
+    activeCustomers(30, range.includeTest, hidden),
   ]);
   return {
     signups: signups[0]?.count || 0,
@@ -199,14 +227,14 @@ export async function customerSnapshot(range: StatsRange) {
   };
 }
 
-async function activeCustomers(days: number, includeTest: boolean, admins: string[]) {
+async function activeCustomers(days: number, includeTest: boolean, hidden: string[]) {
   const sinceAt = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-  const adminList = admins.length ? Prisma.join(admins) : Prisma.sql`'__no_admin__'`;
+  const hiddenList = hidden.length ? Prisma.join(hidden) : Prisma.sql`'__no_privileged__'`;
   const rows = await prisma.$queryRaw<Array<{ count: number }>>`
     SELECT COUNT(*)::int AS count
     FROM "User" u
     WHERE u."compAccess" = false
-      AND (u.email IS NULL OR lower(u.email) NOT IN (${adminList}))
+      AND (u.email IS NULL OR lower(u.email) NOT IN (${hiddenList}))
       AND ${customerSql(includeTest)}
       AND (
         EXISTS (SELECT 1 FROM "Message" m WHERE m."userId" = u.id AND m."createdAt" >= ${sinceAt})
@@ -218,10 +246,13 @@ async function activeCustomers(days: number, includeTest: boolean, admins: strin
 
 export async function funnelSnapshot(range: StatsRange) {
   const created = since('p."createdAt"', range.from, range.to);
-  const paidInWindow = await paidGross(range.from, range.to, range.includeTest);
-  const rows = await prisma.$queryRaw<
-    Array<{ submitted: number; paid: number; coded: number; loggedIn: number; onboarded: number; keyed: number; chatted: number }>
-  >`
+  const paidInWindow = since('COALESCE(p."paidAt", p."createdAt")', range.from, range.to);
+  const hideSubmitted = paymentNotPrivileged("p");
+  const hidePaid = paymentNotPrivileged("p");
+  const [rows, paidRows] = await Promise.all([
+    prisma.$queryRaw<
+      Array<{ submitted: number; paid: number; coded: number; loggedIn: number; onboarded: number; keyed: number; chatted: number }>
+    >`
     SELECT
       COUNT(*)::int AS submitted,
       0::int AS paid,
@@ -246,9 +277,19 @@ export async function funnelSnapshot(range: StatsRange) {
     FROM "Payment" p
     WHERE ${created}
       ${live(range.includeTest)}
-  `;
+      ${hideSubmitted}
+  `,
+    prisma.$queryRaw<Array<{ orders: number }>>`
+      SELECT COUNT(*)::int AS orders
+      FROM "Payment" p
+      WHERE p.status IN ('paid', 'refunded')
+        AND ${paidInWindow}
+        ${live(range.includeTest)}
+        ${hidePaid}
+    `,
+  ]);
   const row = rows[0] || { submitted: 0, paid: 0, coded: 0, loggedIn: 0, onboarded: 0, keyed: 0, chatted: 0 };
-  row.paid = paidInWindow.orders;
+  row.paid = Number(paidRows[0]?.orders || 0);
   return [
     { label: "Landing page", count: null as number | null, note: "Tracking starts in Phase 1" },
     { label: "Buy click", count: null, note: "Tracking starts in Phase 1" },

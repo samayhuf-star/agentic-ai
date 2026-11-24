@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AdminKicker } from "@/components/admin/AdminKicker";
 import { MarkRefunded } from "@/components/admin/MarkRefunded";
 import { StatsBar } from "@/components/admin/StatsBar";
 import { requireAdminPage } from "@/lib/admin/guard";
@@ -15,7 +16,7 @@ export default async function OrdersStatsPage({
 }: {
   searchParams: Promise<{ range?: string; from?: string; to?: string; tests?: string; status?: string }>;
 }) {
-  await requireAdminPage();
+  const { readOnly } = await requireAdminPage();
   const params = await searchParams;
   const range = readStatsRange(params);
   const status = statuses.includes(params.status || "") ? params.status || "all" : "all";
@@ -23,7 +24,7 @@ export default async function OrdersStatsPage({
   const csv = `/api/admin/stats/orders.csv?${rangeQuery(range, { status })}`;
   return (
     <main className="page stats-page">
-      <p className="br-kicker">Orders</p>
+      <AdminKicker kicker="Orders" readOnly={readOnly} />
       <h1>Orders</h1>
       <StatsBar range={range} path="/sup-admin/stats/orders" status={status} />
       <p className="row-actions chip-row">
@@ -32,7 +33,13 @@ export default async function OrdersStatsPage({
             {item}
           </Link>
         ))}
-        <a href={csv}>Download CSV</a>
+        {readOnly ? (
+          <button className="btn btn-g" type="button" disabled>
+            Download CSV
+          </button>
+        ) : (
+          <a href={csv}>Download CSV</a>
+        )}
       </p>
       {rows.length === 0 ? <p className="banner">No data yet.</p> : null}
       <ul className="order-cards">
@@ -51,7 +58,7 @@ export default async function OrdersStatsPage({
                 Refunded {formatIst(row.refundedAt)} by {row.refundedBy || "—"}
               </span>
             ) : (
-              <MarkRefunded orderId={row.id} status={row.status} />
+              <MarkRefunded orderId={row.id} status={row.status} readOnly={readOnly} />
             )}
           </li>
         ))}
@@ -87,7 +94,7 @@ export default async function OrdersStatsPage({
                       {row.refundedBy || "—"}
                     </span>
                   ) : (
-                    <MarkRefunded orderId={row.id} status={row.status} />
+                    <MarkRefunded orderId={row.id} status={row.status} readOnly={readOnly} />
                   )}
                 </td>
               </tr>

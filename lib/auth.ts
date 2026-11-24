@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { isAdminEmail, isProduction } from "@/lib/config";
+import { isAdminEmail, isProduction, isStaffEmail } from "@/lib/config";
 import { hashSecret, randomToken, sixDigitCode } from "@/lib/crypto";
 import { sendEmail } from "@/lib/messaging/email";
 import { clientIp, hitLimit } from "@/lib/rate-limit";
@@ -95,7 +95,7 @@ export async function requestLoginCode(emailInput: string, request: Request) {
   const email = cleanEmail(emailInput || "");
   if (!isEmail(email)) return { ok: false as const, status: 400, message: "Enter a valid email." };
   const user = await prisma.user.findUnique({ where: { email }, include: { payments: { where: { status: "paid" }, take: 1 } } });
-  if (!isAdminEmail(email) && !hasProductAccess(user)) {
+  if (!isAdminEmail(email) && !isStaffEmail(email) && !hasProductAccess(user)) {
     return {
       ok: false as const,
       status: 403,
@@ -149,6 +149,7 @@ export async function verifyLoginCode(emailInput: string, codeInput: string) {
     include: { payments: { where: { status: "paid" }, take: 1 } },
   });
   const admin = isAdminEmail(email);
+  const staff = !admin && isStaffEmail(email);
   if (user && !user.email && user.pendingEmail === email) {
     user = await prisma.user.update({
       where: { id: user.id },
@@ -165,7 +166,7 @@ export async function verifyLoginCode(emailInput: string, codeInput: string) {
       });
     }
   }
-  if (admin) user = await upsertCompUser(email);
+  if (admin || staff) user = await upsertCompUser(email);
   if (!hasProductAccess(user ? { compAccess: user.compAccess, payments: user.payments } : null)) {
     return { ok: false as const, status: 403, message: "Only a paid AI Time Machine account can sign in." };
   }
@@ -196,7 +197,7 @@ export async function verifyLoginCode(emailInput: string, codeInput: string) {
       expiresAt: new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000),
     },
   });
-  const redirect = admin || user?.compAccess || user?.onboardedAt ? "/dashboard" : "/onboarding";
+  const redirect = staff ? "/sup-admin" : admin || user?.compAccess || user?.onboardedAt ? "/dashboard" : "/onboarding";
   return { ok: true as const, status: 200, token, redirect, isAdmin: admin };
 }
 

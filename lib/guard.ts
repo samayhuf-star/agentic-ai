@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { isAdminEmail } from "@/lib/config";
+import { isAdminEmail, isStaffEmail } from "@/lib/config";
 import { istDayStart } from "@/lib/ist";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/session";
@@ -13,7 +13,8 @@ type ReadySession = {
 
 export async function skipsOnboarding(session: ReadySession) {
   if (!session.user) return false;
-  if (session.isAdmin || isAdminEmail(session.user.email || session.email) || session.user.compAccess) return true;
+  const email = session.user.email || session.email;
+  if (session.isAdmin || isAdminEmail(email) || isStaffEmail(email) || session.user.compAccess) return true;
   return Boolean(session.user.onboardedAt);
 }
 
