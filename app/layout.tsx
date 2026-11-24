@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 import "./landing.css";
 
-const title = "AI Time Machine: 55 AI agents for your business. You just say yes.";
-const description = "55 AI agents across 8 teams, your own dashboard and 4 bonuses. ₹1,999 once. Live in 15 minutes, for any business.";
+const title = "AI Time Machine: 55 AI agents for your business. Your AI team drafts. You decide.";
+const description = "55 AI agents across 8 teams, your own dashboard and 4 bonuses. ₹1,999 once. Your AI team drafts. You decide. One-time ₹1,999.";
 
 export const metadata: Metadata = {
   title,
