@@ -3,7 +3,10 @@ import test from "node:test";
 import { showsCustomType } from "../components/BusinessPicker";
 import { BUSINESS_CATEGORIES } from "../lib/business-catalog";
 import { businessPromptLine, validateBusinessSelection, workLabel } from "../lib/business-profile";
-import { composerState, groupChatAgents, messagesAfterSend } from "../lib/chat-view";
+import { chatHasUsableKey, composerState, groupChatAgents, messagesAfterSend } from "../lib/chat-view";
+import { prisma } from "../lib/prisma";
+import { hashSecret, randomToken } from "../lib/crypto";
+import { POST as chat } from "../app/api/dashboard/chat/route";
 import { buildSystemPrompt } from "../lib/llm";
 import { saveButtonState } from "../lib/settings-view";
 import { filterTeam, sortTeam, summaryLine, teamSummary } from "../lib/team-view";
@@ -103,6 +106,70 @@ test("chat list groups pinned and needs-you first, and a missing key does not ad
   const history = [{ role: "agent", body: "Earlier note" }];
   assert.deepEqual(messagesAfterSend(history, "Hello", false), history);
   assert.equal(messagesAfterSend(history, "Hello", true).some((message) => message.body === "Hello" && message.role === "user"), true);
+  assert.equal(chatHasUsableKey(false, false), false);
+  assert.equal(chatHasUsableKey(false, true), true);
+  assert.equal(chatHasUsableKey(true, false), true);
+});
+
+test("chat answers with a platform key and stores nothing when no key exists", async () => {
+  const email = `chat-${Date.now()}@shop.test`;
+  const user = await prisma.user.create({
+    data: { email, compAccess: true, onboardedAt: new Date(), businessName: "Northwind Holidays" },
+  });
+  await prisma.userAgent.create({ data: { userId: user.id, agentId: "mira", enabled: true } });
+  const token = randomToken();
+  await prisma.session.create({
+    data: { tokenHash: hashSecret(token), email, userId: user.id, expiresAt: new Date(Date.now() + 60 * 60 * 1000) },
+  });
+  const previousPlatform = process.env.LLM_API_KEY;
+  const previousOpenAi = process.env.OPENAI_API_KEY;
+  const originalFetch = globalThis.fetch;
+  delete process.env.LLM_API_KEY;
+  delete process.env.OPENAI_API_KEY;
+
+  function send(text: string) {
+    return chat(
+      new Request("http://localhost/api/dashboard/chat", {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie: `ai_time_machine_session=${token}` },
+        body: JSON.stringify({ agentId: "mira", text }),
+      }),
+    );
+  }
+
+  try {
+    const none = await send("Hello");
+    assert.equal(none.status, 409);
+    const noneBody = (await none.json()) as { needsKey?: boolean; reply?: string };
+    assert.equal(noneBody.needsKey, true);
+    assert.equal(noneBody.reply, undefined);
+    assert.equal(await prisma.message.count({ where: { userId: user.id } }), 0);
+
+    process.env.LLM_API_KEY = "sk-test-platform";
+    globalThis.fetch = async (input: RequestInfo | URL) => {
+      assert.match(String(input), /chat\/completions/);
+      return new Response(JSON.stringify({ choices: [{ message: { content: "Platform reply." } }] }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    };
+    const withPlatform = await send("Hello");
+    assert.equal(withPlatform.status, 200);
+    const body = (await withPlatform.json()) as { reply?: string };
+    assert.equal(body.reply, "Platform reply.");
+    const stored = await prisma.message.findMany({ where: { userId: user.id }, orderBy: { createdAt: "asc" } });
+    assert.deepEqual(stored.map((message) => message.body), ["Hello", "Platform reply."]);
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (previousPlatform === undefined) delete process.env.LLM_API_KEY;
+    else process.env.LLM_API_KEY = previousPlatform;
+    if (previousOpenAi === undefined) delete process.env.OPENAI_API_KEY;
+    else process.env.OPENAI_API_KEY = previousOpenAi;
+    await prisma.message.deleteMany({ where: { userId: user.id } });
+    await prisma.session.deleteMany({ where: { userId: user.id } });
+    await prisma.userAgent.deleteMany({ where: { userId: user.id } });
+    await prisma.user.delete({ where: { id: user.id } });
+  }
 });
 
 test("prompts use the category and never leak everyday work", () => {

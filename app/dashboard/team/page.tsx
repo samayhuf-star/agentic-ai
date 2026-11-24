@@ -40,6 +40,7 @@ export default async function TeamPage() {
             pinned: row.pinned,
             needsYou: attention.get(row.agentId)?.needsYou || false,
             needsCount: attention.get(row.agentId)?.count || 0,
+            needsItems: attention.get(row.agentId)?.items || [],
             sortOrder: row.sortOrder,
           }))}
         />

@@ -19,6 +19,7 @@ export type TeamCard = {
   pinned: boolean;
   needsYou: boolean;
   needsCount: number;
+  needsItems?: string[];
   sortOrder?: number;
 };
 

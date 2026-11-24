@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { DndContext, KeyboardSensor, PointerSensor, TouchSensor, closestCenter, type DragEndEvent, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, arrayMove, rectSortingStrategy, sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
@@ -207,7 +208,7 @@ export function TeamBoard({ cards, paused, layout }: { cards: TeamCard[]; paused
         <div className="split-list">{board}</div>
         <div className="split-detail">
           {selected ? (
-            <article className={["team-card", "detail-open", selected.enabled ? "" : "is-off"].filter(Boolean).join(" ")}>
+            <div className="agent-detail">
               <div className="team-id">
                 <span className="avatar" style={{ background: selected.color }}>
                   {selected.name.slice(0, 1)}
@@ -217,16 +218,10 @@ export function TeamBoard({ cards, paused, layout }: { cards: TeamCard[]; paused
                   <small className="team-role">{selected.role}</small>
                 </span>
               </div>
-              {selected.needsYou ? (
-                <span className="needs-flag">
-                  <span className="needs-dot" aria-hidden="true" />
-                  Needs you
-                </span>
-              ) : null}
-              <p className="blurb">{selected.blurb}</p>
               <p className="muted">{selected.department}</p>
+              <p className="blurb">{selected.blurb}</p>
               {selected.recommended ? <span className="pill">Picked for you</span> : null}
-              <div className="team-card-foot">
+              <div className="detail-actions">
                 <button type="button" className={selected.enabled ? "switch on" : "switch"} onClick={() => toggle(selected.id, !selected.enabled)} aria-pressed={selected.enabled}>
                   <i />
                   <span>{selected.enabled ? "On" : "Off"}</span>
@@ -235,7 +230,23 @@ export function TeamBoard({ cards, paused, layout }: { cards: TeamCard[]; paused
                   <PinIcon filled={selected.pinned} />
                 </button>
               </div>
-            </article>
+              {selected.needsItems && selected.needsItems.length > 0 ? (
+                <div>
+                  <p className="needs-flag">
+                    <span className="needs-dot" aria-hidden="true" />
+                    Needs you
+                  </p>
+                  <ul className="needs-list">
+                    {selected.needsItems.map((item, index) => (
+                      <li key={`${index}-${item}`}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+              <Link className="btn btn-p" href={`/dashboard/chat?agent=${selected.id}&layout=b`}>
+                Talk to this agent
+              </Link>
+            </div>
           ) : (
             <p className="muted">Pick someone from the list.</p>
           )}

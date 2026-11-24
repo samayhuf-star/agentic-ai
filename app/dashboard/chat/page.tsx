@@ -5,6 +5,7 @@ import { requireDashboardUser } from "@/lib/guard";
 import { publicKeyFor } from "@/lib/ai/keys";
 import { prisma } from "@/lib/prisma";
 import { PREVIEW_LAYOUT_HEADER, parsePreviewLayout } from "@/lib/preview-layout";
+import { chatHasUsableKey } from "@/lib/chat-view";
 import { attentionMap, teamOrder } from "@/lib/team";
 
 export const dynamic = "force-dynamic";
@@ -53,7 +54,7 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
         <ChatPanel
           key={active || "none"}
           activeId={active || memberships[0].agentId}
-          hasKey={layout ? Boolean(key) : Boolean(key) || platform}
+          hasKey={chatHasUsableKey(Boolean(key), platform)}
           agents={memberships.map((row) => ({
             id: row.agentId,
             name: row.agent.name,

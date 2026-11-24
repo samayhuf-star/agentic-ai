@@ -89,19 +89,24 @@ export const teamOrder = [{ pinned: "desc" as const }, { sortOrder: "asc" as con
 export async function attentionMap(userId: string) {
   const [rows, approvals, messages] = await Promise.all([
     prisma.userAgent.findMany({ where: { userId } }),
-    prisma.approval.findMany({ where: { userId, status: "pending" }, select: { agentId: true } }),
+    prisma.approval.findMany({ where: { userId, status: "pending" }, select: { agentId: true, title: true }, orderBy: { createdAt: "asc" } }),
     prisma.message.findMany({ where: { userId, role: "agent" }, select: { agentId: true, createdAt: true } }),
   ]);
-  const pending = new Map<string, number>();
+  const pending = new Map<string, string[]>();
   for (const item of approvals) {
-    pending.set(item.agentId, (pending.get(item.agentId) || 0) + 1);
+    const titles = pending.get(item.agentId) || [];
+    titles.push(item.title);
+    pending.set(item.agentId, titles);
   }
-  const result = new Map<string, { needsYou: boolean; count: number }>();
+  const result = new Map<string, { needsYou: boolean; count: number; items: string[] }>();
   for (const row of rows) {
-    const waiting = pending.get(row.agentId) || 0;
+    const titles = pending.get(row.agentId) || [];
     const unread = messages.filter((item) => item.agentId === row.agentId && (!row.lastReadAt || item.createdAt > row.lastReadAt)).length;
-    const count = waiting + unread;
-    result.set(row.agentId, { needsYou: count > 0, count });
+    const items = [...titles];
+    if (unread === 1) items.push("1 unread reply");
+    else if (unread > 1) items.push(`${unread} unread replies`);
+    const count = titles.length + unread;
+    result.set(row.agentId, { needsYou: count > 0, count, items });
   }
   return result;
 }

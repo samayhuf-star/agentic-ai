@@ -49,13 +49,13 @@ function ChatRow({
           <span className="muted" title={agent.role}>
             {agent.role}
           </span>
+          {agent.needsYou ? (
+            <span className="needs-flag">
+              <span className="needs-dot" aria-hidden="true" />
+              Needs you{agent.needsCount > 1 ? ` · ${agent.needsCount}` : ""}
+            </span>
+          ) : null}
         </span>
-        {agent.needsYou ? (
-          <span className="needs-flag">
-            <span className="needs-dot" aria-hidden="true" />
-            Needs you{agent.needsCount > 1 ? ` · ${agent.needsCount}` : ""}
-          </span>
-        ) : null}
       </button>
       <button
         className={agent.pinned ? "pin-mini on" : "pin-mini"}

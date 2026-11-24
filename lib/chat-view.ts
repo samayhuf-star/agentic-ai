@@ -15,6 +15,10 @@ export function groupChatAgents<T extends ChatListItem>(agents: T[], query: stri
   };
 }
 
+export function chatHasUsableKey(personal: boolean, platformConfigured: boolean) {
+  return personal || platformConfigured;
+}
+
 export function composerState({ text, busy, hasKey }: { text: string; busy: boolean; hasKey: boolean }) {
   if (!hasKey) return { disabled: true, reason: "nokey" as const };
   if (busy) return { disabled: true, reason: "busy" as const };

@@ -255,6 +255,11 @@
   grid-template-columns: 64px minmax(0, 1fr) 280px;
 }
 
+.layout-c:has(.chat-page),
+.layout-c.is-collapsed:has(.chat-page) {
+  grid-template-columns: auto minmax(240px, 380px) minmax(480px, 1fr);
+}
+
 .layout-c .c-rail {
   background: #101118;
   border-right: 1px solid rgba(196, 181, 253, 0.18);
@@ -597,6 +602,37 @@
   min-height: 280px;
 }
 
+.agent-detail {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  max-width: 520px;
+}
+
+.agent-detail .team-id {
+  padding-right: 0;
+}
+
+.agent-detail .pin-corner {
+  position: static;
+}
+
+.detail-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.needs-list {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+
+.layout-c .preview-chat .chat-person-text .needs-flag {
+  margin-top: 4px;
+}
+
 .preview-chat {
   min-width: 0;
   max-width: 100%;
@@ -871,13 +907,17 @@
   }
 
   .layout-c,
-  .layout-c.is-collapsed {
+  .layout-c.is-collapsed,
+  .layout-c:has(.chat-page),
+  .layout-c.is-collapsed:has(.chat-page) {
     grid-template-columns: 56px minmax(0, 1fr);
     grid-template-rows: minmax(0, 1fr) auto;
   }
 
-  .layout-c .c-detail {
+  .layout-c .c-detail,
+  .layout-c:has(.chat-page) .c-detail {
     grid-column: 1 / -1;
+    min-width: 0;
     max-height: 220px;
     border-left: 0;
     border-top: 1px solid rgba(196, 181, 253, 0.18);
