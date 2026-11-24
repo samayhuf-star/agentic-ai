@@ -12,11 +12,8 @@ type ReadySession = {
 
 export async function skipsOnboarding(session: ReadySession) {
   if (!session.user) return false;
-  if (session.isAdmin || session.user.compAccess) return true;
-  if (isAdminEmail(session.user.email || session.email)) return true;
-  if (session.user.onboardedAt) return true;
-  const team = await prisma.userAgent.count({ where: { userId: session.user.id } });
-  return team > 0;
+  if (session.isAdmin || isAdminEmail(session.user.email || session.email)) return true;
+  return Boolean(session.user.onboardedAt);
 }
 
 export async function requireDashboardUser() {

@@ -124,18 +124,12 @@ export async function fulfillPayment(gateway: GatewayName, event: PaidEvent) {
           where: { id: existing.id },
           data: {
             phone: existing.phone || (canUsePhone ? phone : undefined),
-            businessName: existing.businessName || name,
-            onboardedAt: existing.onboardedAt ?? new Date(),
-            goal: existing.goal || "everything",
           },
         })
       : await tx.user.create({
           data: {
             email,
             phone: canUsePhone ? phone : null,
-            businessName: name,
-            onboardedAt: new Date(),
-            goal: "everything",
           },
         });
     await tx.payment.upsert({

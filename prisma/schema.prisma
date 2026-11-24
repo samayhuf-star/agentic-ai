@@ -29,6 +29,7 @@ model User {
   tasks             Task[]
   messages          Message[]
   sessions          Session[]
+  aiKey             UserAiKey?
 }
 
 model Payment {
@@ -98,9 +99,12 @@ model UserAgent {
   id          String  @id @default(cuid())
   userId      String
   agentId     String
-  enabled     Boolean @default(false)
-  recommended Boolean @default(false)
-  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enabled     Boolean   @default(false)
+  recommended Boolean   @default(false)
+  pinned      Boolean   @default(false)
+  sortOrder   Int       @default(0)
+  lastReadAt  DateTime?
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   agent       Agent   @relation(fields: [agentId], references: [id], onDelete: Cascade)
 
   @@unique([userId, agentId])
@@ -143,6 +147,22 @@ model Message {
   agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
 
   @@index([userId, agentId, createdAt])
+}
+
+model UserAiKey {
+  id           String    @id @default(cuid())
+  userId       String    @unique
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider     String
+  model        String
+  encryptedKey String
+  iv           String
+  authTag      String
+  keyLast4     String
+  isValid      Boolean   @default(false)
+  lastTestedAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }
 
 model Setting {

@@ -1,24 +1,50 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 
-type AgentOption = { id: string; name: string; role: string; color: string };
+type AgentOption = {
+  id: string;
+  name: string;
+  role: string;
+  color: string;
+  pinned: boolean;
+  needsYou: boolean;
+  needsCount: number;
+};
 type Bubble = { id: string; role: string; body: string };
 
-export function ChatPanel({ agents, activeId, initial }: { agents: AgentOption[]; activeId: string; initial: Bubble[] }) {
+export function ChatPanel({
+  agents,
+  activeId,
+  initial,
+  hasKey,
+}: {
+  agents: AgentOption[];
+  activeId: string;
+  initial: Bubble[];
+  hasKey: boolean;
+}) {
   const router = useRouter();
+  const params = useSearchParams();
+  const [selectedId, setSelectedId] = useState(activeId);
   const [messages, setMessages] = useState(initial);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [listOpen, setListOpen] = useState(false);
-  const active = agents.find((agent) => agent.id === activeId) ?? agents[0];
+  const active = agents.find((agent) => agent.id === selectedId);
+
+  useEffect(() => {
+    const fromUrl = params.get("agent");
+    if (fromUrl && agents.some((agent) => agent.id === fromUrl)) setSelectedId(fromUrl);
+  }, [params, agents]);
 
   async function send(event: React.FormEvent) {
     event.preventDefault();
     const value = text.trim();
-    if (!value || !active) return;
+    if (!value || !active || !hasKey) return;
     setText("");
     setBusy(true);
     setError("");
@@ -26,7 +52,7 @@ export function ChatPanel({ agents, activeId, initial }: { agents: AgentOption[]
     const response = await fetch("/api/dashboard/chat", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ agentId: active.id, text: value }),
+      body: JSON.stringify({ agentId: selectedId, text: value }),
     });
     const data = (await response.json().catch(() => ({}))) as { reply?: string; message?: string };
     setBusy(false);
@@ -47,13 +73,18 @@ export function ChatPanel({ agents, activeId, initial }: { agents: AgentOption[]
           <button
             key={agent.id}
             type="button"
-            className={agent.id === active?.id ? "on" : ""}
+            className={[agent.id === active?.id ? "on" : "", agent.needsYou ? "needs-you" : ""].filter(Boolean).join(" ")}
             onClick={() => {
+              setSelectedId(agent.id);
               setListOpen(false);
               router.push(`/dashboard/chat?agent=${agent.id}`);
             }}
           >
-            <b>{agent.name}</b>
+            <b>
+              {agent.pinned ? "Pinned · " : ""}
+              {agent.name}
+            </b>
+            {agent.needsCount > 0 ? <span className="needs-badge">{agent.needsCount}</span> : null}
             <span className="muted" style={{ display: "block" }}>
               {agent.role}
             </span>
@@ -72,6 +103,11 @@ export function ChatPanel({ agents, activeId, initial }: { agents: AgentOption[]
             </small>
           </span>
         </div>
+        {!hasKey ? (
+          <div className="banner">
+            Connect your AI key in <Link href="/dashboard/settings">Settings</Link> to start chatting.
+          </div>
+        ) : null}
         <div className="thread-log">
           {messages.length === 0 ? <p className="muted">Say hello. Talk like you would to a person.</p> : null}
           {messages.map((message) => (
@@ -82,8 +118,8 @@ export function ChatPanel({ agents, activeId, initial }: { agents: AgentOption[]
           {error ? <p className="error">{error}</p> : null}
         </div>
         <form className="chat-form" onSubmit={send}>
-          <input type="text" value={text} onChange={(event) => setText(event.target.value)} placeholder="Type anything, like you'd text a person…" aria-label="Message" />
-          <button className="btn btn-p" type="submit" disabled={busy}>
+          <input type="text" value={text} onChange={(event) => setText(event.target.value)} placeholder="Type anything, like you'd text a person…" aria-label="Message" disabled={!hasKey} />
+          <button className="btn btn-p" type="submit" disabled={busy || !hasKey}>
             {busy ? "Sending…" : "Send"}
           </button>
         </form>

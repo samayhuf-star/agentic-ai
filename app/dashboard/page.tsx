@@ -18,7 +18,7 @@ export default async function OverviewPage() {
 
   return (
     <div>
-      <p className="br-kicker">{user.businessName}</p>
+      <p className="br-kicker">{user.businessName?.trim() || "Your business"}</p>
       <h1>Good to see you.</h1>
       <p className="muted">Goal: {user.goal ? goalLabel(user.goal) : "Not set"}. Nothing goes live until you say yes.</p>
       {user.paused ? <div className="banner">Paused. No posts, no messages, no spending.</div> : null}

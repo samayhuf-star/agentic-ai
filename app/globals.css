@@ -216,6 +216,29 @@
   padding: 3px 8px;
 }
 
+.agent-card.needs-you,
+.chat-list button.needs-you {
+  background: rgba(255, 201, 77, 0.12);
+  box-shadow: inset 4px 0 0 var(--amber);
+}
+
+.needs-badge {
+  margin-left: auto;
+  min-width: 22px;
+  text-align: center;
+  border-radius: 999px;
+  background: rgba(255, 201, 77, 0.2);
+  color: var(--amber);
+  font-size: 12px;
+  font-weight: 800;
+  padding: 2px 7px;
+}
+
+.drag-handle {
+  padding: 6px 8px;
+  font-size: 12px;
+}
+
 .switch {
   display: inline-flex;
   align-items: center;

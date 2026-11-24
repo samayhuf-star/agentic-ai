@@ -9,7 +9,7 @@ import { hashSecret } from "../lib/crypto";
 import { fulfillPayment } from "../lib/payments/fulfill";
 import { POST as onboard } from "../app/api/onboarding/route";
 
-process.env.NODE_ENV = "test";
+Reflect.set(process.env, "NODE_ENV", "test");
 process.env.AUTH_SECRET = "test-secret";
 process.env.APP_URL = "http://localhost:3000";
 process.env.ADMIN_EMAILS = "owner@adiology.io";
@@ -67,7 +67,9 @@ test("checkout, webhook, email code, and team setup in mock mode", async () => {
   assert.equal(payment?.name, "Asha Rao");
   const user = await prisma.user.findUnique({ where: { email } });
   assert.ok(user);
-  assert.ok(user?.onboardedAt);
+  assert.equal(user?.onboardedAt, null);
+  assert.equal(user?.businessName, null);
+  assert.equal(user?.goal, null);
   assert.equal(await prisma.userAgent.count({ where: { userId: user!.id } }), 55);
   const notes = await prisma.emailLog.findMany({ where: { toEmail: email } });
   assert.ok(notes.some((note) => note.subject.includes("code")));
@@ -77,7 +79,7 @@ test("checkout, webhook, email code, and team setup in mock mode", async () => {
   const verified = await verifyLoginCode(email, code!);
   assert.equal(verified.ok, true);
   if (!verified.ok) return;
-  assert.equal(verified.redirect, "/dashboard");
+  assert.equal(verified.redirect, "/onboarding");
   const saved = await prisma.user.findUnique({ where: { id: user!.id } });
   assert.equal(saved?.email, email);
 
@@ -97,10 +99,19 @@ test("checkout, webhook, email code, and team setup in mock mode", async () => {
     }),
   );
   assert.equal(again.status, 200);
-  const againBody = (await again.json()) as { ok?: boolean; redirect?: string; message?: string };
-  assert.equal(againBody.ok, true);
-  assert.equal(againBody.redirect, "/dashboard");
-  assert.equal(againBody.message, undefined);
+  const againBody = (await again.json()) as { ok?: boolean; redirect?: string; message?: string; team?: unknown[] };
+  assert.equal(againBody.team?.length && againBody.team.length > 0, true);
+  assert.equal(againBody.redirect, undefined);
+  const finished = await onboard(
+    new Request("http://localhost/api/onboarding", {
+      method: "POST",
+      headers: { "content-type": "application/json", cookie: `ai_time_machine_session=${verified.token}` },
+      body: JSON.stringify({ step: "finish" }),
+    }),
+  );
+  const finishedBody = (await finished.json()) as { redirect?: string };
+  assert.equal(finished.status, 200);
+  assert.equal(finishedBody.redirect, "/dashboard");
   const teamCount = await prisma.userAgent.count({ where: { userId: user!.id } });
   const enabled = await prisma.userAgent.count({ where: { userId: user!.id, enabled: true } });
   assert.equal(teamCount, 55);
@@ -131,20 +142,21 @@ test("checkout, webhook, email code, and team setup in mock mode", async () => {
   process.env.RESEND_FROM = "AI Time Machine <no-reply@adiology.io>";
   process.env.ADMIN_EMAILS = "resend-owner@example.com";
   const originalFetch = globalThis.fetch;
-  let sent: { url: string; body: { from?: string; to?: string; subject?: string; text?: string; reply_to?: string } } | null = null;
+  const sent: { url: string; body: { from?: string; to?: string; subject?: string; text?: string; reply_to?: string } } = { url: "", body: {} };
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
-    sent = { url: String(input), body: JSON.parse(String(init?.body || "{}")) };
+    sent.url = String(input);
+    sent.body = JSON.parse(String(init?.body || "{}"));
     return new Response("{}", { status: 200 });
   }) as typeof fetch;
   try {
     const mailed = await requestLoginCode("resend-owner@example.com", new Request("http://localhost/api/auth/request-code", { headers: { "x-forwarded-for": "203.0.113.40" } }));
     assert.equal(mailed.ok, true);
-    assert.equal(sent?.url, "https://api.resend.com/emails");
-    assert.equal(sent?.body.from, "AI Time Machine <no-reply@adiology.io>");
-    assert.equal(sent?.body.to, "resend-owner@example.com");
-    assert.equal(sent?.body.subject, "Your AI Time Machine code");
-    assert.match(sent?.body.text || "", /^Your AI Time Machine code is \d{6}\. It expires in 10 minutes\./);
-    assert.equal(sent?.body.reply_to, "support@theaitimemachine.com");
+    assert.equal(sent.url, "https://api.resend.com/emails");
+    assert.equal(sent.body.from, "AI Time Machine <no-reply@adiology.io>");
+    assert.equal(sent.body.to, "resend-owner@example.com");
+    assert.equal(sent.body.subject, "Your AI Time Machine code");
+    assert.match(sent.body.text || "", /^Your AI Time Machine code is \d{6}\. It expires in 10 minutes\./);
+    assert.equal(sent.body.reply_to, "support@theaitimemachine.com");
     const log = await prisma.emailLog.findFirst({ where: { toEmail: "resend-owner@example.com" }, orderBy: { createdAt: "desc" } });
     assert.equal(log?.provider, "resend");
   } finally {
@@ -177,7 +189,7 @@ test("a Cashfree return marks a pending order paid when Cashfree says it is paid
     const payment = await confirmPendingCashfreeOrder(orderId);
     assert.equal(payment?.status, "paid");
     const user = await prisma.user.findUnique({ where: { email } });
-    assert.ok(user?.onboardedAt);
+    assert.equal(user?.onboardedAt, null);
     assert.equal(await prisma.userAgent.count({ where: { userId: user!.id } }), 55);
     const again = await confirmPendingCashfreeOrder(orderId);
     assert.equal(again?.userId, user!.id);
@@ -193,9 +205,12 @@ test("a Cashfree return marks a pending order paid when Cashfree says it is paid
 test("a paid order can be fulfilled again and the code resent", async () => {
   const { fulfilOrder } = await import("../lib/payments/manual");
   const { indianMobile } = await import("../lib/phone");
-  assert.equal(indianMobile("+91 98450 11223").ok && indianMobile("+91 98450 11223").digits, "9845011223");
-  assert.equal(indianMobile("09845011223").ok && indianMobile("09845011223").digits, "9845011223");
-  assert.equal(indianMobile("919845011223").ok && indianMobile("919845011223").digits, "9845011223");
+  const plus = indianMobile("+91 98450 11223");
+  const zero = indianMobile("09845011223");
+  const country = indianMobile("919845011223");
+  assert.equal(plus.ok ? plus.digits : "", "9845011223");
+  assert.equal(zero.ok ? zero.digits : "", "9845011223");
+  assert.equal(country.ok ? country.digits : "", "9845011223");
   assert.equal(indianMobile("5845011223").ok, false);
 
   const orderId = `brmanual${Date.now()}`;
@@ -213,7 +228,7 @@ test("a paid order can be fulfilled again and the code resent", async () => {
     assert.equal(first.ok, true);
     assert.equal(first.cashfreeStatus, "PAID");
     const user = await prisma.user.findUnique({ where: { email } });
-    assert.ok(user?.onboardedAt);
+    assert.equal(user?.onboardedAt, null);
     assert.equal(await prisma.userAgent.count({ where: { userId: user!.id } }), 55);
     const second = await fulfilOrder(orderId, { email });
     assert.equal(second.ok, true);
