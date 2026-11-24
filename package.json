@@ -1,0 +1,42 @@
+{
+  "name": "ai-time-machine",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "node scripts/with-local-db.mjs --push --seed -- next dev",
+    "build": "prisma generate && next build",
+    "start": "next start -H 0.0.0.0 -p ${PORT:-3000}",
+    "start:railway": "prisma migrate deploy && next start -H 0.0.0.0 -p ${PORT:-3000}",
+    "lint": "eslint .",
+    "test": "node scripts/with-local-db.mjs --push --seed -- tsx --test --test-concurrency=1 tests/content.test.ts tests/checkout-flow.test.ts tests/alerts-followups.test.ts tests/admin-stats.test.ts",
+    "test:otp": "playwright test tests/otp-paste.spec.ts",
+    "setup": "node scripts/with-local-db.mjs --push --seed -- node -e \"console.log('Database is ready.')\"",
+    "postinstall": "prisma generate"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "@prisma/client": "^6.19.0",
+    "next": "^15.5.6",
+    "prisma": "^6.19.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.3.14",
+    "@electric-sql/pglite-socket": "^0.0.20",
+    "@eslint/eslintrc": "^3.3.1",
+    "@playwright/test": "^1.65.1",
+    "@types/node": "^22.19.1",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "eslint": "^9.39.1",
+    "eslint-config-next": "^15.5.6",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  }
+}
