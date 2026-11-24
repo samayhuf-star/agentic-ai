@@ -1050,6 +1050,76 @@ button.text-link:disabled {
   font-size: clamp(28px, 5vw, 40px);
 }
 
+.stats-page h2 {
+  font-size: 28px;
+  margin: 28px 0 8px;
+}
+
+.stats-bar {
+  margin: 12px 0 18px;
+}
+
+.stats-filters,
+.stats-bar .row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-end;
+  margin: 8px 0;
+}
+
+.stats-filters a,
+.stats-bar .row-actions a {
+  color: var(--dim);
+  text-decoration: none;
+  padding: 8px 10px;
+  border-radius: 10px;
+}
+
+.stats-filters a.on,
+.stats-bar .row-actions a.on {
+  background: rgba(200, 242, 90, 0.12);
+  color: var(--lime);
+}
+
+.stats-filters label {
+  display: grid;
+  gap: 4px;
+  color: var(--dim);
+  font-size: 13px;
+}
+
+.stats-filters input[type="date"] {
+  width: auto;
+}
+
+.stats-chart {
+  width: 100%;
+  max-width: 720px;
+  height: auto;
+  background: #0b0f12;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+
+.funnel {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.funnel li {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 12px;
+  align-items: center;
+  background: #10161b;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
 .pay-spin {
   width: 42px;
   height: 42px;

@@ -1,8 +1,7 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { GatewaySwitch, ResendButton, TestEmailForm } from "@/components/AdminPanel";
 import { formatInr, formatIst } from "@/lib/config";
-import { getSession } from "@/lib/session";
+import { requireAdminPage } from "@/lib/admin/guard";
 import { prisma } from "@/lib/prisma";
 import { getActiveGateway } from "@/lib/settings";
 import { FulfilButton } from "@/components/FulfilButton";
@@ -13,8 +12,7 @@ import { TestAlertButton } from "@/components/TestAlertButton";
 export const dynamic = "force-dynamic";
 
 export default async function SuperAdminPage({ searchParams }: { searchParams: Promise<{ q?: string; tab?: string }> }) {
-  const session = await getSession();
-  if (!session?.isAdmin) redirect("/login");
+  const session = await requireAdminPage();
   const { q, tab } = await searchParams;
   const query = (q || "").trim();
   const [alerts, followups, leads] = await Promise.all([
@@ -54,6 +52,10 @@ export default async function SuperAdminPage({ searchParams }: { searchParams: P
       <h1>AI Time Machine</h1>
       <p className="row-actions">
         <Link href="/sup-admin">Home</Link>
+        <Link href="/sup-admin/stats">Sales</Link>
+        <Link href="/sup-admin/stats/orders">Orders</Link>
+        <Link href="/sup-admin/stats/customers">Customers</Link>
+        <Link href="/sup-admin/stats/funnel">Funnel</Link>
         <Link href="/sup-admin?tab=alerts">Alerts</Link>
         <Link href="/sup-admin?tab=followups">Follow-ups</Link>
       </p>
