@@ -11,7 +11,7 @@ export default function RefundPage() {
         Access is sent straight after payment, as a sign-in code by email. Because delivery is immediate, write to us within 7 days of payment if you did not receive access, or if you could not sign in.
       </p>
       <p>
-        Email {BUSINESS.supportEmail}. Support is by email only. Include the phone number you paid with. If we cannot give you access, we refund that payment to the original method. We do not refund because of a hoped-for sales or marketing result. The product does not promise those results.
+        Email {BUSINESS.supportEmail} from the email address you paid with. Support is by email only. If we cannot give you access, we refund that payment to the original method. We do not refund because of a hoped-for sales or marketing result. The product does not promise those results.
       </p>
       <p>A refund, when approved, is started within 7 business days. Your bank or UPI app may take longer to show it.</p>
     </PolicyFrame>

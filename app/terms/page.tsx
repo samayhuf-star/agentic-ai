@@ -18,7 +18,7 @@ export default function TermsPage() {
       </p>
       <p>Access is digital. After a successful payment we email you a sign-in code. See the Shipping and Delivery page and the Refund and Cancellation page.</p>
       <p>These terms follow the laws of India. Courts in Delhi, India, hear disputes about them.</p>
-      <p>If something is wrong with a payment, write to {BUSINESS.supportEmail} with the phone number you paid from.</p>
+      <p>If something is wrong with a payment, write to {BUSINESS.supportEmail} from the email address you paid with.</p>
     </PolicyFrame>
   );
 }

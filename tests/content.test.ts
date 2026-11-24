@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import { agents, DEPARTMENTS } from "../data/agents";
+import { approvalDetail, oneReassurance } from "../lib/approval-copy";
 import { appOrigin } from "../lib/config";
 import { cashfreeTarget } from "../lib/payments/gateways";
 
@@ -16,6 +17,20 @@ const expected: Record<string, number> = {
   Money: 5,
   "CEO office": 3,
 };
+
+test("an approval card keeps a single reassurance", () => {
+  const rohan = approvalDetail(
+    { name: "Rohan", role: "Ads watcher", blurb: "Watches your ads and suggests what to pause or boost. No budget change without your yes." },
+    "Chai and Co",
+    "masala chai",
+  );
+  assert.doesNotMatch(rohan, /Nothing goes out, and no money is spent/);
+  const shown = oneReassurance(`${rohan} This is only a suggestion. Nothing goes out, and no money is spent, until you tap yes.`);
+  assert.match(shown, /No budget change without your yes\.$/);
+  assert.doesNotMatch(shown, /This is only a suggestion/);
+  const plain = approvalDetail({ name: "Aman", role: "Photo ideas", blurb: "Suggests photos to take." }, "Chai and Co", "masala chai");
+  assert.equal((plain.match(/Nothing goes out/g) || []).length, 1);
+});
 
 test("the roster is 55 agents in the eight teams", () => {
   assert.equal(agents.length, 55);

@@ -798,6 +798,7 @@ s>span.amt-x{text-decoration:line-through!important;text-decoration-thickness:2p
 .brand-cards h2{font-size:26px;margin:8px 0}
 .brand-cards p,.brand-trust p,.brand-trust li{color:#c3ccc8}
 .brand-cards a,.brand-trust a{color:var(--lime)}
+.brand-grid .card a{display:inline-block;margin-top:18px}
 .brand-trust .wrap{padding-bottom:72px}
 .brand-trust h2{font-size:36px;margin:0}
 .brand-trust ul{margin:16px 0 0;padding-left:18px;display:grid;gap:8px}

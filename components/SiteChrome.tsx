@@ -33,6 +33,19 @@ export function SiteHeader({ offer = false }: { offer?: boolean }) {
   );
 }
 
+export function LogoHeader() {
+  return (
+    <header className="nav">
+      <div className="wrap">
+        <Link className="logo" href="/" aria-label="AI Time Machine">
+          <i />
+          AI Time Machine
+        </Link>
+      </div>
+    </header>
+  );
+}
+
 export function QuietHeader() {
   return (
     <header className="nav">
