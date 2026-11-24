@@ -7,7 +7,7 @@ js = js.replace(
   "var CASHFREE_CHECKOUT_URL = 'https://payments.cashfree.com/forms/boardroom'; // REPLACE with real Cashfree payment link",
   "var CASHFREE_CHECKOUT_URL = cfg.checkoutPath || '/checkout';",
 );
-js = js.replace("var VIDEOS_LIVE = false; // set to true once videos/step-01.mp4 ... step-04.mp4 are uploaded", "var VIDEOS_LIVE = true;");
+js = js.replace("var VIDEOS_LIVE = false; // set to true once videos/step-01.mp4 ... step-04.mp4 are uploaded", "var VIDEOS_LIVE = " + (fs.existsSync(new URL("../public/videos/step-01.mp4", import.meta.url)) ? "true" : "false") + ";");
 js = js.replace(
   "v.preload='auto';v.src=v.getAttribute('data-src');",
   "var src=v.getAttribute('data-src')||''; if(src.charAt(0)!=='/') src='/'+src; v.preload='auto'; v.src=src;",

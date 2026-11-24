@@ -119,7 +119,7 @@ window.startLanding = function (cfg) {
 
 // ===== Buy flow & geo-aware pricing =====
 var CASHFREE_CHECKOUT_URL = cfg.checkoutPath || '/checkout';
-var VIDEOS_LIVE = true;
+var VIDEOS_LIVE = false; // QA 2026-11-25: public/videos is empty; set true once the mp4 files are uploaded
 (function(){
   document.querySelectorAll('[data-buy]').forEach(function(a){a.href=CASHFREE_CHECKOUT_URL;});
   function setUSD(){document.querySelectorAll('.amt-x').forEach(function(e){e.textContent=e.getAttribute('data-usd')||'$24';});

@@ -627,3 +627,33 @@
     font-size: 26px;
   }
 }
+
+/* QA fix 2026-11-25: on phones the chat thread was squeezed into a 220px strip
+   under a tall agent-picker card. Give the thread the rest of the screen. */
+@media (max-width: 800px) {
+  .layout-c:has(.chat-page),
+  .layout-c.is-collapsed:has(.chat-page) {
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .layout-c:has(.chat-page) .c-detail {
+    max-height: none;
+    min-height: 0;
+  }
+
+  .preview-shell .br-main:has(.chat-page) {
+    max-height: 55dvh;
+    overflow: auto;
+  }
+
+  .preview-shell .chat-page .preview-chat {
+    flex: 0 0 auto;
+  }
+
+  .preview-shell .chat-page .chat-picker {
+    flex: 0 0 auto;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+  }
+}
