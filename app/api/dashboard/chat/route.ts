@@ -1,4 +1,5 @@
 import { json, readJson, requireUser } from "@/lib/api";
+import { savedKeySecret } from "@/lib/ai/keys";
 import { prisma } from "@/lib/prisma";
 import { agentReply } from "@/lib/llm";
 
@@ -17,6 +18,8 @@ export async function POST(request: Request) {
     include: { agent: true },
   });
   if (!membership) return json({ message: "That teammate isn't on your team." }, 404);
+  const ownKey = await savedKeySecret(user.id);
+  if (!ownKey) return json({ message: "Connect your AI key in Settings to start chatting.", needsKey: true }, 409);
   const history = await prisma.message.findMany({
     where: { userId: user.id, agentId },
     orderBy: { createdAt: "asc" },

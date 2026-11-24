@@ -1,6 +1,9 @@
+import { headers } from "next/headers";
 import { PauseSwitch } from "@/components/PauseSwitch";
+import { OverviewPreview } from "@/components/OverviewPreview";
 import { goalLabel } from "@/data/agents";
 import { requireDashboardUser, startOfTodayIst } from "@/lib/guard";
+import { PREVIEW_LAYOUT_HEADER, parsePreviewLayout } from "@/lib/preview-layout";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +18,22 @@ export default async function OverviewPage() {
     prisma.task.findMany({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, take: 6 }),
   ]);
   const active = user.paused ? 0 : running;
+  const layout = parsePreviewLayout((await headers()).get(PREVIEW_LAYOUT_HEADER));
+  const goal = user.goal ? goalLabel(user.goal) : "Not set";
+  if (layout === "b" || layout === "c") {
+    return (
+      <OverviewPreview
+        layout={layout}
+        businessName={user.businessName?.trim() || "Your business"}
+        goal={goal}
+        paused={user.paused}
+        active={active}
+        waiting={waiting}
+        doneToday={doneToday}
+        recent={recent.map((task) => ({ id: task.id, title: task.title }))}
+      />
+    );
+  }
 
   return (
     <div>

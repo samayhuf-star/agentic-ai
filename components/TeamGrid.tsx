@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { TeamBoard } from "@/components/TeamBoard";
+import { usePreviewLayout } from "@/components/layout/context";
 import { DndContext, KeyboardSensor, PointerSensor, TouchSensor, closestCenter, type DragEndEvent, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, arrayMove, rectSortingStrategy, sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -17,6 +19,7 @@ export type TeamCard = {
   pinned: boolean;
   needsYou: boolean;
   needsCount: number;
+  sortOrder?: number;
 };
 
 function SortableCard({
@@ -63,6 +66,12 @@ function SortableCard({
 }
 
 export function TeamGrid({ cards, paused }: { cards: TeamCard[]; paused: boolean }) {
+  const layout = usePreviewLayout();
+  if (layout) return <TeamBoard cards={cards} paused={paused} layout={layout} />;
+  return <LegacyTeamGrid cards={cards} paused={paused} />;
+}
+
+function LegacyTeamGrid({ cards, paused }: { cards: TeamCard[]; paused: boolean }) {
   const [rows, setRows] = useState(cards);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),

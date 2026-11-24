@@ -1,5 +1,6 @@
 import { agents, isGoal, type GoalId } from "@/data/agents";
 import { approvalDetail as approvalCopy } from "@/lib/approval-copy";
+import { workLabel } from "@/lib/business-profile";
 import { prisma } from "@/lib/prisma";
 
 function catalogRows() {
@@ -57,15 +58,15 @@ export async function assembleTeam(userId: string, goal: GoalId, options?: { app
   const pending = await prisma.approval.count({ where: { userId, status: "pending" } });
   if (applyEnabled && pending === 0 && user) {
     const recommended = catalog.filter((agent) => agent.goals.split(",").includes(goal) && agent.department !== "CEO office").slice(0, 2);
-    const shop = user.businessName?.trim() || "your business";
-    const sells = user.sells?.trim() || "what you do";
+    const shop = user.businessName?.trim() || "the business";
+    const work = workLabel(user);
     await prisma.approval.createMany({
       data: recommended.map((agent) => ({
         userId,
         agentId: agent.id,
         status: "pending",
         title: "Suggestion to get you started",
-        detail: approvalCopy(agent, shop, sells),
+        detail: approvalCopy(agent, shop, work),
       })),
     });
   }

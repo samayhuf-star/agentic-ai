@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { ChatWorkspace } from "@/components/ChatWorkspace";
+import { usePreviewLayout } from "@/components/layout/context";
 import { useRouter, useSearchParams } from "next/navigation";
 import { DndContext, KeyboardSensor, PointerSensor, TouchSensor, closestCenter, type DragEndEvent, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
@@ -53,6 +55,22 @@ function ChatRow({
 }
 
 export function ChatPanel({
+  agents,
+  activeId,
+  initial,
+  hasKey,
+}: {
+  agents: AgentOption[];
+  activeId: string;
+  initial: Bubble[];
+  hasKey: boolean;
+}) {
+  const layout = usePreviewLayout();
+  if (layout) return <ChatWorkspace agents={agents} activeId={activeId} initial={initial} hasKey={hasKey} />;
+  return <LegacyChat agents={agents} activeId={activeId} initial={initial} hasKey={hasKey} />;
+}
+
+function LegacyChat({
   agents,
   activeId,
   initial,

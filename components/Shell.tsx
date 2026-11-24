@@ -4,6 +4,9 @@ import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { PauseSwitch } from "@/components/PauseSwitch";
+import { LayoutProvider } from "@/components/layout/context";
+import { PreviewShell } from "@/components/layout/PreviewShell";
+import type { PreviewLayout } from "@/lib/preview-layout";
 
 const links = [
   { href: "/dashboard", label: "Overview" },
@@ -15,6 +18,36 @@ const links = [
 ];
 
 export function Shell({
+  businessName,
+  paused,
+  needsYes,
+  isAdmin,
+  layout = null,
+  children,
+}: {
+  businessName: string;
+  paused: boolean;
+  needsYes: number;
+  isAdmin: boolean;
+  layout?: PreviewLayout | null;
+  children: React.ReactNode;
+}) {
+  return (
+    <LayoutProvider value={layout}>
+      {layout ? (
+        <PreviewShell layout={layout} businessName={businessName} paused={paused} needsYes={needsYes} isAdmin={isAdmin}>
+          {children}
+        </PreviewShell>
+      ) : (
+        <LegacyShell businessName={businessName} paused={paused} needsYes={needsYes} isAdmin={isAdmin}>
+          {children}
+        </LegacyShell>
+      )}
+    </LayoutProvider>
+  );
+}
+
+function LegacyShell({
   businessName,
   paused,
   needsYes,

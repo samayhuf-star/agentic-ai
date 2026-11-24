@@ -15,6 +15,9 @@ model User {
   pendingEmail      String?
   businessName      String?
   sells             String?
+  category          String?
+  businessType      String?
+  customType        String?
   goal              String?
   onboardedAt       DateTime?
   paused            Boolean   @default(false)
