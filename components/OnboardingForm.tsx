@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { GOALS } from "@/data/agents";
+import { PROVIDER_LABEL } from "@/lib/ai/models";
 import { AiKeyForm, type PublicKey } from "@/components/AiKeyForm";
 
 type Picked = { id: string; name: string; role: string; department: string; color: string };
@@ -142,7 +143,7 @@ export function OnboardingForm() {
             setKey(next);
           }}
         />
-        <button className="btn btn-g" type="button" onClick={() => setStep(3)}>
+        <button className="btn btn-g skip-later" type="button" onClick={() => setStep(3)}>
           Skip for now (connect later in Settings)
         </button>
       </div>
@@ -154,10 +155,10 @@ export function OnboardingForm() {
       <p className="br-kicker">Step 3 of 3</p>
       <h1>Your team is ready</h1>
       <p className="lead">These are turned on first. The others wait until you switch them on. Nothing goes out until you say yes.</p>
-      <p>{key ? `AI key: ${key.provider}, ending ${key.keyLast4}. ${key.isValid ? "Working." : "Not confirmed."}` : "AI key: not connected yet. You can add it in Settings."}</p>
+      <p>{key ? `AI key: ${PROVIDER_LABEL[key.provider]}, ending ${key.keyLast4}. ${key.isValid ? "Working." : "Not confirmed."}` : "AI key: not connected yet. You can add it in Settings."}</p>
       <div className="assemble">
-        {team.map((agent, index) => (
-          <div key={agent.id} style={{ animationDelay: `${index * 40}ms` }}>
+        {team.map((agent) => (
+          <div className="ready-row" key={agent.id}>
             <span className="avatar" style={{ background: agent.color }}>
               {agent.name.slice(0, 1)}
             </span>

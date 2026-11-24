@@ -27,10 +27,12 @@ export function AiKeyForm({
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [providerOpen, setProviderOpen] = useState(false);
 
   function pickProvider(next: AiProvider) {
     setProvider(next);
     setModel(defaultModel(next));
+    setProviderOpen(false);
     setMessage("");
     setError("");
   }
@@ -99,20 +101,30 @@ export function AiKeyForm({
       ) : (
         <p className="muted">No key connected yet.</p>
       )}
-      <label className="field">
-        Provider
-        <select
-          value={provider}
-          onChange={(event) => pickProvider(event.target.value as AiProvider)}
-          aria-label="AI provider"
+      <div className="field">
+        <span id="provider-label">Provider</span>
+        <button
+          className="provider-toggle"
+          type="button"
+          aria-label={`Provider, ${PROVIDER_LABEL[provider]}`}
+          aria-expanded={providerOpen}
+          aria-controls="provider-list"
+          onClick={() => setProviderOpen((open) => !open)}
         >
-          {AI_PROVIDERS.map((item) => (
-            <option key={item} value={item}>
-              {PROVIDER_LABEL[item]}
-            </option>
-          ))}
-        </select>
-      </label>
+          {PROVIDER_LABEL[provider]}
+        </button>
+        {providerOpen ? (
+          <ul className="provider-list" id="provider-list" role="listbox" aria-label="AI provider">
+            {AI_PROVIDERS.map((item) => (
+              <li key={item}>
+                <button type="button" role="option" aria-selected={item === provider} onClick={() => pickProvider(item)}>
+                  {PROVIDER_LABEL[item]}
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
       <p className="muted">{PROVIDER_HELP[provider]}</p>
       <label className="field">
         Model

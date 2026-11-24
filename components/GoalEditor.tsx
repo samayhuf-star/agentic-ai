@@ -25,8 +25,9 @@ export function GoalEditor({ goal }: { goal: string }) {
   return (
     <form className="stack" onSubmit={save}>
       <h2 style={{ fontSize: 28 }}>Main goal</h2>
+      <p className="goal-help">This only updates who is marked as picked for you.</p>
       <fieldset className="choices" style={{ border: 0, padding: 0, margin: 0 }}>
-        <legend className="muted">This only updates who is marked as picked for you.</legend>
+        <legend className="sr-only">Main goal</legend>
         {GOALS.map((item) => (
           <label key={item.id} className={value === item.id ? "onboard-choice on" : "onboard-choice"}>
             <input type="radio" name="goal" value={item.id} checked={value === item.id} onChange={() => setValue(item.id)} />
