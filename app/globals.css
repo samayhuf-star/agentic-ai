@@ -1050,6 +1050,187 @@ button.text-link:disabled {
   font-size: clamp(28px, 5vw, 40px);
 }
 
+.stats-page {
+  overflow-x: clip;
+}
+
+.stats-page h2 {
+  font-size: 28px;
+  margin: 28px 0 8px;
+}
+
+.stats-bar {
+  margin: 12px 0 18px;
+}
+
+.stats-filters,
+.stats-bar .row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-end;
+  margin: 8px 0;
+}
+
+.stats-filters a,
+.stats-bar .row-actions a {
+  color: var(--dim);
+  text-decoration: none;
+  padding: 8px 10px;
+  border-radius: 10px;
+}
+
+.stats-filters a.on,
+.stats-bar .row-actions a.on {
+  background: rgba(200, 242, 90, 0.12);
+  color: var(--lime);
+}
+
+.stats-filters label {
+  display: grid;
+  gap: 4px;
+  color: var(--dim);
+  font-size: 13px;
+}
+
+.stats-filters input[type="date"] {
+  width: auto;
+}
+
+.stats-chart {
+  width: 100%;
+  max-width: 720px;
+  height: auto;
+  background: #0b0f12;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+
+.chart-axis {
+  display: flex;
+  max-width: 720px;
+  margin-top: 6px;
+  color: var(--dim);
+  font-size: 12px;
+}
+
+.chart-axis span {
+  flex: 1 1 0;
+  min-width: 0;
+  text-align: center;
+}
+
+.chart-caption {
+  color: var(--dim);
+  margin: 0 0 8px;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  max-width: 100%;
+}
+
+.chip-row a {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.funnel {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.funnel li {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 12px;
+  align-items: center;
+  background: #10161b;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.order-cards {
+  display: none;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px;
+  gap: 10px;
+}
+
+.order-card {
+  display: grid;
+  gap: 4px;
+  background: #10161b;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+}
+
+.order-card b {
+  font-size: 22px;
+}
+
+.confirm-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(0, 0, 0, 0.72);
+  display: grid;
+  place-items: center;
+  padding: 18px;
+}
+
+.confirm-card {
+  width: min(420px, 100%);
+  background: #0b0f12;
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 18px;
+}
+
+.confirm-card h2 {
+  font-size: 26px;
+  margin: 0 0 8px;
+}
+
+@media (max-width: 640px) {
+  .orders-table {
+    display: none;
+  }
+  .order-cards {
+    display: grid;
+  }
+  .chart-axis .tick:not(.tick-major) {
+    font-size: 0;
+  }
+  .stats-filters,
+  .chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .stats-filters .chip-row {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    width: 100%;
+  }
+  .stats-filters input[type="date"] {
+    max-width: 148px;
+  }
+  .funnel li {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+}
+
 .pay-spin {
   width: 42px;
   height: 42px;

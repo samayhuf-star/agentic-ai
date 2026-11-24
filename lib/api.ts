@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSessionFromRequest } from "@/lib/auth";
+import { isAdminEmail } from "@/lib/config";
 import { prisma } from "@/lib/prisma";
 
 export function json(body: unknown, status = 200) {
@@ -24,6 +25,6 @@ export async function requireUser(request: Request) {
 
 export async function requireAdmin(request: Request) {
   const session = await getSessionFromRequest(request);
-  if (!session?.isAdmin) return null;
+  if (!session?.isAdmin || !isAdminEmail(session.email)) return null;
   return session;
 }

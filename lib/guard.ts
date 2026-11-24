@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { isAdminEmail } from "@/lib/config";
+import { istDayStart } from "@/lib/ist";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/session";
 import { ensureTeam } from "@/lib/team";
@@ -32,9 +33,7 @@ export async function requireOnboardingUser() {
 }
 
 export function startOfTodayIst() {
-  const now = new Date();
-  const ist = new Date(now.getTime() + 5.5 * 60 * 60 * 1000);
-  return new Date(Date.UTC(ist.getUTCFullYear(), ist.getUTCMonth(), ist.getUTCDate()) - 5.5 * 60 * 60 * 1000);
+  return istDayStart(new Date());
 }
 
 export async function needsYesCount(userId: string) {

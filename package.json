@@ -8,7 +8,7 @@
     "start": "next start -H 0.0.0.0 -p ${PORT:-3000}",
     "start:railway": "prisma migrate deploy && next start -H 0.0.0.0 -p ${PORT:-3000}",
     "lint": "eslint .",
-    "test": "node scripts/with-local-db.mjs --push --seed -- tsx --test tests/content.test.ts tests/checkout-flow.test.ts tests/alerts-followups.test.ts",
+    "test": "node scripts/with-local-db.mjs --push --seed -- tsx --test --test-concurrency=1 tests/content.test.ts tests/checkout-flow.test.ts tests/alerts-followups.test.ts tests/admin-stats.test.ts",
     "test:otp": "playwright test tests/otp-paste.spec.ts",
     "setup": "node scripts/with-local-db.mjs --push --seed -- node -e \"console.log('Database is ready.')\"",
     "postinstall": "prisma generate"
