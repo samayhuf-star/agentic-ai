@@ -1,5 +1,5 @@
-import { OnboardingForm } from "@/components/OnboardingForm";
-import { AccountHeader, SiteFooter } from "@/components/SiteChrome";
+import { PreviewOnboarding } from "@/components/PreviewOnboarding";
+import { SiteFooter } from "@/components/SiteChrome";
 import { requireOnboardingUser } from "@/lib/guard";
 
 export const dynamic = "force-dynamic";
@@ -8,9 +8,11 @@ export default async function OnboardingPage() {
   await requireOnboardingUser();
   return (
     <>
-      <AccountHeader />
-      <main className="wrap onboard">
-        <OnboardingForm />
+      <main className="preview-onboard layout-c">
+        <header className="onboard-bar">AI Time Machine</header>
+        <div className="wrap onboard">
+          <PreviewOnboarding />
+        </div>
       </main>
       <SiteFooter />
     </>

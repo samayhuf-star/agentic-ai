@@ -2,6 +2,7 @@ import { json, readJson, requireUser } from "@/lib/api";
 import { getSessionFromRequest } from "@/lib/auth";
 import { isAdminEmail, isStaffEmail } from "@/lib/config";
 import { publicKeyFor } from "@/lib/ai/keys";
+import { validateBusinessSelection } from "@/lib/business-profile";
 import { prisma } from "@/lib/prisma";
 import { assembleTeam, readGoal } from "@/lib/team";
 
@@ -21,18 +22,28 @@ export async function POST(request: Request) {
     return json({ ok: true, redirect: "/dashboard" });
   }
   const businessName = String(body.businessName || "").trim();
-  const sells = String(body.sells || "").trim();
   const goal = readGoal(body.goal);
   if (businessName.length < 2 || businessName.length > 80) {
     return json({ message: "Tell us the business name, in a few words." }, 400);
   }
-  if (sells.length < 2 || sells.length > 200) {
+  if (!goal) return json({ message: "Pick the main thing you want help with." }, 400);
+  let sells = String(body.sells || "").trim();
+  let category: string | undefined;
+  let businessType: string | undefined;
+  let customType: string | null | undefined;
+  if (body.category) {
+    const parsed = validateBusinessSelection(body);
+    if (!parsed.ok) return json({ message: parsed.message }, 400);
+    sells = parsed.value.sells;
+    category = parsed.value.category;
+    businessType = parsed.value.businessType;
+    customType = parsed.value.customType;
+  } else if (sells.length < 2 || sells.length > 200) {
     return json({ message: "Tell us what you sell, in a short line." }, 400);
   }
-  if (!goal) return json({ message: "Pick the main thing you want help with." }, 400);
   await prisma.user.update({
     where: { id: user.id },
-    data: { businessName, sells, goal },
+    data: { businessName, sells, goal, ...(category ? { category, businessType, customType } : {}) },
   });
   const team = await assembleTeam(user.id, goal, { applyEnabled: true });
   const key = await publicKeyFor(user.id);

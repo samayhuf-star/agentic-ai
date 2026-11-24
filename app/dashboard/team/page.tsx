@@ -16,7 +16,7 @@ export default async function TeamPage() {
   });
   const attention = await attentionMap(userId);
   return (
-    <div>
+    <div className="team-page">
       <p className="br-kicker">My team</p>
       <h1>55 agents. You choose who is on.</h1>
       <p className="muted">Pinned people stay at the top. Drag a card to change the order in its group.</p>
@@ -40,6 +40,8 @@ export default async function TeamPage() {
             pinned: row.pinned,
             needsYou: attention.get(row.agentId)?.needsYou || false,
             needsCount: attention.get(row.agentId)?.count || 0,
+            needsItems: attention.get(row.agentId)?.items || [],
+            sortOrder: row.sortOrder,
           }))}
         />
       )}

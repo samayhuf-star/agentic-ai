@@ -3,6 +3,7 @@ import { ChatPanel } from "@/components/ChatPanel";
 import { requireDashboardUser } from "@/lib/guard";
 import { publicKeyFor } from "@/lib/ai/keys";
 import { prisma } from "@/lib/prisma";
+import { chatHasUsableKey } from "@/lib/chat-view";
 import { attentionMap, teamOrder } from "@/lib/team";
 
 export const dynamic = "force-dynamic";
@@ -38,7 +39,7 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
   return (
     <div className="chat-page">
       <p className="br-kicker">Talk to an agent</p>
-      <h1>Plain words. Connect your AI key once.</h1>
+      <h1>Talk to an agent</h1>
       {memberships.length === 0 ? (
         <p className="muted">
           No agents are on this page yet. <Link href="/dashboard/team">Open my team</Link> or write to{" "}
@@ -50,7 +51,7 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
         <ChatPanel
           key={active || "none"}
           activeId={active || memberships[0].agentId}
-          hasKey={Boolean(key) || platform}
+          hasKey={chatHasUsableKey(Boolean(key), platform)}
           agents={memberships.map((row) => ({
             id: row.agentId,
             name: row.agent.name,
