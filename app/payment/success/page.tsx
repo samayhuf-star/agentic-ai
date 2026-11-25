@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { PaymentCodeForm } from "@/components/PaymentCodeForm";
+import { GtmSuccess } from "@/components/marketing/GtmSuccess";
 import { PurchaseEvent } from "@/components/marketing/Pixels";
 import { QuietHeader, SiteFooter } from "@/components/SiteChrome";
 import { confirmPendingCashfreeOrder } from "@/lib/payments/confirm";
@@ -15,9 +16,18 @@ export default async function PaymentSuccessPage({ searchParams }: { searchParam
   const payment = orderId ? await prisma.payment.findUnique({ where: { id: orderId } }) : null;
   const paid = payment?.status === "paid" || payment?.status === "paid_unassigned";
   const failed = payment?.status === "failed";
+  const gtmPurchase =
+    payment &&
+    paid &&
+    payment.gateway === "cashfree" &&
+    payment.gatewayConfirmedAt &&
+    !payment.isTest
+      ? { transaction_id: payment.id, value: payment.amountInr }
+      : undefined;
 
   return (
     <>
+      <GtmSuccess purchase={gtmPurchase} />
       <QuietHeader />
       <main className="wrap onboard checkout">
         {!payment ? (
