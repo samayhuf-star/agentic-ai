@@ -7,9 +7,7 @@ import { appOrigin } from "@/lib/config";
 import { newPartnerToken, partnerUrl, suggestCode } from "@/lib/affiliates/core";
 import { sendWelcomeEmail } from "@/lib/affiliates/email";
 import { DEFAULT_RULE, followers } from "@/lib/affiliates/input";
-import { maskedSummary, readPayout, sealPayout } from "@/lib/affiliates/payout";
 import { socialUrl } from "@/lib/affiliates/social";
-import { MissingEncryptionKey } from "@/lib/encryption";
 import { prisma } from "@/lib/prisma";
 import { clientIp, hitLimit } from "@/lib/rate-limit";
 
@@ -36,7 +34,6 @@ export async function POST(request: Request) {
     const niche = v.text(body.niche, "Niche", 80, true);
     const pitch = v.text(body.pitch, "Content plan", 2000, true);
     if (body.terms !== true) throw new v.InputError("Please agree to the partner terms.");
-    const payout = readPayout((body.payout as Record<string, unknown>) || {}, { optional: true });
 
     const existing = await prisma.affiliate.findFirst({ where: { email: { equals: email, mode: "insensitive" } } });
     if (existing) {
@@ -72,7 +69,6 @@ export async function POST(request: Request) {
         source: "application",
         appliedAt: now,
         termsAcceptedAt: now,
-        ...(payout ? { payoutEnc: sealPayout(payout), payoutMasked: maskedSummary(payout), payoutUpdatedAt: now, payoutUpdatedBy: "creator" } : {}),
       },
     });
     await audit(`applicant:${email}`, "affiliate.apply", "affiliate", affiliate.id, `New partner application from ${name} (${code})`, {
@@ -84,7 +80,6 @@ export async function POST(request: Request) {
     return json({ ok: true, dashboardUrl: partnerUrl(appOrigin(request), affiliate.token), emailed }, 201);
   } catch (error) {
     if (error instanceof v.InputError) return json({ message: error.message }, 400);
-    if (error instanceof MissingEncryptionKey) return json({ message: "We can't save payout details right now. Leave them blank and add them later from your dashboard." }, 400);
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") return json({ message: "Please try again." }, 409);
     console.error(error);
     return json({ message: "Could not send your application. Please try again." }, 500);

@@ -7,6 +7,7 @@ import {
 } from "@/lib/payments/signature";
 import { parseCashfreeEvent, parseFormOrJson, parsePayuEvent, parseRazorpayEvent } from "@/lib/payments/parse";
 import { fulfillPayment } from "@/lib/payments/fulfill";
+import { markCashfreeConfirmed } from "@/lib/payments/confirmed";
 
 export async function handleWebhook(gatewayName: string, raw: string, headers: Headers) {
   if (!isGateway(gatewayName)) return { status: 404, body: { message: "Unknown payment gateway." } };
@@ -26,6 +27,7 @@ export async function handleWebhook(gatewayName: string, raw: string, headers: H
         ? parseRazorpayEvent(payload)
         : parsePayuEvent(payload);
   await fulfillPayment(gatewayName, event);
+  if (gatewayName === "cashfree" && event.status === "paid" && event.orderId) await markCashfreeConfirmed(event.orderId, "webhook");
   return { status: 200, body: { ok: true } };
 }
 

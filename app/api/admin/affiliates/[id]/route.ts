@@ -6,11 +6,19 @@ import { InputError } from "@/lib/admin/validate";
 import { newPartnerToken } from "@/lib/affiliates/core";
 import { readAffiliate } from "@/lib/affiliates/input";
 import { maskedSummary, readPayout, sealPayout } from "@/lib/affiliates/payout";
-import { sendApprovalEmail } from "@/lib/affiliates/email";
+import { sendApprovalEmail, sendRejectionEmail, type EmailStatus } from "@/lib/affiliates/email";
+import * as v from "@/lib/admin/validate";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+function emailNote(status: EmailStatus) {
+  if (status === "sent") return "We emailed them.";
+  if (status === "not_configured") return "Email NOT sent: Resend is not set up (RESEND_API_KEY). Use Resend email later.";
+  if (status === "no_email") return "No email on file, so nothing was sent.";
+  return "The email failed to send. Try Resend email.";
+}
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -37,15 +45,28 @@ export async function PATCH(request: Request, { params }: Params) {
     }
     if (action === "approve") {
       if (affiliate.status === "active") return json({ ok: true, message: "Already active." });
-      await prisma.affiliate.update({ where: { id }, data: { status: "active", reviewedAt: new Date(), reviewedBy: actor } });
-      await audit(actor, "affiliate.approve", "affiliate", id, `Approved ${affiliate.name} (${affiliate.code})`, { from: affiliate.status });
-      const mailed = affiliate.status === "pending" ? await sendApprovalEmail(affiliate) : false;
-      return json({ ok: true, message: `Approved. Their link is live now.${mailed ? " We emailed them." : ""}` });
+      await prisma.affiliate.update({ where: { id }, data: { status: "active", reviewedAt: new Date(), reviewedBy: actor, rejectReason: null } });
+      const mail = await sendApprovalEmail(affiliate);
+      await audit(actor, "affiliate.approve", "affiliate", id, `Approved ${affiliate.name} (${affiliate.code}); email ${mail}`, { from: affiliate.status, email: mail });
+      return json({ ok: true, email: mail, message: `Approved. Their link is live now. ${emailNote(mail)}` });
     }
     if (action === "reject") {
-      await prisma.affiliate.update({ where: { id }, data: { status: "rejected", reviewedAt: new Date(), reviewedBy: actor } });
-      await audit(actor, "affiliate.reject", "affiliate", id, `Rejected ${affiliate.name} (${affiliate.code})`, { from: affiliate.status });
-      return json({ ok: true, message: "Rejected. Their link does not track and their page shows nothing." });
+      const reason = v.text(body.reason, "Reason", 500);
+      await prisma.affiliate.update({ where: { id }, data: { status: "rejected", reviewedAt: new Date(), reviewedBy: actor, rejectReason: reason } });
+      const mail = await sendRejectionEmail({ ...affiliate, rejectReason: reason });
+      await audit(actor, "affiliate.reject", "affiliate", id, `Rejected ${affiliate.name} (${affiliate.code}); email ${mail}`, { from: affiliate.status, reason, email: mail });
+      return json({ ok: true, email: mail, message: `Rejected. Their link does not track. ${emailNote(mail)}` });
+    }
+    if (action === "resendEmail") {
+      const mail =
+        affiliate.status === "active" || affiliate.status === "paused"
+          ? await sendApprovalEmail(affiliate)
+          : affiliate.status === "rejected"
+            ? await sendRejectionEmail(affiliate)
+            : null;
+      if (!mail) throw new InputError("Approve or reject first; then the decision email can be sent.");
+      await audit(actor, "affiliate.email", "affiliate", id, `Re-sent decision email to ${affiliate.name}: ${mail}`, { email: mail });
+      return json({ ok: mail === "sent", email: mail, message: emailNote(mail) }, mail === "sent" ? 200 : 502);
     }
     if (action === "payout") {
       const details = readPayout(body);

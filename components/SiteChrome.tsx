@@ -117,6 +117,29 @@ export function SiteFooter() {
   );
 }
 
+/** Footer without company details, for partner pages. */
+export function MinimalFooter() {
+  return (
+    <footer>
+      <div className="wrap foot">
+        <div>
+          <Link className="logo" href="/">
+            <i />
+            AI Time Machine
+          </Link>
+        </div>
+        <div className="foot-r">
+          <nav className="foot-policies" aria-label="Partner links">
+            <Link href="/partners/terms">Partner terms</Link>
+            <Link href="/privacy">Privacy</Link>
+          </nav>
+          <small>© 2026 AI Time Machine</small>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
 export function PolicyFrame({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <>

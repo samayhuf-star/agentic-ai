@@ -1,3 +1,4 @@
+import { stamp, type StoredTouch } from "@/lib/marketing/server";
 import { randomBytes } from "node:crypto";
 import type { Prisma } from "@prisma/client";
 import type { PaymentStatus } from "@/lib/admin/validate";
@@ -24,6 +25,8 @@ export type ManualPaymentInput = {
 
 export async function createManualPayment(tx: Prisma.TransactionClient, input: ManualPaymentInput) {
   const now = new Date();
+  const user = input.userId ? await tx.user.findUnique({ where: { id: input.userId }, select: { mktFirst: true, mktLast: true } }) : null;
+  const mk = stamp((user?.mktFirst as StoredTouch | null) ?? null, (user?.mktLast as StoredTouch | null) ?? null, input.affiliateId ?? null);
   return tx.payment.create({
     data: {
       id: manualPaymentId(),
@@ -46,6 +49,7 @@ export async function createManualPayment(tx: Prisma.TransactionClient, input: M
       refundedBy: input.status === "refunded" ? input.actor : null,
       raw: { source: "admin_manual", by: input.actor },
       affiliateId: input.affiliateId ?? null,
+      ...mk,
     },
   });
 }

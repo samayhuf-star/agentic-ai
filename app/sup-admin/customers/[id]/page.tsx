@@ -1,3 +1,4 @@
+import { AttributionCard } from "@/components/marketing/AttributionCard";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AdminKicker } from "@/components/admin/AdminKicker";
@@ -141,6 +142,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
         </section>
       </div>
 
+      <AttributionCard first={user.mktFirst} last={user.mktLast} channelFirst={user.channelFirst} channelLast={user.channelLast} />
       <section className="adm-section">
         <h2>Payments</h2>
         <div className="table-wrap">

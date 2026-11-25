@@ -1,5 +1,6 @@
 "use client";
 
+import { trackLead } from "@/lib/marketing/pixel-client";
 import { useState } from "react";
 import { indianMobile } from "@/lib/phone";
 
@@ -41,13 +42,14 @@ export function CheckoutForm({ price }: { price: string }) {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ name, email, phone }),
     });
-    const data = (await response.json().catch(() => ({}))) as { message?: string; field?: string; redirect?: string };
+    const data = (await response.json().catch(() => ({}))) as { message?: string; field?: string; redirect?: string; leadEventId?: string };
     setBusy(false);
     if (!response.ok || !data.redirect) {
       const field = data.field === "name" || data.field === "email" || data.field === "phone" ? data.field : "form";
       setErrors({ [field]: data.message || "We could not open checkout. Please try again." });
       return;
     }
+    if (data.leadEventId) trackLead(data.leadEventId);
     window.location.assign(data.redirect);
   }
 

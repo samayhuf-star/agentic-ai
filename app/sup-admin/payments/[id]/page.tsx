@@ -1,3 +1,4 @@
+import { AttributionCard } from "@/components/marketing/AttributionCard";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AdminKicker } from "@/components/admin/AdminKicker";
@@ -35,9 +36,19 @@ export default async function PaymentDetailPage({ params }: { params: Promise<{ 
             {money(payment.amountInr)} <span className={`pill ${payment.status}`}>{payment.status}</span>
             {payment.isTest ? <span className="test-badge">TEST</span> : null}
           </h1>
-          <p className="muted">{payment.id}</p>
+          <p className="muted">
+            {payment.id} ·{" "}
+            {manual ? (
+              <span className="pill">manual</span>
+            ) : payment.gatewayConfirmedAt ? (
+              <span className="pill paid">Cashfree-confirmed ({payment.gatewayConfirmedVia}) {formatIst(payment.gatewayConfirmedAt)}</span>
+            ) : (
+              <span className="pill">not confirmed by {payment.gateway}: not counted as a sale</span>
+            )}
+          </p>
         </div>
       </div>
+      <AttributionCard first={payment.mktFirst} last={payment.mktLast} channelFirst={payment.channelFirst} channelLast={payment.channelLast} note={payment.gclid ? `gclid on file for Google Ads offline upload.` : undefined} />
       <div className="adm-cols">
         <section className="adm-section">
           <h2>Edit</h2>

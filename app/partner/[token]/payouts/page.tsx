@@ -29,6 +29,10 @@ export default async function PartnerPayouts({ params }: { params: Promise<{ tok
         <p>Commission payouts are paid to your account below.</p>
         {a.status === "rejected" ? (
           <p className="muted">Not available.</p>
+        ) : a.status === "pending" ? (
+          <p className="muted">
+            <b>Add payout details after approval.</b> Once you&apos;re approved, you can add your UPI ID or bank account here.
+          </p>
         ) : (
           <PayoutForm url={`/api/partner/${token}/payout`} method="PUT" current={a.payoutMasked} />
         )}

@@ -15,7 +15,7 @@ export default async function PartnerSales({ params }: { params: Promise<{ token
   const k = approved ? (await affiliateKpis([a.id])).get(a.id) : null;
   const clicks = k && show("clicks") ? k.clicks : null;
   const signups = k && show("signups") ? k.signups : null;
-  const sales = k?.paid ?? 0;
+  const sales = (k?.paid ?? 0) + (k?.manualPaid ?? 0);
   const steps = [
     { label: "Clicks", n: clicks },
     { label: "Signups", n: signups },

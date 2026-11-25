@@ -1,3 +1,4 @@
+import { markCashfreeConfirmed } from "@/lib/payments/confirmed";
 import { fetchCashfreeOrder } from "@/lib/payments/cashfree-order";
 import { fulfillPayment } from "@/lib/payments/fulfill";
 import { prisma } from "@/lib/prisma";
@@ -46,7 +47,10 @@ export async function confirmPendingCashfreeOrder(orderId: string) {
     });
     return prisma.payment.findUnique({ where: { id: orderId } });
   }
-  if (orderStatus !== "PAID" && payment.status !== "paid" && payment.status !== "paid_unassigned") return payment;
+  const cashfreePaid = orderStatus === "PAID";
+  // Not paid at Cashfree and not paid here: nothing to do. (A row already paid here is re-fulfilled
+  // as before, but only a PAID answer from Cashfree marks it as a confirmed sale.)
+  if (!cashfreePaid && payment.status !== "paid" && payment.status !== "paid_unassigned") return payment;
   await fulfillPayment("cashfree", {
     orderId,
     status: "paid",
@@ -58,5 +62,6 @@ export async function confirmPendingCashfreeOrder(orderId: string) {
     gatewayPaymentId: null,
     raw: body,
   });
+  if (cashfreePaid) await markCashfreeConfirmed(orderId, "api");
   return prisma.payment.findUnique({ where: { id: orderId } });
 }

@@ -12,7 +12,10 @@ export function GET(request: Request) {
 export async function POST(request: Request) {
   const result = await createCheckout(request);
   const wantsJson = (request.headers.get("content-type") || "").includes("application/json");
-  if (result.redirect && wantsJson) return NextResponse.json({ redirect: result.redirect });
+  if (result.redirect && wantsJson) {
+    const orderId = "orderId" in result ? result.orderId : undefined;
+    return NextResponse.json({ redirect: result.redirect, leadEventId: orderId ? `lead_${orderId}` : undefined });
+  }
   if (result.redirect) return NextResponse.redirect(result.redirect, 303);
   return NextResponse.json({ message: result.message, field: "field" in result ? result.field : undefined }, { status: result.status });
 }

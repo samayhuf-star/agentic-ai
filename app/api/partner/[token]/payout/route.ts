@@ -16,6 +16,7 @@ export async function PUT(request: Request, { params }: Params) {
   const gate = await requirePartnerWrite(request, token);
   if (!gate.ok) return gate.response;
   const { affiliate, actor } = gate;
+  if (affiliate.status === "pending") return json({ message: "Add payout details after approval." }, 403);
   try {
     const details = readPayout(await readJson(request));
     if (!details) throw new InputError("Add payout details.");

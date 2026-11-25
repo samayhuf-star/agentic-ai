@@ -1,6 +1,7 @@
 import { AdminShell } from "@/components/admin/console/AdminShell";
 import { requireAdminPage } from "@/lib/admin/guard";
 import "./admin.css";
+import "../affiliates.css";
 
 export const dynamic = "force-dynamic";
 

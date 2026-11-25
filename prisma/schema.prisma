@@ -27,6 +27,10 @@ model User {
   emailTokenExpires  DateTime?
   name               String?
   city               String?
+  mktFirst           Json?
+  mktLast            Json?
+  channelFirst       String?
+  channelLast        String?
   adminNotes         String?
   suspendedAt        DateTime?
   createdByAdmin     String?
@@ -44,32 +48,40 @@ model User {
 }
 
 model Payment {
-  id               String     @id
-  userId           String?
-  user             User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
-  gateway          String
-  amountInr        Int
-  status           String
-  isTest           Boolean    @default(false)
-  phone            String?
-  email            String?
-  name             String?
-  gatewayPaymentId String?
-  raw              Json?
-  smsSentAt        DateTime?
-  createdAt        DateTime   @default(now())
-  paidAt           DateTime?
-  refundedAt       DateTime?
-  refundedBy       String?
-  method           String?
-  reference        String?
-  adminNote        String?
-  createdBy        String?
-  updatedAt        DateTime?  @updatedAt
-  affiliateId      String?
-  affiliate        Affiliate? @relation(fields: [affiliateId], references: [id], onDelete: SetNull)
-  refClickId       String?
-  refPostId        String?
+  id                  String     @id
+  userId              String?
+  user                User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  gateway             String
+  amountInr           Int
+  status              String
+  isTest              Boolean    @default(false)
+  phone               String?
+  email               String?
+  name                String?
+  gatewayPaymentId    String?
+  raw                 Json?
+  smsSentAt           DateTime?
+  createdAt           DateTime   @default(now())
+  paidAt              DateTime?
+  refundedAt          DateTime?
+  refundedBy          String?
+  method              String?
+  reference           String?
+  adminNote           String?
+  createdBy           String?
+  updatedAt           DateTime?  @updatedAt
+  affiliateId         String?
+  affiliate           Affiliate? @relation(fields: [affiliateId], references: [id], onDelete: SetNull)
+  refClickId          String?
+  refPostId           String?
+  gatewayConfirmedAt  DateTime?
+  gatewayConfirmedVia String?
+  mktFirst            Json?
+  mktLast             Json?
+  channelFirst        String?
+  channelLast         String?
+  gclid               String?
+  capiPurchaseAt      DateTime?
 
   @@index([affiliateId])
   @@index([status])
@@ -308,6 +320,11 @@ model Affiliate {
   payoutUpdatedAt DateTime?
   payoutUpdatedBy String?
   payoutCheckedAt DateTime?
+  rejectReason    String?
+  lastEmailKind   String?
+  lastEmailStatus String?
+  lastEmailAt     DateTime?
+  lastEmailError  String?
   createdBy       String?
   createdAt       DateTime              @default(now())
   updatedAt       DateTime              @updatedAt

@@ -106,8 +106,12 @@ export function SideShell({
     };
   }, [open, close]);
 
-  const isActive = (item: SideItem) =>
-    item.exact ? pathname === item.href : pathname === item.href || pathname.startsWith(`${item.href}/`);
+  const matches = (item: SideItem) => (item.exact ? pathname === item.href : pathname === item.href || pathname.startsWith(`${item.href}/`));
+  const best = groups
+    .flatMap((g) => g.items)
+    .filter(matches)
+    .sort((a, b) => b.href.length - a.href.length)[0]?.href;
+  const isActive = (item: SideItem) => item.href === best;
 
   return (
     <div className={`adm-shell${collapsed ? " is-collapsed" : ""}${open ? " is-open" : ""}`}>

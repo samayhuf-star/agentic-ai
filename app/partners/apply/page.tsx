@@ -1,5 +1,5 @@
 import { ApplyForm } from "@/components/affiliates/ApplyForm";
-import { SiteFooter, SiteHeader } from "@/components/SiteChrome";
+import { MinimalFooter, SiteHeader } from "@/components/SiteChrome";
 import "../../affiliates.css";
 import "../../sup-admin/admin.css";
 
@@ -22,11 +22,11 @@ export default function ApplyPage() {
         <ul className="apply-points">
           <li>Your own link and a separate link for each post, so you see which post sold</li>
           <li>Commission on every paid sale through your link (30-day tracking)</li>
-          <li>Payouts to your UPI or bank account</li>
+          <li>Payouts to your UPI or bank account (you add these after approval)</li>
         </ul>
         <ApplyForm />
       </main>
-      <SiteFooter />
+      <MinimalFooter />
     </>
   );
 }

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AdminKicker } from "@/components/admin/AdminKicker";
 import { ActionButton } from "@/components/admin/console/ActionButton";
+import { DecisionButtons } from "@/components/affiliates/DecisionButtons";
 import { AffiliateForm } from "@/components/affiliates/AffiliateForm";
 import { CommissionActions, CommissionBulk } from "@/components/affiliates/CommissionTools";
 import { LinkRow } from "@/components/affiliates/CopyButton";
@@ -61,11 +62,8 @@ export default async function AffiliateDetailPage({ params, searchParams }: { pa
           </p>
         </div>
         <div className="row-actions">
-          {a.status === "pending" || a.status === "rejected" ? (
-            <ActionButton url={api} method="PATCH" body={{ action: "approve" }} label="Approve" readOnly={readOnly} />
-          ) : null}
-          {a.status === "pending" ? (
-            <ActionButton url={api} method="PATCH" body={{ action: "reject" }} label="Reject" danger confirmTitle={`Reject ${a.name}?`} readOnly={readOnly} />
+          {a.status === "pending" || a.status === "rejected" || a.lastEmailStatus !== "sent" ? (
+            <DecisionButtons id={a.id} status={a.status} canResend={a.status !== "pending" && a.lastEmailStatus !== "sent"} readOnly={readOnly} />
           ) : null}
           {a.status === "active" ? (
             <ActionButton url={api} method="PATCH" body={{ action: "pause" }} label="Pause" confirmTitle="Pause this affiliate?" confirmText="New clicks stop being tracked. Earned commission stays." readOnly={readOnly} />
@@ -139,6 +137,18 @@ export default async function AffiliateDetailPage({ params, searchParams }: { pa
             <dd>{a.niche || "—"}</dd>
             <dt>Plan</dt>
             <dd style={{ whiteSpace: "pre-wrap" }}>{a.pitch || "—"}</dd>
+            {a.rejectReason ? (
+              <>
+                <dt>Reject reason</dt>
+                <dd>{a.rejectReason}</dd>
+              </>
+            ) : null}
+            <dt>Last email</dt>
+            <dd>
+              {a.lastEmailStatus
+                ? `${a.lastEmailKind}: ${a.lastEmailStatus.replace("_", " ")} · ${a.lastEmailAt ? formatIst(a.lastEmailAt) : ""}${a.lastEmailError ? ` · ${a.lastEmailError}` : ""}`
+                : "—"}
+            </dd>
             {a.reviewedAt ? (
               <>
                 <dt>Reviewed</dt>
@@ -199,15 +209,20 @@ export default async function AffiliateDetailPage({ params, searchParams }: { pa
             <b>{k.signups}</b>
           </div>
           <div className="stat y">
-            <small>Paid sales</small>
+            <small>Paid sales (Cashfree-confirmed)</small>
             <b>{k.paid}</b>
+          </div>
+          <div className="stat">
+            <small>Manual sales (admin-recorded)</small>
+            <b>{k.manualPaid}</b>
+            <span className="muted">{money(k.manualRevenue)}</span>
           </div>
           <div className="stat">
             <small>Conversion</small>
             <b>{conversionRate(k)}</b>
           </div>
           <div className="stat y">
-            <small>Revenue</small>
+            <small>Revenue (Cashfree)</small>
             <b>{money(k.revenue)}</b>
           </div>
           <div className="stat">

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { PaymentCodeForm } from "@/components/PaymentCodeForm";
+import { PurchaseEvent } from "@/components/marketing/Pixels";
 import { QuietHeader, SiteFooter } from "@/components/SiteChrome";
 import { confirmPendingCashfreeOrder } from "@/lib/payments/confirm";
 import { prisma } from "@/lib/prisma";
@@ -29,6 +30,7 @@ export default async function PaymentSuccessPage({ searchParams }: { searchParam
           </>
         ) : paid && payment.email ? (
           <>
+            {payment.gateway === "cashfree" && payment.gatewayConfirmedAt && !payment.isTest ? <PurchaseEvent orderId={payment.id} value={payment.amountInr} /> : null}
             <h1>Payment received</h1>
             <PaymentCodeForm email={payment.email} orderId={payment.id} />
           </>

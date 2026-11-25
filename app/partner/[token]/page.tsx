@@ -10,7 +10,7 @@ import { appOrigin } from "@/lib/config";
 
 export const dynamic = "force-dynamic";
 
-const ZERO: AffiliateKpis = { clicks: 0, signups: 0, paid: 0, revenue: 0, earned: 0, pending: 0, approved: 0, paidOut: 0, voided: 0 };
+const ZERO: AffiliateKpis = { clicks: 0, signups: 0, paid: 0, revenue: 0, manualPaid: 0, manualRevenue: 0, earned: 0, pending: 0, approved: 0, paidOut: 0, voided: 0 };
 
 export default async function PartnerOverview({ params, searchParams }: { params: Promise<{ token: string }>; searchParams: Promise<{ days?: string }> }) {
   const { token } = await params;
@@ -33,6 +33,14 @@ export default async function PartnerOverview({ params, searchParams }: { params
       <h1 style={{ marginBottom: 4 }}>Hi {a.name.split(" ")[0]}</h1>
       {approved ? <p className="muted">Your commission: {ruleLabel(a)}. Tracking lasts 30 days from a click; the last link clicked gets the sale.</p> : null}
       <StatusBanner status={a.status} />
+      {approved && !a.payoutEnc ? (
+        <div className="aff-review">
+          <b>Add payout details</b> so we can pay your commission.{" "}
+          <Link href={`/partner/${token}/payouts`} prefetch={false}>
+            Add them now →
+          </Link>
+        </div>
+      ) : null}
 
       <section className="adm-section">
         <h2>Your links</h2>
@@ -54,8 +62,8 @@ export default async function PartnerOverview({ params, searchParams }: { params
         <div className="stats">
           {showSales ? (
             <>
-              <Stat big label="Total conversions" value={num(k.paid)} sub="paid sales" />
-              <Stat big label="Total billing" value={inr(k.revenue)} sub="sale value you brought in" />
+              <Stat big label="Total conversions" value={num(k.paid + k.manualPaid)} sub="paid sales" />
+              <Stat big label="Total billing" value={inr(k.revenue + k.manualRevenue)} sub="sale value you brought in" />
             </>
           ) : null}
           {showCommission ? <Stat big label="Commission earned" value={inr(k.earned)} sub="pending + confirmed + paid" /> : null}

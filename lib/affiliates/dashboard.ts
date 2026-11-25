@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { maskEmail } from "@/lib/affiliates/core";
+import { CONFIRMED_GATEWAY_SALE, MANUAL_SALE } from "@/lib/payments/confirmed";
 
 export const BLOCKS = [
   { key: "clicks", label: "Clicks" },
@@ -96,7 +97,7 @@ export async function postsWithStats(affiliateId: string) {
   const ids = posts.map((p) => p.id);
   const [clicks, sales] = await Promise.all([
     prisma.affiliateClick.groupBy({ by: ["postId"], where: { postId: { in: ids } }, _count: { _all: true } }),
-    prisma.payment.groupBy({ by: ["refPostId"], where: { refPostId: { in: ids }, status: "paid", isTest: false }, _count: { _all: true }, _sum: { amountInr: true } }),
+    prisma.payment.groupBy({ by: ["refPostId"], where: { refPostId: { in: ids }, OR: [CONFIRMED_GATEWAY_SALE, MANUAL_SALE] }, _count: { _all: true }, _sum: { amountInr: true } }),
   ]);
   const c = new Map(clicks.map((r) => [r.postId, r._count._all]));
   const s = new Map(sales.map((r) => [r.refPostId, { n: r._count._all, revenue: r._sum.amountInr || 0 }]));

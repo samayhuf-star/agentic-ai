@@ -1,12 +1,17 @@
 import { Prisma } from "@prisma/client";
 import { istDayExpr, istDayKey } from "@/lib/ist";
 import { prisma } from "@/lib/prisma";
+import { CONFIRMED_GATEWAY_SALE, MANUAL_SALE } from "@/lib/payments/confirmed";
 
 export type AffiliateKpis = {
   clicks: number;
   signups: number;
+  /** Cashfree-confirmed sales only. */
   paid: number;
   revenue: number;
+  /** Admin-recorded manual sales, counted separately. */
+  manualPaid: number;
+  manualRevenue: number;
   earned: number;
   pending: number;
   approved: number;
@@ -14,7 +19,7 @@ export type AffiliateKpis = {
   voided: number;
 };
 
-const empty = (): AffiliateKpis => ({ clicks: 0, signups: 0, paid: 0, revenue: 0, earned: 0, pending: 0, approved: 0, paidOut: 0, voided: 0 });
+const empty = (): AffiliateKpis => ({ clicks: 0, signups: 0, paid: 0, revenue: 0, manualPaid: 0, manualRevenue: 0, earned: 0, pending: 0, approved: 0, paidOut: 0, voided: 0 });
 
 /**
  * signups = distinct buyers (email, else payment) who started an attributed checkout or got an attributed manual payment.
@@ -24,7 +29,7 @@ const empty = (): AffiliateKpis => ({ clicks: 0, signups: 0, paid: 0, revenue: 0
 export async function affiliateKpis(ids: string[]): Promise<Map<string, AffiliateKpis>> {
   const out = new Map(ids.map((id) => [id, empty()]));
   if (ids.length === 0) return out;
-  const [clicks, signups, paid, commissions] = await Promise.all([
+  const [clicks, signups, paid, manual, commissions] = await Promise.all([
     prisma.affiliateClick.groupBy({ by: ["affiliateId"], where: { affiliateId: { in: ids } }, _count: { _all: true } }),
     prisma.$queryRaw<{ affiliateId: string; n: number }[]>`
       SELECT "affiliateId", COUNT(DISTINCT COALESCE(LOWER(email), id))::int AS n
@@ -32,7 +37,13 @@ export async function affiliateKpis(ids: string[]): Promise<Map<string, Affiliat
       GROUP BY "affiliateId"`,
     prisma.payment.groupBy({
       by: ["affiliateId"],
-      where: { affiliateId: { in: ids }, status: "paid", isTest: false },
+      where: { affiliateId: { in: ids }, ...CONFIRMED_GATEWAY_SALE },
+      _count: { _all: true },
+      _sum: { amountInr: true },
+    }),
+    prisma.payment.groupBy({
+      by: ["affiliateId"],
+      where: { affiliateId: { in: ids }, ...MANUAL_SALE },
       _count: { _all: true },
       _sum: { amountInr: true },
     }),
@@ -45,6 +56,12 @@ export async function affiliateKpis(ids: string[]): Promise<Map<string, Affiliat
     const k = out.get(row.affiliateId)!;
     k.paid = row._count._all;
     k.revenue = row._sum.amountInr || 0;
+  }
+  for (const row of manual) {
+    if (!row.affiliateId) continue;
+    const k = out.get(row.affiliateId)!;
+    k.manualPaid = row._count._all;
+    k.manualRevenue = row._sum.amountInr || 0;
   }
   for (const row of commissions) {
     const k = out.get(row.affiliateId)!;
@@ -70,7 +87,8 @@ export async function affiliateDaily(affiliateId: string, days: number): Promise
       WHERE "affiliateId" = ${affiliateId} AND "createdAt" >= ${since} GROUP BY 1`,
     prisma.$queryRaw<{ day: string; n: number }[]>`
       SELECT ${paidDay} AS day, COUNT(*)::int AS n FROM "Payment"
-      WHERE "affiliateId" = ${affiliateId} AND status = 'paid' AND "isTest" = false AND COALESCE("paidAt", "createdAt") >= ${since} GROUP BY 1`,
+      WHERE "affiliateId" = ${affiliateId} AND status = 'paid' AND "isTest" = false
+        AND (gateway = 'manual' OR (gateway = 'cashfree' AND "gatewayConfirmedAt" IS NOT NULL)) AND COALESCE("paidAt", "createdAt") >= ${since} GROUP BY 1`,
     prisma.$queryRaw<{ day: string; n: number }[]>`
       SELECT ${clickDay} AS day, COALESCE(SUM("amountInr"), 0)::int AS n FROM "AffiliateCommission"
       WHERE "affiliateId" = ${affiliateId} AND status <> 'void' AND "createdAt" >= ${since} GROUP BY 1`,
@@ -86,7 +104,7 @@ export async function affiliateDaily(affiliateId: string, days: number): Promise
   return Array.from(map.values());
 }
 
-export function conversionRate(k: { clicks: number; paid: number }) {
+export function conversionRate(k: { clicks: number; paid: number; manualPaid?: number }) {
   if (!k.clicks) return "—";
-  return `${((k.paid / k.clicks) * 100).toFixed(1)}%`;
+  return `${(((k.paid + (k.manualPaid || 0)) / k.clicks) * 100).toFixed(1)}%`;
 }

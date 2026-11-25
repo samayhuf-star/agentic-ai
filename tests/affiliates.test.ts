@@ -16,6 +16,9 @@ import { maskedName, parseHidden, salesFeed, serializeHidden } from "../lib/affi
 import { maskedSummary, openPayout, readPayout, sealPayout } from "../lib/affiliates/payout";
 import { socialUrl } from "../lib/affiliates/social";
 import { decodeRefCookie, encodeRefCookie } from "../lib/affiliates/core";
+import { syncCommission } from "../lib/affiliates/commission";
+import { affiliateKpis } from "../lib/affiliates/stats";
+import { markCashfreeConfirmed } from "../lib/payments/confirmed";
 
 if (!process.env.AUTH_SECRET) process.env.AUTH_SECRET = "test-secret";
 if (!process.env.ENCRYPTION_KEY) process.env.ENCRYPTION_KEY = "a".repeat(64);
@@ -95,14 +98,14 @@ test("apply → pending gating → approve → tracking, posts, payout, feed", a
   assert.equal((await apply(req("/api/partners/apply", "POST", APPLICATION, undefined, { origin: "https://evil.example" }))).status, 403);
 
   const res = await apply(req("/api/partners/apply", "POST", { ...APPLICATION, payout: { upiId: "priya@okhdfc", upiIdConfirm: "priya@okhdfc", holderName: "Priya C" } }));
+  // Payout details are never taken at apply time.
   assert.equal(res.status, 201);
   const body = (await res.json()) as { dashboardUrl: string };
   const token = body.dashboardUrl.split("/partner/")[1];
   const a = await prisma.affiliate.findUniqueOrThrow({ where: { token } });
   assert.equal(a.status, "pending");
   assert.equal(a.followers, 12000);
-  assert.equal(a.payoutMasked, "UPI pri***@okhdfc — Priya");
-  assert.ok(a.payoutEnc && !a.payoutEnc.includes("priya"));
+  assert.equal(a.payoutEnc, null);
 
   // Re-applying never shows the token on screen.
   const again = await apply(req("/api/partners/apply", "POST", APPLICATION));
@@ -119,11 +122,17 @@ test("apply → pending gating → approve → tracking, posts, payout, feed", a
   assert.equal((await partnerAddPost(req(`/api/partner/${token}/posts`, "POST", { url: "https://www.instagram.com/reel/abc" }), tp(token))).status, 403);
   assert.equal((await partnerAddPost(req(`/api/partner/nope-not-a-real-token-xx/posts`, "POST", {}), tp("nope-not-a-real-token-xx"))).status, 404);
 
+  // Payout details are locked while pending.
+  assert.equal((await partnerPayout(req(`/api/partner/${token}/payout`, "PUT", { upiId: "x@ybl", upiIdConfirm: "x@ybl", holderName: "P" }), tp(token))).status, 403);
+
   // Approve requires an admin.
   const ap = { params: Promise.resolve({ id: a.id }) };
   assert.equal((await patchAffiliate(req(`/api/admin/affiliates/${a.id}`, "PATCH", { action: "approve" }), ap)).status, 401);
   assert.equal((await patchAffiliate(req(`/api/admin/affiliates/${a.id}`, "PATCH", { action: "approve" }, admin), { params: Promise.resolve({ id: a.id }) })).status, 200);
-  assert.equal((await prisma.affiliate.findUniqueOrThrow({ where: { id: a.id } })).status, "active");
+  const approved = await prisma.affiliate.findUniqueOrThrow({ where: { id: a.id } });
+  assert.equal(approved.status, "active");
+  assert.equal(approved.lastEmailKind, "approved");
+  assert.equal(approved.lastEmailStatus, process.env.RESEND_API_KEY ? "sent" : "not_configured");
 
   // Posts: creator adds, per-post click is tracked.
   const added = await partnerAddPost(req(`/api/partner/${token}/posts`, "POST", { url: "https://www.instagram.com/reel/abc123/", views: "1,200", likes: 80 }), tp(token));
@@ -166,5 +175,34 @@ test("apply → pending gating → approve → tracking, posts, payout, feed", a
   assert.equal(feed[0].sale, "Sale refunded");
   assert.equal(feed[0].commission, "your commission reversed ₹400");
 
+  // Cashfree rule: a gateway payment marked paid without Cashfree's confirmation earns nothing.
+  const cf = await prisma.payment.create({ data: { id: `brtest${Date.now()}`, gateway: "cashfree", amountInr: 1999, status: "paid", email: BUYER, affiliateId: a.id, paidAt: new Date() } });
+  await syncCommission(cf.id);
+  assert.equal(await prisma.affiliateCommission.count({ where: { paymentId: cf.id } }), 0);
+  const before = (await affiliateKpis([a.id])).get(a.id)!;
+  await markCashfreeConfirmed(cf.id, "webhook");
+  await markCashfreeConfirmed(cf.id, "webhook"); // idempotent
+  assert.equal(await prisma.affiliateCommission.count({ where: { paymentId: cf.id, status: "pending" } }), 1);
+  const after = (await affiliateKpis([a.id])).get(a.id)!;
+  assert.equal(after.paid, before.paid + 1);
+  assert.equal(after.manualPaid, 0); // the manual sale above was refunded
+  await prisma.affiliateCommission.deleteMany({ where: { paymentId: cf.id } });
+  await prisma.payment.delete({ where: { id: cf.id } });
+
+  await cleanup();
+});
+
+test("reject stores the reason and logs the decision email", async () => {
+  await cleanup();
+  const admin = await adminCookie();
+  const res = await apply(req("/api/partners/apply", "POST", APPLICATION));
+  const { dashboardUrl } = (await res.json()) as { dashboardUrl: string };
+  const a = await prisma.affiliate.findUniqueOrThrow({ where: { token: dashboardUrl.split("/partner/")[1] } });
+  const r = await patchAffiliate(req(`/api/admin/affiliates/${a.id}`, "PATCH", { action: "reject", reason: "Audience mostly outside India" }, admin), { params: Promise.resolve({ id: a.id }) });
+  assert.equal(r.status, 200);
+  const after = await prisma.affiliate.findUniqueOrThrow({ where: { id: a.id } });
+  assert.equal(after.status, "rejected");
+  assert.equal(after.rejectReason, "Audience mostly outside India");
+  assert.equal(after.lastEmailKind, "rejected");
   await cleanup();
 });

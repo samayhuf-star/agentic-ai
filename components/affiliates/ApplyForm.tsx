@@ -3,15 +3,12 @@
 import Link from "next/link";
 import { useState } from "react";
 import { CopyButton } from "@/components/affiliates/CopyButton";
-import { EMPTY_PAYOUT, PayoutFieldsInputs } from "@/components/affiliates/PayoutForm";
 
 const NICHES = ["Business & startups", "Marketing", "Tech & AI", "Finance", "Education", "Lifestyle", "Comedy & entertainment", "Other"];
 
 export function ApplyForm() {
   const [f, setF] = useState({ name: "", email: "", phone: "", city: "", instagramUrl: "", tiktokUrl: "", followers: "", niche: "", pitch: "", website: "" });
   const [terms, setTerms] = useState(false);
-  const [withPayout, setWithPayout] = useState(false);
-  const [payout, setPayout] = useState(EMPTY_PAYOUT);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState<{ url?: string; emailed?: boolean; text?: string } | null>(null);
@@ -27,7 +24,7 @@ export function ApplyForm() {
       const res = await fetch("/api/partners/apply", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ ...f, terms, payout: withPayout ? payout : undefined }),
+        body: JSON.stringify({ ...f, terms }),
       });
       const data = (await res.json().catch(() => ({}))) as { message?: string; dashboardUrl?: string; emailed?: boolean };
       if (!res.ok) setError(data.message || "Something went wrong. Try again.");
@@ -116,11 +113,6 @@ export function ApplyForm() {
           Website
           <input tabIndex={-1} autoComplete="off" value={f.website} onChange={set("website")} />
         </label>
-        <label className="aff-toggle">
-          <input type="checkbox" checked={withPayout} onChange={(e) => setWithPayout(e.target.checked)} />
-          Add payout details now (optional, you can add them later)
-        </label>
-        {withPayout ? <PayoutFieldsInputs values={payout} onChange={setPayout} /> : null}
         <label className="aff-toggle">
           <input type="checkbox" checked={terms} onChange={(e) => setTerms(e.target.checked)} />
           <span>

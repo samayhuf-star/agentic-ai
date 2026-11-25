@@ -24,7 +24,14 @@ export async function syncCommission(paymentId: string) {
       prisma.affiliateCommission.findUnique({ where: { key: saleKey } }),
       prisma.affiliateCommission.findUnique({ where: { key: clawKey } }),
     ]);
-    const eligible = Boolean(payment && payment.status === "paid" && !payment.isTest && payment.affiliateId);
+    // Only Cashfree-confirmed gateway sales, or manual payments where an admin picked the affiliate.
+    const eligible = Boolean(
+      payment &&
+        payment.status === "paid" &&
+        !payment.isTest &&
+        payment.affiliateId &&
+        (payment.gateway === "manual" || (payment.gateway === "cashfree" && payment.gatewayConfirmedAt)),
+    );
 
     if (eligible && payment && payment.affiliateId) {
       const affiliate = await prisma.affiliate.findUnique({ where: { id: payment.affiliateId } });

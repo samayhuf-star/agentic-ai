@@ -8,6 +8,7 @@ const GROUPS: SideGroup[] = [
       { href: "/sup-admin", label: "Overview", icon: "home", exact: true },
       { href: "/sup-admin/customers", label: "Customers", icon: "users" },
       { href: "/sup-admin/payments", label: "Payments", icon: "card" },
+      { href: "/sup-admin/payments/reconcile", label: "Cashfree recon", icon: "shield" },
       { href: "/sup-admin/affiliates", label: "Affiliates", icon: "link" },
       { href: "/sup-admin/agents", label: "Agents", icon: "bot" },
     ],
@@ -19,6 +20,7 @@ const GROUPS: SideGroup[] = [
       { href: "/sup-admin/stats/orders", label: "Orders", icon: "list" },
       { href: "/sup-admin/stats/customers", label: "Customer stats", icon: "pie" },
       { href: "/sup-admin/stats/funnel", label: "Funnel", icon: "funnel" },
+      { href: "/sup-admin/stats/sources", label: "Sales by source", icon: "pie" },
     ],
   },
   {

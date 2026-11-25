@@ -5,8 +5,8 @@ import { BUSINESS } from "@/lib/business";
 
 type EmailWriter = Prisma.TransactionClient | typeof prisma;
 
-export async function sendEmail(to: string, subject: string, text: string, db: EmailWriter = prisma) {
-  const from = process.env.RESEND_FROM || "AI Time Machine <no-reply@adiology.io>";
+export async function sendEmail(to: string, subject: string, text: string, db: EmailWriter = prisma, options: { from?: string } = {}) {
+  const from = options.from || process.env.RESEND_FROM || "AI Time Machine <no-reply@adiology.io>";
   const provider = process.env.RESEND_API_KEY ? "resend" : "mock";
   if (process.env.RESEND_API_KEY) {
     const response = await fetch("https://api.resend.com/emails", {
