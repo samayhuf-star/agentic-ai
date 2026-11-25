@@ -9,12 +9,13 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 
 const PER_PAGE = 50;
-const ENTITIES = ["", "customer", "payment", "agent"];
+const ENTITIES = ["", "customer", "payment", "agent", "affiliate"];
 
 function entityHref(entity: string, id: string | null) {
   if (!id) return null;
   if (entity === "customer") return `/sup-admin/customers/${id}`;
   if (entity === "payment") return `/sup-admin/payments/${encodeURIComponent(id)}`;
+  if (entity === "affiliate") return `/sup-admin/affiliates/${id}`;
   if (entity === "agent") return "/sup-admin/agents";
   return null;
 }

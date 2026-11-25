@@ -6,6 +6,7 @@ import { queueOwnerAlert } from "@/lib/alerts/notify";
 import { markLeadFailed, markLeadPaid, saveBuyerContact } from "@/lib/leads";
 import { indianMobile } from "@/lib/phone";
 import { ensureTeam } from "@/lib/team";
+import { syncCommission } from "@/lib/affiliates/commission";
 import type { PaidEvent } from "@/lib/payments/types";
 import type { GatewayName } from "@/lib/payments/signature";
 
@@ -43,6 +44,12 @@ function eventMatchesOrder(payment: { gateway: string; amountInr: number } | nul
 }
 
 export async function fulfillPayment(gateway: GatewayName, event: PaidEvent) {
+  const result = await fulfillPaymentInner(gateway, event);
+  if (event.orderId) await syncCommission(event.orderId);
+  return result;
+}
+
+async function fulfillPaymentInner(gateway: GatewayName, event: PaidEvent) {
   if (!event.orderId || event.status === "ignored") return { ok: true, ignored: true };
   const payment = await prisma.payment.findUnique({ where: { id: event.orderId } });
   if (payment?.isTest) return { ok: true, ignored: true };

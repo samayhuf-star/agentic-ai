@@ -8,64 +8,70 @@ datasource db {
 }
 
 model User {
-  id                String    @id @default(cuid())
-  phone             String?   @unique
-  email             String?   @unique
-  compAccess        Boolean   @default(false)
-  pendingEmail      String?
-  businessName      String?
-  sells             String?
-  category          String?
-  businessType      String?
-  customType        String?
-  goal              String?
-  onboardedAt       DateTime?
-  paused            Boolean   @default(false)
+  id                 String      @id @default(cuid())
+  phone              String?     @unique
+  email              String?     @unique
+  compAccess         Boolean     @default(false)
+  pendingEmail       String?
+  businessName       String?
+  sells              String?
+  category           String?
+  businessType       String?
+  customType         String?
+  goal               String?
+  onboardedAt        DateTime?
+  paused             Boolean     @default(false)
   welcomeEmailSentAt DateTime?
-  marketingOptOut Boolean   @default(false)
-  emailTokenHash    String?   @unique
-  emailTokenExpires DateTime?
-  name              String?
-  adminNotes        String?
-  suspendedAt       DateTime?
-  createdByAdmin    String?
-  createdAt         DateTime  @default(now())
-  payments          Payment[]
-  agents            UserAgent[]
-  approvals         Approval[]
-  tasks             Task[]
-  messages          Message[]
-  sessions          Session[]
-  aiKey             UserAiKey?
+  marketingOptOut    Boolean     @default(false)
+  emailTokenHash     String?     @unique
+  emailTokenExpires  DateTime?
+  name               String?
+  city               String?
+  adminNotes         String?
+  suspendedAt        DateTime?
+  createdByAdmin     String?
+  createdAt          DateTime    @default(now())
+  payments           Payment[]
+  agents             UserAgent[]
+  approvals          Approval[]
+  tasks              Task[]
+  messages           Message[]
+  sessions           Session[]
+  aiKey              UserAiKey?
 
   @@index([createdAt])
   @@index([onboardedAt])
 }
 
 model Payment {
-  id              String    @id
-  userId          String?
-  user            User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
-  gateway         String
-  amountInr       Int
-  status          String
-  isTest          Boolean   @default(false)
-  phone           String?
-  email           String?
-  name            String?
+  id               String     @id
+  userId           String?
+  user             User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  gateway          String
+  amountInr        Int
+  status           String
+  isTest           Boolean    @default(false)
+  phone            String?
+  email            String?
+  name             String?
   gatewayPaymentId String?
-  raw             Json?
-  smsSentAt       DateTime?
-  createdAt       DateTime  @default(now())
-  paidAt          DateTime?
-  refundedAt      DateTime?
-  refundedBy      String?
-  method          String?
-  reference       String?
-  adminNote       String?
-  createdBy       String?
-  updatedAt       DateTime? @updatedAt
+  raw              Json?
+  smsSentAt        DateTime?
+  createdAt        DateTime   @default(now())
+  paidAt           DateTime?
+  refundedAt       DateTime?
+  refundedBy       String?
+  method           String?
+  reference        String?
+  adminNote        String?
+  createdBy        String?
+  updatedAt        DateTime?  @updatedAt
+  affiliateId      String?
+  affiliate        Affiliate? @relation(fields: [affiliateId], references: [id], onDelete: SetNull)
+  refClickId       String?
+  refPostId        String?
 
+  @@index([affiliateId])
   @@index([status])
   @@index([userId])
   @@index([status, isTest, paidAt])
@@ -118,7 +124,7 @@ model Agent {
 }
 
 model UserAgent {
-  id          String  @id @default(cuid())
+  id          String    @id @default(cuid())
   userId      String
   agentId     String
   enabled     Boolean   @default(false)
@@ -127,7 +133,7 @@ model UserAgent {
   sortOrder   Int       @default(0)
   lastReadAt  DateTime?
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  agent       Agent   @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  agent       Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
 
   @@unique([userId, agentId])
 }
@@ -270,4 +276,118 @@ model AdminAudit {
 
   @@index([createdAt])
   @@index([entity, entityId])
+}
+
+model Affiliate {
+  id              String                @id @default(cuid())
+  name            String
+  email           String?
+  phone           String?
+  handles         String?
+  code            String                @unique
+  token           String                @unique
+  commissionType  String                @default("percent")
+  rate            Float
+  status          String                @default("active")
+  payoutNotes     String?
+  notes           String?
+  city            String?
+  instagramUrl    String?
+  tiktokUrl       String?
+  followers       Int?
+  niche           String?
+  pitch           String?
+  source          String                @default("admin")
+  appliedAt       DateTime?
+  termsAcceptedAt DateTime?
+  reviewedAt      DateTime?
+  reviewedBy      String?
+  hiddenBlocks    String                @default("")
+  payoutEnc       String?
+  payoutMasked    String?
+  payoutUpdatedAt DateTime?
+  payoutUpdatedBy String?
+  payoutCheckedAt DateTime?
+  createdBy       String?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  clicks          AffiliateClick[]
+  commissions     AffiliateCommission[]
+  payments        Payment[]
+  posts           AffiliatePost[]
+
+  @@index([status])
+}
+
+model AffiliateClick {
+  id          String    @id @default(cuid())
+  affiliateId String
+  affiliate   Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  landingPath String
+  referrer    String?
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  utmContent  String?
+  utmTerm     String?
+  ipHash      String?
+  uaHash      String?
+  postId      String?
+  createdAt   DateTime  @default(now())
+
+  @@index([affiliateId, createdAt])
+  @@index([postId])
+  @@index([affiliateId, ipHash, createdAt])
+}
+
+model AffiliateCommission {
+  id            String    @id @default(cuid())
+  affiliateId   String
+  affiliate     Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  paymentId     String?
+  key           String?   @unique
+  kind          String
+  amountInr     Int
+  saleAmountInr Int?
+  rateLabel     String?
+  status        String
+  note          String?
+  voidReason    String?
+  approvedAt    DateTime?
+  approvedBy    String?
+  paidAt        DateTime?
+  paidBy        String?
+  payoutRef     String?
+  createdBy     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([affiliateId, status])
+  @@index([paymentId])
+}
+
+model AffiliatePost {
+  id               String    @id @default(cuid())
+  affiliateId      String
+  affiliate        Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  platform         String
+  url              String
+  title            String?
+  postedAt         DateTime?
+  views            Int       @default(0)
+  likes            Int       @default(0)
+  comments         Int       @default(0)
+  shares           Int       @default(0)
+  metricsSource    String    @default("manual")
+  metricsUpdatedAt DateTime?
+  metricsUpdatedBy String?
+  verified         Boolean   @default(false)
+  verifiedBy       String?
+  verifiedAt       DateTime?
+  locked           Boolean   @default(false)
+  createdBy        String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([affiliateId, createdAt])
 }

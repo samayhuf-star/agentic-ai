@@ -5,6 +5,8 @@ import { audit } from "@/lib/admin/audit";
 import { createManualPayment } from "@/lib/admin/payments";
 import * as v from "@/lib/admin/validate";
 import { prisma } from "@/lib/prisma";
+import { syncCommission } from "@/lib/affiliates/commission";
+import { affiliateIdFromCode } from "@/lib/affiliates/lookup";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,6 +21,7 @@ export async function POST(request: Request) {
     const phone = v.phone(body.phone);
     const name = v.text(body.name, "Name", 80, true);
     const businessName = v.text(body.businessName, "Business name", 120);
+    const city = v.text(body.city, "City", 60);
     const adminNotes = v.text(body.notes, "Notes", 2000);
     const access = String(body.access || "none");
     if (!["none", "comp", "paid"].includes(access)) throw new v.InputError("Pick an access type.");
@@ -32,6 +35,7 @@ export async function POST(request: Request) {
             paidAt: v.date(body.paidAt, "Payment date"),
           }
         : null;
+    const affiliateId = pay ? await affiliateIdFromCode(body.affiliateCode) : null;
 
     const result = await prisma.$transaction(async (tx) => {
       if (await tx.user.findUnique({ where: { email } })) throw new v.InputError("A customer with that email already exists.");
@@ -42,6 +46,7 @@ export async function POST(request: Request) {
           phone,
           name,
           businessName,
+          city,
           adminNotes,
           compAccess: access === "comp",
           suspendedAt: suspended ? new Date() : null,
@@ -62,6 +67,7 @@ export async function POST(request: Request) {
             paidAt: pay.paidAt,
             isTest: v.bool(body.isTest),
             actor,
+            affiliateId,
           })
         : null;
       return { user, payment };
@@ -73,6 +79,7 @@ export async function POST(request: Request) {
       paymentId: result.payment?.id ?? null,
     });
     if (result.payment) {
+      await syncCommission(result.payment.id);
       await audit(actor, "payment.create", "payment", result.payment.id, `Recorded ₹${result.payment.amountInr} paid for ${email}`, {
         userId: result.user.id,
       });

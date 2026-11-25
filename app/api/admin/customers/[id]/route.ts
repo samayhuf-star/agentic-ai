@@ -55,6 +55,7 @@ export async function PATCH(request: Request, { params }: Params) {
     }
     if ("name" in body) data.name = v.text(body.name, "Name", 80);
     if ("businessName" in body) data.businessName = v.text(body.businessName, "Business name", 120);
+    if ("city" in body) data.city = v.text(body.city, "City", 60);
     if ("notes" in body) data.adminNotes = v.text(body.notes, "Notes", 2000);
     if ("compAccess" in body) data.compAccess = v.bool(body.compAccess);
     if ("marketingOptOut" in body) data.marketingOptOut = v.bool(body.marketingOptOut);

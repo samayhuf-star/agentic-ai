@@ -91,6 +91,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
               email: user.email || "",
               phone: user.phone ? displayPhone(user.phone) : "",
               businessName: user.businessName || "",
+              city: user.city || "",
               notes: user.adminNotes || "",
               compAccess: user.compAccess,
               marketingOptOut: user.marketingOptOut,

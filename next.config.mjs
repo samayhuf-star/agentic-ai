@@ -15,6 +15,12 @@ const nextConfig = {
       { source: "/dashboard/:path*", headers: noStore },
       { source: "/api/auth/:path*", headers: noStore },
       { source: "/api/onboarding", headers: noStore },
+      {
+        source: "/partner/:path*",
+        headers: [...noStore, { key: "X-Robots-Tag", value: "noindex, nofollow" }, { key: "Referrer-Policy", value: "no-referrer" }],
+      },
+      { source: "/api/partner/:path*", headers: noStore },
+      { source: "/api/partners/:path*", headers: noStore },
     ];
   },
   outputFileTracingIncludes: {

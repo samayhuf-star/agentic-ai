@@ -1,5 +1,6 @@
 import { denyStaffMutation, json, readJson, requireAdmin } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
+import { syncCommission } from "@/lib/affiliates/commission";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,5 +20,6 @@ export async function POST(request: Request) {
     where: { id: orderId },
     data: { status: "refunded", refundedAt: new Date(), refundedBy: session.email },
   });
+  await syncCommission(orderId);
   return json({ ok: true, message: "Marked refunded." });
 }

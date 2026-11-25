@@ -5,7 +5,7 @@ import { json } from "@/lib/api";
 
 type AdminCheck = { ok: true; session: Session } | { ok: false; response: Response };
 
-function sameOrigin(request: Request) {
+export function sameOrigin(request: Request) {
   const origin = request.headers.get("origin");
   if (!origin) return true;
   let originHost: string;

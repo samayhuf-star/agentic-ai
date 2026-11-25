@@ -1,4 +1,4 @@
-import { AdminNav } from "@/components/admin/console/AdminNav";
+import { AdminShell } from "@/components/admin/console/AdminShell";
 import { requireAdminPage } from "@/lib/admin/guard";
 import "./admin.css";
 
@@ -8,8 +8,9 @@ export default async function SupAdminLayout({ children }: { children: React.Rea
   const { session, role } = await requireAdminPage();
   return (
     <div className="adm">
-      <AdminNav email={session.email} role={role === "admin" ? "Admin" : "Staff (view only)"} />
-      {children}
+      <AdminShell email={session.email} role={role === "admin" ? "Admin" : "Staff (view only)"}>
+        {children}
+      </AdminShell>
     </div>
   );
 }

@@ -19,6 +19,7 @@ export type ManualPaymentInput = {
   paidAt: Date | null;
   isTest: boolean;
   actor: string;
+  affiliateId?: string | null;
 };
 
 export async function createManualPayment(tx: Prisma.TransactionClient, input: ManualPaymentInput) {
@@ -44,6 +45,7 @@ export async function createManualPayment(tx: Prisma.TransactionClient, input: M
       refundedAt: input.status === "refunded" ? now : null,
       refundedBy: input.status === "refunded" ? input.actor : null,
       raw: { source: "admin_manual", by: input.actor },
+      affiliateId: input.affiliateId ?? null,
     },
   });
 }

@@ -1,5 +1,6 @@
 import { denyStaffMutation, json, readJson, requireAdmin } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
+import { syncCommission } from "@/lib/affiliates/commission";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,5 +17,6 @@ export async function POST(request: Request) {
   if (!payment) return json({ message: "That payment was not found." }, 404);
   const isTest = Boolean(body.isTest);
   await prisma.payment.update({ where: { id: orderId }, data: { isTest } });
+  await syncCommission(orderId);
   return json({ message: isTest ? "Marked as a test payment." : "Marked as a real payment.", isTest });
 }

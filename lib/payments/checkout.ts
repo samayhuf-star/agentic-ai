@@ -6,6 +6,7 @@ import { openLead, saveBuyerContact } from "@/lib/leads";
 import { createHostedCheckout, gatewayHasKeys } from "@/lib/payments/gateways";
 import { indianMobile } from "@/lib/phone";
 import { getActiveGateway } from "@/lib/settings";
+import { attributionFromRequest } from "@/lib/affiliates/attribution";
 
 export function readBuyer(input: { name?: unknown; email?: unknown; phone?: unknown }) {
   const name = String(input.name || "").trim().replace(/\s+/g, " ");
@@ -41,8 +42,20 @@ export async function createCheckout(request: Request) {
   const amountInr = pricing().inr;
   const orderId = `br${randomToken().slice(0, 16)}`;
   const origin = appOrigin(request);
+  const attribution = await attributionFromRequest(request).catch(() => null);
   await prisma.payment.create({
-    data: { id: orderId, gateway, amountInr, status: "pending", name: buyer.name, email: buyer.email, phone: buyer.phone },
+    data: {
+      id: orderId,
+      gateway,
+      amountInr,
+      status: "pending",
+      name: buyer.name,
+      email: buyer.email,
+      phone: buyer.phone,
+      affiliateId: attribution?.affiliateId ?? null,
+      refClickId: attribution?.clickId ?? null,
+      refPostId: attribution?.postId ?? null,
+    },
   });
   await openLead({ orderId, amountInr, name: buyer.name, email: buyer.email, phone: buyer.phone });
   await saveBuyerContact({ orderId, amountInr, name: buyer.name, email: buyer.email, phone: buyer.phone });

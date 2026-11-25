@@ -18,4 +18,5 @@ export const POLICY_LINKS = [
   { href: "/pricing", label: "Pricing" },
   { href: "/disclaimer", label: "Disclaimer" },
   { href: "/cookie-policy", label: "Cookie Policy" },
+  { href: "/partners/apply", label: "Become a partner" },
 ] as const;

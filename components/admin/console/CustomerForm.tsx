@@ -21,6 +21,7 @@ export type CustomerValues = {
   email: string;
   phone: string;
   businessName: string;
+  city?: string;
   notes: string;
   compAccess?: boolean;
   marketingOptOut?: boolean;
@@ -77,6 +78,7 @@ export function CustomerForm({
         email: values.email,
         phone: values.phone,
         businessName: values.businessName,
+        city: values.city || "",
         notes: values.notes,
         compAccess: Boolean(values.compAccess),
         marketingOptOut: Boolean(values.marketingOptOut),
@@ -105,6 +107,10 @@ export function CustomerForm({
           <label className="field">
             Business name
             <input value={values.businessName} onChange={(e) => set("businessName", e.target.value)} maxLength={120} />
+          </label>
+          <label className="field">
+            City
+            <input value={values.city || ""} onChange={(e) => set("city", e.target.value)} maxLength={60} placeholder="Delhi" />
           </label>
 
           {mode === "create" ? (
