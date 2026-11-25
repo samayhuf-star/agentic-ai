@@ -25,6 +25,10 @@ model User {
   marketingOptOut Boolean   @default(false)
   emailTokenHash    String?   @unique
   emailTokenExpires DateTime?
+  name              String?
+  adminNotes        String?
+  suspendedAt       DateTime?
+  createdByAdmin    String?
   createdAt         DateTime  @default(now())
   payments          Payment[]
   agents            UserAgent[]
@@ -56,6 +60,11 @@ model Payment {
   paidAt          DateTime?
   refundedAt      DateTime?
   refundedBy      String?
+  method          String?
+  reference       String?
+  adminNote       String?
+  createdBy       String?
+  updatedAt       DateTime? @updatedAt
 
   @@index([status])
   @@index([userId])
@@ -247,4 +256,18 @@ model AlertLog {
 
   @@unique([dedupeKey, channel])
   @@index([createdAt])
+}
+
+model AdminAudit {
+  id         String   @id @default(cuid())
+  actorEmail String
+  action     String
+  entity     String
+  entityId   String?
+  summary    String
+  detail     Json?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([entity, entityId])
 }

@@ -67,10 +67,11 @@ async function issueCode(email: string, request: Request) {
   };
 }
 
-type AccessUser = { compAccess: boolean; payments: unknown[] } | null;
+type AccessUser = { compAccess: boolean; payments: unknown[]; suspendedAt?: Date | null } | null;
 
 function hasProductAccess(user: AccessUser) {
-  return Boolean(user && (user.compAccess || user.payments.length > 0));
+  if (!user || user.suspendedAt) return false;
+  return Boolean(user.compAccess || user.payments.length > 0);
 }
 
 async function upsertCompUser(email: string) {
@@ -167,7 +168,7 @@ export async function verifyLoginCode(emailInput: string, codeInput: string) {
     }
   }
   if (admin || staff) user = await upsertCompUser(email);
-  if (!hasProductAccess(user ? { compAccess: user.compAccess, payments: user.payments } : null)) {
+  if (!hasProductAccess(user ? { compAccess: user.compAccess, payments: user.payments, suspendedAt: user.suspendedAt } : null)) {
     return { ok: false as const, status: 403, message: "Only a paid AI Time Machine account can sign in." };
   }
 
@@ -208,6 +209,7 @@ export async function getSessionFromToken(token: string | null | undefined) {
     include: { user: true },
   });
   if (!session || session.expiresAt < new Date()) return null;
+  if (session.user?.suspendedAt && !isAdminEmail(session.email) && !isStaffEmail(session.email)) return null;
   return session;
 }
 

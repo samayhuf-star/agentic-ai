@@ -17,7 +17,7 @@ export function StatsBar({ range, path, status = "" }: { range: StatsRange; path
             {link.label}
           </Link>
         ))}
-        <Link href="/sup-admin">Admin home</Link>
+        <Link href="/sup-admin">Overview</Link>
       </p>
       <form className="stats-filters" action={path} method="get">
         <div className="chip-row">

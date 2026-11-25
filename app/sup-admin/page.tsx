@@ -1,268 +1,224 @@
 import Link from "next/link";
-import { GatewaySwitch, ResendButton, TestEmailForm } from "@/components/AdminPanel";
+import { redirect } from "next/navigation";
 import { AdminKicker } from "@/components/admin/AdminKicker";
-import { formatInr, formatIst } from "@/lib/config";
 import { requireAdminPage } from "@/lib/admin/guard";
-import { overviewSignupCount } from "@/lib/admin/stats";
+import { ACCESS_LABEL, accessOf } from "@/lib/admin/customers";
+import { money } from "@/lib/admin/format";
+import { formatIst, privilegedEmails } from "@/lib/config";
+import { istDayStart } from "@/lib/ist";
 import { prisma } from "@/lib/prisma";
-import { getActiveGateway } from "@/lib/settings";
-import { FulfilButton } from "@/components/FulfilButton";
-import { MarkTestToggle } from "@/components/MarkTestToggle";
-import { displayPhone } from "@/lib/phone";
-import { TestAlertButton } from "@/components/TestAlertButton";
 
 export const dynamic = "force-dynamic";
 
-export default async function SuperAdminPage({ searchParams }: { searchParams: Promise<{ q?: string; tab?: string }> }) {
-  const { session, readOnly } = await requireAdminPage();
-  const { q, tab } = await searchParams;
-  const query = (q || "").trim();
-  const [alerts, followups, leads] = await Promise.all([
-    prisma.alertLog.findMany({ orderBy: { createdAt: "desc" }, take: 50 }),
-    prisma.followupSend.findMany({ orderBy: { createdAt: "desc" }, take: 50 }),
-    prisma.lead.findMany({ where: { status: "pending" }, orderBy: { createdAt: "desc" }, take: 50 }),
-  ]);
-  const [signups, paidCount, revenue, gateway, users, payments] = await Promise.all([
-    overviewSignupCount(),
-    prisma.payment.count({ where: { status: "paid", isTest: false } }),
-    prisma.payment.aggregate({ where: { status: "paid", isTest: false }, _sum: { amountInr: true } }),
-    getActiveGateway(),
+const LEGACY_TABS = new Set(["alerts", "followups"]);
+
+export default async function AdminOverviewPage({ searchParams }: { searchParams: Promise<{ tab?: string; q?: string }> }) {
+  const { readOnly } = await requireAdminPage();
+  const { tab, q } = await searchParams;
+  if (tab && LEGACY_TABS.has(tab)) redirect(`/sup-admin/ops?tab=${tab}`);
+  if (q) redirect(`/sup-admin/customers?q=${encodeURIComponent(q)}`);
+
+  const now = new Date();
+  const today = istDayStart(now);
+  const d7 = new Date(now.getTime() - 7 * 86400000);
+  const d30 = new Date(now.getTime() - 30 * 86400000);
+  const notStaff = { OR: [{ email: null }, { email: { notIn: privilegedEmails() } }] };
+  const realPaid = { status: "paid", isTest: false };
+
+  const [
+    totalCustomers,
+    paidCustomers,
+    compCustomers,
+    suspended,
+    signups7,
+    revenueAll,
+    revenue30,
+    revenueToday,
+    refunded,
+    pending,
+    recentUsers,
+    recentPayments,
+    recentAudit,
+  ] = await Promise.all([
+    prisma.user.count({ where: notStaff }),
+    prisma.user.count({ where: { ...notStaff, suspendedAt: null, payments: { some: realPaid } } }),
+    prisma.user.count({ where: { ...notStaff, suspendedAt: null, compAccess: true } }),
+    prisma.user.count({ where: { NOT: { suspendedAt: null } } }),
+    prisma.user.count({ where: { ...notStaff, createdAt: { gte: d7 } } }),
+    prisma.payment.aggregate({ where: realPaid, _sum: { amountInr: true }, _count: true }),
+    prisma.payment.aggregate({ where: { ...realPaid, paidAt: { gte: d30 } }, _sum: { amountInr: true }, _count: true }),
+    prisma.payment.aggregate({ where: { ...realPaid, paidAt: { gte: today } }, _sum: { amountInr: true }, _count: true }),
+    prisma.payment.aggregate({ where: { status: "refunded", isTest: false }, _sum: { amountInr: true }, _count: true }),
+    prisma.payment.count({ where: { status: "pending", isTest: false } }),
     prisma.user.findMany({
-      where: query
-        ? {
-            OR: [
-              { phone: { contains: query } },
-              { email: { contains: query, mode: "insensitive" } },
-              { businessName: { contains: query, mode: "insensitive" } },
-            ],
-          }
-        : undefined,
+      where: notStaff,
       orderBy: { createdAt: "desc" },
-      take: 50,
-      include: { payments: { where: { status: "paid", isTest: false }, select: { amountInr: true } } },
+      take: 8,
+      include: { _count: { select: { payments: { where: { status: "paid" } } } } },
     }),
-    prisma.payment.findMany({ orderBy: { createdAt: "desc" }, take: 30, include: { user: true } }),
+    prisma.payment.findMany({ orderBy: { createdAt: "desc" }, take: 8, include: { user: { select: { id: true, email: true, name: true, businessName: true } } } }),
+    prisma.adminAudit.findMany({ orderBy: { createdAt: "desc" }, take: 6 }),
   ]);
 
   return (
     <main className="page">
-      <AdminKicker kicker="Admin" readOnly={readOnly} />
-      <h1>AI Time Machine</h1>
-      <p className="row-actions">
-        <Link href="/sup-admin">Home</Link>
-        <Link href="/sup-admin/stats">Sales</Link>
-        <Link href="/sup-admin/stats/orders">Orders</Link>
-        <Link href="/sup-admin/stats/customers">Customers</Link>
-        <Link href="/sup-admin/stats/funnel">Funnel</Link>
-        <Link href="/sup-admin?tab=alerts">Alerts</Link>
-        <Link href="/sup-admin?tab=followups">Follow-ups</Link>
-      </p>
-      {tab === "alerts" ? (
-        <section>
-          <h2 style={{ fontSize: 28 }}>Alerts</h2>
-          <TestAlertButton readOnly={readOnly} />
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>When</th>
-                  <th>Kind</th>
-                  <th>Channel</th>
-                  <th>Status</th>
-                  <th>To</th>
-                </tr>
-              </thead>
-              <tbody>
-                {alerts.length === 0 ? (
-                  <tr>
-                    <td colSpan={5}>No alerts yet.</td>
-                  </tr>
-                ) : (
-                  alerts.map((alert) => (
-                    <tr key={alert.id}>
-                      <td>{formatIst(alert.createdAt)}</td>
-                      <td>{alert.kind}</td>
-                      <td>{alert.channel}</td>
-                      <td>{alert.status}</td>
-                      <td>{alert.toAddress}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+      <AdminKicker kicker="Overview" readOnly={readOnly} />
+      <div className="adm-head">
+        <h1>Run the business</h1>
+        {readOnly ? null : (
+          <div className="row-actions">
+            <Link className="btn btn-p btn-sm" href="/sup-admin/customers/new">
+              + New customer
+            </Link>
+            <Link className="btn btn-g btn-sm" href="/sup-admin/payments/new">
+              + Record payment
+            </Link>
           </div>
-        </section>
-      ) : null}
-      {tab === "followups" ? (
-        <section>
-          <h2 style={{ fontSize: 28 }}>Follow-ups</h2>
-          <h3>Waiting on payment</h3>
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Started</th>
-                  <th>Email</th>
-                  <th>Phone</th>
-                  <th>Order</th>
-                </tr>
-              </thead>
-              <tbody>
-                {leads.length === 0 ? (
-                  <tr>
-                    <td colSpan={4}>No open checkouts.</td>
-                  </tr>
-                ) : (
-                  leads.map((lead) => (
-                    <tr key={lead.id}>
-                      <td>{formatIst(lead.createdAt)}</td>
-                      <td>{lead.email || "—"}</td>
-                      <td>{lead.phone ? displayPhone(lead.phone) : "—"}</td>
-                      <td>{lead.orderId}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-          <h3>Sent</h3>
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>When</th>
-                  <th>Step</th>
-                  <th>To</th>
-                </tr>
-              </thead>
-              <tbody>
-                {followups.length === 0 ? (
-                  <tr>
-                    <td colSpan={3}>None sent yet.</td>
-                  </tr>
-                ) : (
-                  followups.map((row) => (
-                    <tr key={row.id}>
-                      <td>{formatIst(row.createdAt)}</td>
-                      <td>{row.step}</td>
-                      <td>{row.toEmail}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      ) : null}
-      {tab ? null : (
-      <>
+        )}
+      </div>
+      <p className="muted">Revenue counts real paid payments only. Test payments, admin and staff accounts are left out.</p>
       <div className="stats">
         <div className="stat">
-          <small>Signups</small>
-          <b>{signups}</b>
+          <small>Customers</small>
+          <b>{totalCustomers}</b>
+        </div>
+        <div className="stat y">
+          <small>Paid (active)</small>
+          <b>{paidCustomers}</b>
         </div>
         <div className="stat">
-          <small>Paid</small>
-          <b>{paidCount}</b>
+          <small>Free access</small>
+          <b>{compCustomers}</b>
         </div>
         <div className="stat">
-          <small>Revenue</small>
-          <b>{formatInr(revenue._sum.amountInr || 0)}</b>
+          <small>Suspended</small>
+          <b>{suspended}</b>
+        </div>
+        <div className="stat">
+          <small>New in 7 days</small>
+          <b>{signups7}</b>
+        </div>
+        <div className="stat y">
+          <small>Revenue, all time</small>
+          <b>{money(revenueAll._sum.amountInr || 0)}</b>
+        </div>
+        <div className="stat">
+          <small>Revenue, 30 days</small>
+          <b>{money(revenue30._sum.amountInr || 0)}</b>
+        </div>
+        <div className="stat">
+          <small>Revenue, today (IST)</small>
+          <b>{money(revenueToday._sum.amountInr || 0)}</b>
+        </div>
+        <div className="stat">
+          <small>Refunded</small>
+          <b>{money(refunded._sum.amountInr || 0)}</b>
+        </div>
+        <div className="stat">
+          <small>Pending payments</small>
+          <b>{pending}</b>
         </div>
       </div>
-      <div className="card" style={{ marginBottom: 18 }}>
-        <h2 style={{ fontSize: 24 }}>Active gateway</h2>
-        <p className="muted">New Buy buttons use this. Cashfree is the main one. Razorpay and PayU are backups.</p>
-        <GatewaySwitch current={gateway} readOnly={readOnly} />
-      </div>
-      <div className="card" style={{ marginBottom: 18 }}>
-        <h2 style={{ fontSize: 24 }}>Test email</h2>
-        <p className="muted">Sends from the configured sender. Replies go to support@theaitimemachine.com.</p>
-        <TestEmailForm defaultTo={session.email} readOnly={readOnly} />
-      </div>
-      <form className="row-actions" action="/sup-admin" method="get" style={{ margin: "18px 0" }}>
-        <input name="q" defaultValue={query} placeholder="Search phone, email or business" aria-label="Search people" style={{ maxWidth: 360 }} />
-        <button className="btn btn-p" type="submit">
-          Search
-        </button>
-      </form>
-      <div className="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Person</th>
-              <th>Signed up</th>
-              <th>Paid</th>
-              <th>Welcome</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.length === 0 ? (
-              <tr>
-                <td colSpan={4}>No one matches.</td>
-              </tr>
-            ) : (
-              users.map((user) => (
-                <tr key={user.id}>
-                  <td>
-                    <b>{user.businessName || "No business name yet"}</b>
-                    <div className="muted">{displayPhone(user.phone)}</div>
-                    <div className="muted">{user.email || "Email not added"}</div>
-                  </td>
-                  <td>{formatIst(user.createdAt)}</td>
-                  <td>{formatInr(user.payments.reduce((sum, payment) => sum + payment.amountInr, 0))}</td>
-                  <td>{user.email ? <ResendButton userId={user.id} readOnly={readOnly} /> : <span className="muted">Waiting for email</span>}</td>
+
+      <div className="adm-cols">
+        <section className="adm-section">
+          <div className="adm-head">
+            <h2>Recent payments</h2>
+            <Link href="/sup-admin/payments">All payments →</Link>
+          </div>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>When</th>
+                  <th>Customer</th>
+                  <th>Amount</th>
+                  <th>Status</th>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              </thead>
+              <tbody>
+                {recentPayments.length === 0 ? (
+                  <tr>
+                    <td colSpan={4}>No payments yet.</td>
+                  </tr>
+                ) : (
+                  recentPayments.map((payment) => (
+                    <tr key={payment.id}>
+                      <td>
+                        <Link href={`/sup-admin/payments/${encodeURIComponent(payment.id)}`}>{formatIst(payment.paidAt || payment.createdAt)}</Link>
+                      </td>
+                      <td>{payment.user?.email || payment.email || "—"}</td>
+                      <td>{money(payment.amountInr)}</td>
+                      <td>
+                        <span className={`pill ${payment.status}`}>{payment.status}</span>
+                        {payment.isTest ? <span className="test-badge">TEST</span> : null}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+        <section className="adm-section">
+          <div className="adm-head">
+            <h2>Recent signups</h2>
+            <Link href="/sup-admin/customers">All customers →</Link>
+          </div>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Customer</th>
+                  <th>Access</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={2}>No customers yet.</td>
+                  </tr>
+                ) : (
+                  recentUsers.map((user) => {
+                    const kind = accessOf({ suspendedAt: user.suspendedAt, compAccess: user.compAccess, paidCount: user._count.payments });
+                    return (
+                      <tr key={user.id}>
+                        <td>
+                          <Link href={`/sup-admin/customers/${user.id}`}>
+                            <b>{user.name || user.businessName || user.email || "Unnamed"}</b>
+                          </Link>
+                          <div className="muted">{formatIst(user.createdAt)}</div>
+                        </td>
+                        <td>
+                          <span className={`pill ${kind}`}>{ACCESS_LABEL[kind]}</span>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
       </div>
-      <h2 style={{ marginTop: 28, fontSize: 28 }}>Payments</h2>
-      <div className="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>When</th>
-              <th>Gateway</th>
-              <th>Amount</th>
-              <th>Status</th>
-              <th>Phone</th>
-              <th>Email</th>
-              <th>Access</th>
-            </tr>
-          </thead>
-          <tbody>
-            {payments.map((payment) => (
-              <tr key={payment.id}>
-                <td>{formatIst(payment.createdAt)}</td>
-                <td>{payment.gateway}</td>
-                <td>{formatInr(payment.amountInr)}</td>
-                <td>
-                  {payment.status}
-                  {payment.isTest ? <span className="test-badge">TEST</span> : null}
-                </td>
-                <td>{payment.phone ? displayPhone(payment.phone) : payment.user?.phone ? displayPhone(payment.user.phone) : "—"}</td>
-                <td>{payment.email || payment.user?.email || "—"}</td>
-                <td>
-                  <div className="muted">{payment.id}</div>
-                  <MarkTestToggle orderId={payment.id} isTest={payment.isTest} readOnly={readOnly} />
-                  {payment.isTest ? (
-                    <p className="muted">Test payments are not fulfilled.</p>
-                  ) : (
-                    <FulfilButton orderId={payment.id} email={payment.email || payment.user?.email || ""} readOnly={readOnly} />
-                  )}
-                </td>
-              </tr>
+
+      <section className="adm-section">
+        <div className="adm-head">
+          <h2>Latest admin actions</h2>
+          <Link href="/sup-admin/audit">Audit log →</Link>
+        </div>
+        {recentAudit.length === 0 ? (
+          <p className="muted">Nothing yet. Every change made in this console is recorded here.</p>
+        ) : (
+          <ul>
+            {recentAudit.map((row) => (
+              <li key={row.id}>
+                <span className="muted">{formatIst(row.createdAt)}</span> · {row.summary} <span className="muted">by {row.actorEmail}</span>
+              </li>
             ))}
-          </tbody>
-        </table>
-      </div>
-      <p style={{ marginTop: 18 }}>
-        <Link href="/dashboard">Back to the dashboard</Link>
-      </p>
-      </>
-      )}
+          </ul>
+        )}
+      </section>
     </main>
   );
 }

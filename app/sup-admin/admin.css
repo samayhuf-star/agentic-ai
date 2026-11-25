@@ -1,0 +1,214 @@
+.adm-top {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: rgba(7, 10, 12, 0.94);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--line);
+  padding: 10px 18px 0;
+}
+.adm-top-row {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.adm-brand {
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 700;
+  color: var(--text);
+  text-decoration: none;
+}
+.adm-brand span {
+  color: var(--lime);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-left: 4px;
+}
+.adm-who {
+  color: var(--dim);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 55%;
+}
+.adm-nav {
+  max-width: 1180px;
+  margin: 8px auto 0;
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.adm-nav a {
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  border-radius: 10px 10px 0 0;
+  color: var(--dim);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  border-bottom: 2px solid transparent;
+}
+.adm-nav a.on {
+  color: var(--text);
+  border-bottom-color: var(--lime);
+}
+.adm .page {
+  max-width: 1180px;
+}
+.adm .stats {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+.adm-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: 16px 0;
+}
+.adm-toolbar input,
+.adm-toolbar select {
+  max-width: 260px;
+}
+.adm-toolbar .grow {
+  flex: 1 1 auto;
+}
+.adm-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.adm-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.adm-grid .full {
+  grid-column: 1 / -1;
+}
+.adm-cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+.adm-section {
+  margin: 26px 0;
+}
+.adm-section h2 {
+  font-size: 22px;
+  margin-bottom: 10px;
+}
+.adm-dl {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 6px 12px;
+  margin: 0;
+}
+.adm-dl dt {
+  color: var(--dim);
+  font-size: 13px;
+}
+.adm-dl dd {
+  margin: 0;
+  word-break: break-word;
+}
+.pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid var(--line);
+  white-space: nowrap;
+}
+.pill.paid,
+.pill.active {
+  color: var(--lime);
+  border-color: rgba(200, 242, 90, 0.4);
+}
+.pill.comp {
+  color: #8fd3ff;
+  border-color: rgba(143, 211, 255, 0.4);
+}
+.pill.pending,
+.pill.none {
+  color: var(--amber);
+  border-color: rgba(255, 201, 77, 0.4);
+}
+.pill.failed,
+.pill.refunded,
+.pill.suspended {
+  color: #ff9a9a;
+  border-color: rgba(255, 138, 138, 0.4);
+}
+.adm table td a {
+  color: var(--text);
+}
+.adm-pager {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 14px 0;
+}
+.adm-msg {
+  margin: 8px 0 0;
+  font-size: 14px;
+}
+.adm-msg.err {
+  color: #ff9a9a;
+}
+.adm-msg.ok {
+  color: var(--lime);
+}
+.btn-danger {
+  background: transparent;
+  color: #ff9a9a;
+  border: 1px solid rgba(255, 138, 138, 0.5);
+}
+.adm-subnav a {
+  color: var(--dim);
+}
+@media (max-width: 760px) {
+  .adm-grid,
+  .adm-cols {
+    grid-template-columns: 1fr;
+  }
+  .adm-dl {
+    grid-template-columns: 110px 1fr;
+  }
+  .adm-toolbar input,
+  .adm-toolbar select {
+    max-width: none;
+    flex: 1 1 140px;
+  }
+  .adm-hide-sm {
+    display: none;
+  }
+}
+.adm .btn-sm {
+  padding: 8px 14px;
+  font-size: 14px;
+  border-radius: 10px;
+}
+.adm .check {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  color: var(--text);
+  font-size: 14px;
+}
+.adm section {
+  padding: 0;
+}
+.adm .card.adm-section {
+  padding: 16px;
+}
