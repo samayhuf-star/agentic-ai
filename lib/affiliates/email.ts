@@ -7,7 +7,7 @@ type Who = { id: string; name: string; email: string | null; token: string; code
 export type EmailKind = "welcome" | "approved" | "rejected";
 export type EmailStatus = "sent" | "failed" | "not_configured" | "no_email";
 
-export const PARTNER_FROM = () => process.env.PARTNER_EMAIL_FROM || "AI Time Machine <support@theaitimemachine.com>";
+export const PARTNER_FROM = () => process.env.PARTNER_EMAIL_FROM || process.env.RESEND_FROM || "AI Time Machine <support@adiology.io>";
 export const resendConfigured = () => Boolean(process.env.RESEND_API_KEY);
 
 async function deliver(a: Who, kind: EmailKind, subject: string, text: string): Promise<EmailStatus> {
