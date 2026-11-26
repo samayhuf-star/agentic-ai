@@ -1,4 +1,5 @@
 import { appOrigin, formatInr } from "@/lib/config";
+import { formatUsdCents } from "@/lib/us";
 import { sendEmail } from "@/lib/messaging/email";
 import { prisma } from "@/lib/prisma";
 import { sendOwnerWhatsApp } from "@/lib/alerts/whatsapp";
@@ -12,6 +13,8 @@ export type AlertInput = {
   email?: string | null;
   phone?: string | null;
   amountInr?: number | null;
+  amountUsdCents?: number | null;
+  currency?: string | null;
   orderId?: string | null;
   status: string;
 };
@@ -27,9 +30,15 @@ function istNow() {
   return new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata", dateStyle: "medium", timeStyle: "short" }).format(new Date());
 }
 
+function amountLabel(input: AlertInput) {
+  if ((input.currency || "").toUpperCase() === "USD" && input.amountUsdCents != null) return formatUsdCents(input.amountUsdCents);
+  if (input.amountInr != null) return formatInr(input.amountInr);
+  return "";
+}
+
 function subjectFor(input: AlertInput) {
   const who = input.name || input.email || input.phone || "someone";
-  const amount = input.amountInr != null ? formatInr(input.amountInr) : "";
+  const amount = amountLabel(input);
   if (input.kind === "payment_received") return `[AI Time Machine] Payment received ${amount} — ${who}`.trim();
   if (input.kind === "payment_failed") return `[AI Time Machine] Payment ${input.status} ${amount} — ${who}`.trim();
   if (input.kind === "checkout_started") return `[AI Time Machine] Checkout started ${amount} — ${who}`.trim();
@@ -42,7 +51,7 @@ function bodyFor(input: AlertInput) {
     `Name: ${input.name || "—"}`,
     `Email: ${input.email || "—"}`,
     `Phone: ${input.phone || "—"}`,
-    `Amount: ${input.amountInr != null ? formatInr(input.amountInr) : "—"}`,
+    `Amount: ${amountLabel(input) || "—"}`,
     `Order: ${input.orderId || "—"}`,
     `Status: ${input.status}`,
     `Time (IST): ${istNow()}`,
@@ -52,7 +61,7 @@ function bodyFor(input: AlertInput) {
 
 function lineFor(input: AlertInput) {
   const who = input.email || input.phone || input.name || "someone";
-  const amount = input.amountInr != null ? formatInr(input.amountInr) : "";
+  const amount = amountLabel(input);
   return `AI Time Machine: ${input.kind.replaceAll("_", " ")} ${amount} ${who} ${input.orderId || ""}`.replace(/\s+/g, " ").trim();
 }
 

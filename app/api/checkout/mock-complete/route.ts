@@ -29,7 +29,28 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "That test payment could not be found." }, { status: 404 });
   }
   const payload =
-    payment.gateway === "razorpay"
+    payment.gateway === "stripe"
+      ? JSON.stringify({
+          type: "checkout.session.completed",
+          data: {
+            object: {
+              id: `cs_test_${payment.id}`,
+              client_reference_id: payment.id,
+              payment_status: "paid",
+              amount_total: payment.amountUsdCents ?? 4999,
+              currency: "usd",
+              customer_email: payment.email,
+              customer_details: {
+                email: payment.email,
+                name: payment.name,
+                phone: phone || payment.phone,
+              },
+              payment_intent: `pi_test_${payment.id}`,
+              metadata: { orderId: payment.id, market: "us" },
+            },
+          },
+        })
+      : payment.gateway === "razorpay"
       ? JSON.stringify({
           event: "payment.captured",
           payload: {

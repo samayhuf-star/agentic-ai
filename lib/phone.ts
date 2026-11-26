@@ -7,6 +7,15 @@ export function indianMobile(input: string | null | undefined): { ok: true; digi
   return { ok: true, digits, e164: `+91${digits}` };
 }
 
+
+export function usMobile(input: string | null | undefined): { ok: true; digits: string; e164: string } | { ok: false; error: string } {
+  if (!input || !String(input).trim()) return { ok: false, error: "Enter your mobile number." };
+  let digits = String(input).replace(/\D/g, "");
+  if (digits.length === 11 && digits.startsWith("1")) digits = digits.slice(1);
+  if (!/^[2-9]\d{2}[2-9]\d{6}$/.test(digits)) return { ok: false, error: "Enter a 10-digit US phone number." };
+  return { ok: true, digits, e164: `+1${digits}` };
+}
+
 export function normalizePhone(input: string | null | undefined) {
   const mobile = indianMobile(input);
   if (mobile.ok) return mobile.e164;

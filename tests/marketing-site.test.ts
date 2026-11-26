@@ -29,6 +29,7 @@ test("public pages include the new marketing routes and every agent", () => {
   const pages = publicPages();
   for (const needed of [
     "/",
+    "/us",
     "/about",
     "/agents",
     "/blog",

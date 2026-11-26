@@ -1,7 +1,9 @@
 import { appOrigin } from "@/lib/config";
 import { cashfreeStartUrl, cashfreeTarget, gatewayHasKeys } from "@/lib/payments/gateways";
 import { startCheckoutFor } from "@/lib/payments/checkout";
-import { indianMobile } from "@/lib/phone";
+import { startUsCheckoutFor } from "@/lib/payments/us-checkout";
+import { indianMobile, usMobile } from "@/lib/phone";
+import { US_CHECKOUT_PATH } from "@/lib/us";
 import { prisma } from "@/lib/prisma";
 import { logEvent, paymentSource } from "@/lib/activity/log";
 import { deviceLabel, inAppKind } from "@/lib/device";
@@ -67,6 +69,16 @@ export async function payAgain(request: Request, orderId: string): Promise<{ red
       }
       return { redirect: cashfreeStartUrl(origin, session) };
     }
+  }
+  if (payment.gateway === "stripe") {
+    const mobile = usMobile(payment.phone);
+    if (!payment.name || !payment.email || !mobile.ok) return { redirect: `${origin}${US_CHECKOUT_PATH}` };
+    const result = await startUsCheckoutFor(
+      request,
+      { name: payment.name, email: payment.email, phone: mobile.e164, digits: mobile.digits },
+      { retryOf: orderId },
+    );
+    return { redirect: result.redirect || `${origin}${US_CHECKOUT_PATH}` };
   }
   const mobile = indianMobile(payment.phone);
   if (!payment.name || !payment.email || !mobile.ok) return { redirect: `${origin}/checkout` };

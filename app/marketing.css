@@ -99,3 +99,13 @@ a.mk-card:hover{border-color:rgba(200,242,90,.4);transform:translateY(-2px);tran
   .nav.nav-marketing .nav-links{display:none}
   .nav.nav-marketing.menu-open .nav-links{display:flex}
 }
+
+/* US landing and checkout (/us). Keep light for mobile. */
+.us-hero .us-hero-note{margin:18px 0 0;color:var(--dim);font-size:14.5px;max-width:52ch}
+.us-foot-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:36px 28px;align-items:start}
+.us-sticky{display:none}
+@media (max-width:760px){
+  .us-foot-grid{grid-template-columns:1fr;gap:28px}
+  .us-sticky{display:block;position:sticky;bottom:0;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:rgba(8,12,14,.92);border-top:1px solid var(--line);z-index:8}
+  .us-sticky .btn{width:100%;text-align:center}
+}

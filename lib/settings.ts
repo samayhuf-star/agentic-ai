@@ -1,14 +1,14 @@
 import { prisma } from "@/lib/prisma";
-import { isGateway, type GatewayName } from "@/lib/payments/signature";
+import { isIndiaGateway, type IndiaGatewayName } from "@/lib/payments/signature";
 
-export async function getActiveGateway(): Promise<GatewayName> {
+export async function getActiveGateway(): Promise<IndiaGatewayName> {
   const row = await prisma.setting.findUnique({ where: { key: "active_gateway" } });
-  if (row && isGateway(row.value)) return row.value;
+  if (row && isIndiaGateway(row.value)) return row.value;
   const fromEnv = process.env.PAYMENT_GATEWAY || "cashfree";
-  return isGateway(fromEnv) ? fromEnv : "cashfree";
+  return isIndiaGateway(fromEnv) ? fromEnv : "cashfree";
 }
 
-export async function setActiveGateway(gateway: GatewayName) {
+export async function setActiveGateway(gateway: IndiaGatewayName) {
   await prisma.setting.upsert({
     where: { key: "active_gateway" },
     update: { value: gateway },

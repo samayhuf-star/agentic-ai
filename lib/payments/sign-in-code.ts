@@ -3,20 +3,36 @@ import { appOrigin, isProduction } from "@/lib/config";
 import { hashSecret, sixDigitCode } from "@/lib/crypto";
 import { CODE_TTL_COPY, CODE_TTL_MS, codeFromEmailBody } from "@/lib/login-code";
 import { sendEmail } from "@/lib/messaging/email";
+import { formatUsdCents, usPriceCents } from "@/lib/us";
 
 export const SIGN_IN_CODE_SUBJECT = "Payment of ₹1,999 confirmed — your sign-in code";
-export const SIGN_IN_CODE_SUBJECTS = [SIGN_IN_CODE_SUBJECT, "Your AI Time Machine code"];
+export const LOGIN_CODE_SUBJECT = "Your AI Time Machine code";
 function rupees(amountInr: number) {
   return `₹${amountInr.toLocaleString("en-IN")}`;
 }
 
-export function fulfilmentEmail(code: string, email: string, amountInr = 1999) {
+export function fulfilmentSubject(currency?: string | null, amountUsdCents?: number | null) {
+  if ((currency || "INR").toUpperCase() === "USD") {
+    return `Payment of ${formatUsdCents(amountUsdCents ?? usPriceCents())} confirmed — your sign-in code`;
+  }
+  return SIGN_IN_CODE_SUBJECT;
+}
+
+export const SIGN_IN_CODE_SUBJECTS = [SIGN_IN_CODE_SUBJECT, fulfilmentSubject("USD", usPriceCents()), LOGIN_CODE_SUBJECT];
+
+export function fulfilmentEmail(
+  code: string,
+  email: string,
+  amount: number | { amountInr?: number | null; amountUsdCents?: number | null; currency?: string | null } = 1999,
+) {
   const login = `${appOrigin()}/login?email=${encodeURIComponent(email)}`;
-  const amount = rupees(amountInr);
+  const details = typeof amount === "number" ? { amountInr: amount, currency: "INR" as const } : amount;
+  const currency = (details.currency || "INR").toUpperCase();
+  const label = currency === "USD" ? formatUsdCents(details.amountUsdCents ?? usPriceCents()) : rupees(details.amountInr ?? 1999);
   return {
-    subject: SIGN_IN_CODE_SUBJECT,
+    subject: fulfilmentSubject(currency, details.amountUsdCents),
     text: [
-      `Payment of ${amount} confirmed.`,
+      `Payment of ${label} confirmed.`,
       "",
       "Thank you for buying AI Time Machine. Your 6-digit sign-in code is " + code + ".",
       `It expires in ${CODE_TTL_COPY}.`,
@@ -66,7 +82,7 @@ export async function sendFulfilmentCode(orderId: string, email: string, mode: "
             data: { email: clean, codeHash: hashSecret(code), expiresAt: new Date(Date.now() + CODE_TTL_MS) },
           });
         }
-        const note = fulfilmentEmail(code, clean, payment.amountInr);
+        const note = fulfilmentEmail(code, clean, payment);
         await sendEmail(clean, note.subject, note.text, tx);
         return {
           ok: true as const,

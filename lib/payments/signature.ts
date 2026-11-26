@@ -1,11 +1,17 @@
 import { createHash } from "node:crypto";
 import { hmacBase64, hmacHex, safeEqual } from "@/lib/crypto";
 import { isProduction, mockPaymentsAllowed } from "@/lib/config";
+import Stripe from "stripe";
 
-export type GatewayName = "cashfree" | "razorpay" | "payu";
+export type IndiaGatewayName = "cashfree" | "razorpay" | "payu";
+export type GatewayName = IndiaGatewayName | "stripe";
+
+export function isIndiaGateway(value: string): value is IndiaGatewayName {
+  return value === "cashfree" || value === "razorpay" || value === "payu";
+}
 
 export function isGateway(value: string): value is GatewayName {
-  return value === "cashfree" || value === "razorpay" || value === "payu";
+  return isIndiaGateway(value) || value === "stripe";
 }
 
 export function mockSignature(raw: string) {
@@ -106,6 +112,20 @@ export function verifyPayuSignature(raw: string, headers: Headers, contentType: 
     if (!params.hash) return false;
     const expected = payuResponseHash(params, salt);
     return safeEqual(expected.toLowerCase(), params.hash.toLowerCase());
+  }
+  return mockHeaderOk(raw, headers);
+}
+
+export function verifyStripeSignature(raw: string, headers: Headers) {
+  const secret = (process.env.STRIPE_WEBHOOK_SECRET || "").trim();
+  const signature = headers.get("stripe-signature") || "";
+  if (secret && signature) {
+    try {
+      Stripe.webhooks.constructEvent(raw, signature, secret);
+      return true;
+    } catch {
+      return false;
+    }
   }
   return mockHeaderOk(raw, headers);
 }

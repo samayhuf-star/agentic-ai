@@ -8,7 +8,8 @@ import type { StoredTouch } from "@/lib/marketing/server";
 export async function afterPaid(orderId: string) {
   try {
     const p = await prisma.payment.findUnique({ where: { id: orderId } });
-    if (!p || p.status !== "paid" || p.isTest || p.gateway !== "cashfree" || !p.gatewayConfirmedAt) return;
+    if (!p || p.status !== "paid" || p.isTest || !p.gatewayConfirmedAt) return;
+    if (p.gateway !== "cashfree" && p.gateway !== "stripe") return;
     const user = p.userId && (p.mktFirst || p.mktLast) ? await prisma.user.findUnique({ where: { id: p.userId }, select: { id: true, mktFirst: true } }) : null;
     if (user && !user.mktFirst) {
       await prisma.user.update({
@@ -21,7 +22,7 @@ export async function afterPaid(orderId: string) {
         },
       });
     }
-    if (!metaCapiEnabled()) return;
+    if (p.gateway !== "cashfree" || !metaCapiEnabled()) return;
     const claimed = await prisma.payment.updateMany({ where: { id: orderId, capiPurchaseAt: null }, data: { capiPurchaseAt: new Date() } });
     if (claimed.count !== 1) return;
     const last = (p.mktLast || {}) as StoredTouch;

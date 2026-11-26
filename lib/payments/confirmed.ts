@@ -18,15 +18,27 @@ export async function markCashfreeConfirmed(orderId: string, via: "webhook" | "a
   await uploadPaidGoogleConversion(orderId);
 }
 
+/** A Stripe sale counts only after a signature-verified webhook, or a paid Checkout Session retrieved from Stripe. */
+export async function markStripeConfirmed(orderId: string, via: "webhook" | "api") {
+  await prisma.payment.updateMany({
+    where: { id: orderId, gateway: "stripe", status: "paid", isTest: false, gatewayConfirmedAt: null },
+    data: { gatewayConfirmedAt: new Date(), gatewayConfirmedVia: via },
+  });
+  await afterPaid(orderId);
+  await uploadPaidGoogleConversion(orderId);
+}
+
 /** SQL/Prisma filter for a sale that counts. Manual payments are counted separately. */
 export const CONFIRMED_GATEWAY_SALE = { status: "paid", isTest: false, gateway: "cashfree", gatewayConfirmedAt: { not: null } } as const;
 export const MANUAL_SALE = { status: "paid", isTest: false, gateway: "manual" } as const;
 export const RAZORPAY_SALE = { status: "paid", isTest: false, gateway: "razorpay" } as const;
+export const STRIPE_SALE = { status: "paid", isTest: false, gateway: "stripe", gatewayConfirmedAt: { not: null } } as const;
 
 export function saleKind(p: { gateway: string; gatewayConfirmedAt: Date | null; status: string; isTest: boolean }) {
   if (p.status !== "paid" || p.isTest) return null;
   if (p.gateway === "manual") return "manual" as const;
   if (p.gateway === "cashfree" && p.gatewayConfirmedAt) return "cashfree" as const;
   if (p.gateway === "razorpay") return "razorpay" as const;
+  if (p.gateway === "stripe" && p.gatewayConfirmedAt) return "stripe" as const;
   return null;
 }

@@ -5,6 +5,7 @@ import { PurchaseEvent } from "@/components/marketing/Pixels";
 import { QuietHeader, SiteFooter } from "@/components/SiteChrome";
 import { InAppBrowserNotice } from "@/components/InAppBrowserNotice";
 import { confirmPendingCashfreeOrder } from "@/lib/payments/confirm";
+import { confirmPendingStripeOrder } from "@/lib/payments/confirm-stripe";
 import { triggerRecovery } from "@/lib/followups/recovery";
 import { prisma } from "@/lib/prisma";
 
@@ -12,9 +13,12 @@ export const dynamic = "force-dynamic";
 
 export const metadata = { title: "Payment · AI Time Machine" };
 
-export default async function PaymentSuccessPage({ searchParams }: { searchParams: Promise<{ order_id?: string; retry?: string }> }) {
-  const { order_id: orderId, retry } = await searchParams;
-  if (orderId) await confirmPendingCashfreeOrder(orderId);
+export default async function PaymentSuccessPage({ searchParams }: { searchParams: Promise<{ order_id?: string; retry?: string; session_id?: string }> }) {
+  const { order_id: orderId, retry, session_id: sessionId } = await searchParams;
+  if (orderId) {
+    await confirmPendingCashfreeOrder(orderId);
+    await confirmPendingStripeOrder(orderId, sessionId);
+  }
   const payment = orderId ? await prisma.payment.findUnique({ where: { id: orderId } }) : null;
   const paid = payment?.status === "paid" || payment?.status === "paid_unassigned";
   const failed = payment?.status === "failed";
@@ -45,6 +49,7 @@ export default async function PaymentSuccessPage({ searchParams }: { searchParam
         ) : paid && payment.email ? (
           <>
             {payment.gateway === "cashfree" && payment.gatewayConfirmedAt && !payment.isTest ? <PurchaseEvent orderId={payment.id} value={payment.amountInr} /> : null}
+            {payment.gateway === "stripe" && payment.gatewayConfirmedAt && !payment.isTest ? <PurchaseEvent orderId={payment.id} value={(payment.amountUsdCents ?? 0) / 100} currency="USD" market="us" /> : null}
             <h1>Payment received</h1>
             <PaymentCodeForm email={payment.email} orderId={payment.id} />
           </>
@@ -55,6 +60,27 @@ export default async function PaymentSuccessPage({ searchParams }: { searchParam
             <Link className="btn btn-p" href="/contact">
               Contact support
             </Link>
+          </>
+        ) : payment.gateway === "stripe" ? (
+          <>
+            <h1>{failed ? "The payment did not go through" : "Payment not finished yet"}</h1>
+            <p className="lead">
+              {failed
+                ? "No money was taken. Your details are saved, so you can pay again."
+                : "If you just paid, wait a moment and check again. If you left the payment page, you can pay again. Your details are saved."}
+            </p>
+            {retry === "failed" ? <p className="field-error">We could not reopen the payment. Please try once more.</p> : null}
+            <form method="post" action={`/api/checkout/retry?order=${encodeURIComponent(payment.id)}`} className="stack">
+              <button className="btn btn-p" type="submit">
+                Pay again
+              </button>
+            </form>
+            <p className="stack">
+              <Link className="btn btn-g" href={`/payment/success?order_id=${encodeURIComponent(payment.id)}`}>
+                I paid, check again
+              </Link>
+            </p>
+            <p className="payee-note">Payment is processed by Stripe and may show as Rizwiz Enterprises, the company behind AI Time Machine.</p>
           </>
         ) : (
           <>

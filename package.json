@@ -8,7 +8,7 @@
     "start": "next start -H 0.0.0.0 -p ${PORT:-3000}",
     "start:railway": "prisma migrate deploy && npx tsx scripts/backfill-activity.ts && next start -H 0.0.0.0 -p ${PORT:-3000}",
     "lint": "eslint .",
-    "test": "node scripts/with-local-db.mjs --push --seed -- tsx --test --test-concurrency=1 tests/content.test.ts tests/checkout-flow.test.ts tests/alerts-followups.test.ts tests/admin-stats.test.ts tests/staff-role.test.ts tests/admin-console.test.ts tests/affiliates.test.ts tests/marketing.test.ts tests/preview.test.tsx tests/activity.test.ts tests/marketing-site.test.ts tests/login-pin.test.ts tests/razorpay-backup.test.ts tests/google-ads.test.ts",
+    "test": "node scripts/with-local-db.mjs --push --seed -- tsx --test --test-concurrency=1 tests/content.test.ts tests/checkout-flow.test.ts tests/alerts-followups.test.ts tests/admin-stats.test.ts tests/staff-role.test.ts tests/admin-console.test.ts tests/affiliates.test.ts tests/marketing.test.ts tests/preview.test.tsx tests/activity.test.ts tests/marketing-site.test.ts tests/login-pin.test.ts tests/razorpay-backup.test.ts tests/google-ads.test.ts tests/us-checkout.test.ts",
     "test:otp": "playwright test tests/otp-paste.spec.ts",
     "setup": "node scripts/with-local-db.mjs --push --seed -- node -e \"console.log('Database is ready.')\"",
     "postinstall": "prisma generate"
@@ -27,7 +27,8 @@
     "prisma": "^6.19.0",
     "qrcode": "^1.5.4",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "stripe": "^23.2.0"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.3.14",

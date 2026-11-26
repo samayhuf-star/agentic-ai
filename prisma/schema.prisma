@@ -54,6 +54,8 @@ model Payment {
   user                User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
   gateway             String
   amountInr           Int
+  currency            String     @default("INR")
+  amountUsdCents      Int?
   status              String
   isTest              Boolean    @default(false)
   phone               String?

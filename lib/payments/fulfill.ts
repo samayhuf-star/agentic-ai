@@ -4,7 +4,8 @@ import { isEmail } from "@/lib/auth";
 import { sendFulfilmentCode } from "@/lib/payments/sign-in-code";
 import { queueOwnerAlert } from "@/lib/alerts/notify";
 import { markLeadFailed, markLeadPaid, saveBuyerContact } from "@/lib/leads";
-import { indianMobile } from "@/lib/phone";
+import { indianMobile, usMobile } from "@/lib/phone";
+import { formatUsdCents } from "@/lib/us";
 import { ensureTeam } from "@/lib/team";
 import { syncCommission } from "@/lib/affiliates/commission";
 import type { PaidEvent } from "@/lib/payments/types";
@@ -18,11 +19,31 @@ function chosenEmail(remote?: string | null, stored?: string | null) {
   return isEmail(remoteEmail) ? remoteEmail : null;
 }
 
-function chosenPhone(remote?: string | null, stored?: string | null) {
+function chosenPhone(remote?: string | null, stored?: string | null, currency?: string | null) {
+  if ((currency || "").toUpperCase() === "USD") {
+    const storedUs = usMobile(stored);
+    if (storedUs.ok) return storedUs.e164;
+    const remoteUs = usMobile(remote);
+    if (remoteUs.ok) return remoteUs.e164;
+    const storedVal = (stored || "").trim();
+    if (storedVal) return storedVal.slice(0, 20);
+    const remoteVal = (remote || "").trim();
+    return remoteVal ? remoteVal.slice(0, 20) : null;
+  }
   const storedMobile = indianMobile(stored);
   if (storedMobile.ok) return storedMobile.e164;
   const remoteMobile = indianMobile(remote);
   return remoteMobile.ok ? remoteMobile.e164 : null;
+}
+
+function paidAmountLabel(payment: { amountInr: number; currency?: string | null; amountUsdCents?: number | null } | null, event: PaidEvent) {
+  const currency = (event.currency || payment?.currency || "INR").toUpperCase();
+  if (currency === "USD") {
+    const cents = event.amountUsdCents ?? payment?.amountUsdCents ?? 0;
+    return formatUsdCents(cents);
+  }
+  const amount = event.amountInr ?? payment?.amountInr ?? 0;
+  return `₹${amount.toLocaleString("en-IN")}`;
 }
 
 function chosenName(remote?: string | null, stored?: string | null) {
@@ -37,9 +58,15 @@ async function phoneIsFree(tx: Prisma.TransactionClient, phone: string, exceptUs
   return !owner || owner.id === exceptUserId;
 }
 
-function eventMatchesOrder(payment: { gateway: string; amountInr: number } | null, gateway: GatewayName, event: PaidEvent) {
+function eventMatchesOrder(payment: { gateway: string; amountInr: number; currency?: string | null; amountUsdCents?: number | null } | null, gateway: GatewayName, event: PaidEvent) {
   if (!payment) return false;
   if (payment.gateway !== gateway) return false;
+  if (gateway === "stripe") {
+    const currency = (event.currency || payment.currency || "").toUpperCase();
+    if (currency !== "USD") return false;
+    if (event.amountUsdCents == null || payment.amountUsdCents == null) return false;
+    return event.amountUsdCents === payment.amountUsdCents;
+  }
   if (event.amountInr == null || event.amountInr !== payment.amountInr) return false;
   return (event.currency || "").toUpperCase() === "INR";
 }
@@ -78,6 +105,8 @@ async function fulfillPaymentInner(gateway: GatewayName, event: PaidEvent) {
         phone: event.phone || payment.phone,
         email: event.email || payment.email,
         amountInr: event.amountInr ?? payment.amountInr,
+        amountUsdCents: event.amountUsdCents ?? payment.amountUsdCents,
+        currency: event.currency || payment.currency,
         orderId: payment.id,
         status: "failed",
       });
@@ -104,7 +133,7 @@ async function fulfillPaymentInner(gateway: GatewayName, event: PaidEvent) {
     return { ok: true, duplicate: true, userId: payment.userId };
   }
 
-  const phone = chosenPhone(event.phone, payment?.phone);
+  const phone = chosenPhone(event.phone, payment?.phone, event.currency || payment?.currency);
   const email = chosenEmail(event.email, payment?.email);
   const name = chosenName(event.name, payment?.name);
   const amountInr = event.amountInr ?? payment?.amountInr ?? 0;
@@ -139,6 +168,8 @@ async function fulfillPaymentInner(gateway: GatewayName, event: PaidEvent) {
       name,
       phone,
       amountInr,
+      amountUsdCents: event.amountUsdCents ?? payment?.amountUsdCents,
+      currency: event.currency || payment?.currency,
       orderId: event.orderId,
       status: "paid, email not saved",
     });
@@ -150,7 +181,7 @@ async function fulfillPaymentInner(gateway: GatewayName, event: PaidEvent) {
       amountInr,
       source: payment ? paymentSource(payment) : null,
       status: "paid",
-      summary: `Paid ₹${amountInr.toLocaleString("en-IN")} (${gateway}, email not saved)`,
+      summary: `Paid ${paidAmountLabel(payment, event)} (${gateway}, email not saved)`,
       isTest: payment?.isTest,
       dedupeKey: `payment.paid:${event.orderId}`,
     });
@@ -250,7 +281,7 @@ async function fulfillPaymentInner(gateway: GatewayName, event: PaidEvent) {
     amountInr,
     source: payment ? paymentSource(payment) : null,
     status: "paid",
-    summary: `Paid ₹${amountInr.toLocaleString("en-IN")} (${gateway})`,
+    summary: `Paid ${paidAmountLabel(payment, event)} (${gateway})`,
     isTest: payment?.isTest,
     dedupeKey: `payment.paid:${event.orderId}`,
   });
@@ -264,6 +295,8 @@ async function fulfillPaymentInner(gateway: GatewayName, event: PaidEvent) {
     email,
     phone,
     amountInr,
+    amountUsdCents: event.amountUsdCents ?? payment?.amountUsdCents,
+    currency: event.currency || payment?.currency,
     orderId: event.orderId,
     status: "paid",
   });

@@ -3,6 +3,7 @@ import { applyMarketingToUser } from "@/lib/marketing/server";
 import { isAdminEmail, isProduction, isStaffEmail } from "@/lib/config";
 import { hashSecret, randomToken, sixDigitCode } from "@/lib/crypto";
 import { CODE_TTL_COPY, CODE_TTL_MS, codeFromEmailBody } from "@/lib/login-code";
+import { SIGN_IN_CODE_SUBJECTS } from "@/lib/payments/sign-in-code";
 import { sendEmail } from "@/lib/messaging/email";
 import { clientIp, hitLimit } from "@/lib/rate-limit";
 import { welcomeEmail } from "@/lib/copy";
@@ -53,7 +54,7 @@ async function issueCode(email: string, request: Request) {
     orderBy: { createdAt: "desc" },
   });
   const prior = await prisma.emailLog.findFirst({
-    where: { toEmail: email, subject: { in: ["Your AI Time Machine code", "Payment of ₹1,999 confirmed — your sign-in code"] } },
+    where: { toEmail: email, subject: { in: SIGN_IN_CODE_SUBJECTS } },
     orderBy: { createdAt: "desc" },
   });
   const priorCode = prior ? codeFromEmailBody(prior.body) : null;

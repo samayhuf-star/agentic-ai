@@ -13,14 +13,19 @@ export const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID || "";
 /** Production Google Ads account 909-928-3797. Fallback keeps remarketing on if the env var is unset. */
 export const GOOGLE_ADS_ID = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID || "AW-18595562469";
 export const GOOGLE_ADS_PURCHASE_LABEL = process.env.NEXT_PUBLIC_GOOGLE_ADS_PURCHASE_LABEL || "_Ku4CN3W478dEOWHh6NF";
+/** US Google Ads account — no fallback. Blank until the new US account and conversion label are set. */
+export const GOOGLE_ADS_US_ID = process.env.NEXT_PUBLIC_GOOGLE_ADS_US_ID || "";
+export const GOOGLE_ADS_US_PURCHASE_LABEL = process.env.NEXT_PUBLIC_GOOGLE_ADS_US_PURCHASE_LABEL || "";
 export const GA4_ID = process.env.NEXT_PUBLIC_GA4_ID || "";
 
 export function trackLead(eventId: string) {
   window.fbq?.("track", "Lead", {}, { eventID: eventId });
 }
 
+type PurchaseOpts = { currency?: "INR" | "USD"; market?: "in" | "us" };
+
 /** Call once per order. Meta dedupes against the server event by eventID; Google by transaction_id. */
-export function trackPurchase(orderId: string, value: number) {
+export function trackPurchase(orderId: string, value: number, opts: PurchaseOpts = {}) {
   const key = `aitm_purchase_${orderId}`;
   try {
     if (window.localStorage.getItem(key)) return;
@@ -28,11 +33,17 @@ export function trackPurchase(orderId: string, value: number) {
   } catch {
     // storage blocked: still fire; Meta and Google dedupe
   }
-  window.fbq?.("track", "Purchase", { value, currency: "INR" }, { eventID: `purchase_${orderId}` });
-  if (GOOGLE_ADS_ID && GOOGLE_ADS_PURCHASE_LABEL) {
-    window.gtag?.("event", "conversion", { send_to: `${GOOGLE_ADS_ID}/${GOOGLE_ADS_PURCHASE_LABEL}`, value, currency: "INR", transaction_id: orderId });
+  const currency = opts.currency || "INR";
+  const market = opts.market || "in";
+  if (market === "in") {
+    window.fbq?.("track", "Purchase", { value, currency }, { eventID: `purchase_${orderId}` });
+    if (GOOGLE_ADS_ID && GOOGLE_ADS_PURCHASE_LABEL) {
+      window.gtag?.("event", "conversion", { send_to: `${GOOGLE_ADS_ID}/${GOOGLE_ADS_PURCHASE_LABEL}`, value, currency, transaction_id: orderId });
+    }
+  } else if (GOOGLE_ADS_US_ID && GOOGLE_ADS_US_PURCHASE_LABEL) {
+    window.gtag?.("event", "conversion", { send_to: `${GOOGLE_ADS_US_ID}/${GOOGLE_ADS_US_PURCHASE_LABEL}`, value, currency, transaction_id: orderId });
   }
   if (GA4_ID) {
-    window.gtag?.("event", "purchase", { transaction_id: orderId, value, currency: "INR" });
+    window.gtag?.("event", "purchase", { transaction_id: orderId, value, currency });
   }
 }

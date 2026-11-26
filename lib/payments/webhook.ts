@@ -2,13 +2,14 @@ import {
   verifyCashfreeSignature,
   verifyPayuSignature,
   verifyRazorpaySignature,
+  verifyStripeSignature,
   isGateway,
   type GatewayName,
 } from "@/lib/payments/signature";
-import { cashfreeWebhookMeta, parseCashfreeEvent, parseFormOrJson, parsePayuEvent, parseRazorpayEvent } from "@/lib/payments/parse";
+import { cashfreeWebhookMeta, parseCashfreeEvent, parseFormOrJson, parsePayuEvent, parseRazorpayEvent, parseStripeEvent } from "@/lib/payments/parse";
 import { logEvent } from "@/lib/activity/log";
 import { fulfillPayment } from "@/lib/payments/fulfill";
-import { markCashfreeConfirmed } from "@/lib/payments/confirmed";
+import { markCashfreeConfirmed, markStripeConfirmed } from "@/lib/payments/confirmed";
 import { triggerRecovery } from "@/lib/followups/recovery";
 
 export async function handleWebhook(gatewayName: string, raw: string, headers: Headers) {
@@ -27,7 +28,9 @@ export async function handleWebhook(gatewayName: string, raw: string, headers: H
       ? parseCashfreeEvent(payload)
       : gatewayName === "razorpay"
         ? parseRazorpayEvent(payload)
-        : parsePayuEvent(payload);
+        : gatewayName === "stripe"
+          ? parseStripeEvent(payload)
+          : parsePayuEvent(payload);
   const meta = gatewayName === "cashfree" ? cashfreeWebhookMeta(payload) : null;
   const attemptStatus = meta?.paymentStatus || event.status;
   await logEvent({
@@ -58,6 +61,7 @@ export async function handleWebhook(gatewayName: string, raw: string, headers: H
   }
   await fulfillPayment(gatewayName, event);
   if (gatewayName === "cashfree" && event.status === "paid" && event.orderId) await markCashfreeConfirmed(event.orderId, "webhook");
+  if (gatewayName === "stripe" && event.status === "paid" && event.orderId) await markStripeConfirmed(event.orderId, "webhook");
   // Failed or dropped payment: recovery email #1 right away (no-op unless RECOVERY_EMAILS=on).
   if (gatewayName === "cashfree" && event.orderId && (event.status === "failed" || /USER_DROPPED|ORDER_EXPIRED|PAYMENT_EXPIRED|EXPIRED/.test(raw))) {
     await triggerRecovery(event.orderId).catch((error) => console.error("recovery trigger", error));
@@ -68,5 +72,6 @@ export async function handleWebhook(gatewayName: string, raw: string, headers: H
 function verify(gateway: GatewayName, raw: string, headers: Headers, contentType: string) {
   if (gateway === "cashfree") return verifyCashfreeSignature(raw, headers);
   if (gateway === "razorpay") return verifyRazorpaySignature(raw, headers);
+  if (gateway === "stripe") return verifyStripeSignature(raw, headers);
   return verifyPayuSignature(raw, headers, contentType);
 }

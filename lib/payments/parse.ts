@@ -97,3 +97,30 @@ export function cashfreeWebhookMeta(payload: unknown) {
     amountInr: order?.order_amount != null ? Math.round(Number(order.order_amount)) : null,
   };
 }
+
+export function parseStripeEvent(payload: unknown): PaidEvent {
+  const root = asRecord(payload);
+  const type = text(root?.type);
+  const data = asRecord(root?.data);
+  const obj = asRecord(data?.object) ?? root;
+  const metadata = asRecord(obj?.metadata);
+  const details = asRecord(obj?.customer_details);
+  const orderId = text(obj?.client_reference_id) || text(metadata?.orderId) || text(metadata?.order_id);
+  const amountTotal = obj?.amount_total != null ? Math.round(Number(obj.amount_total)) : null;
+  const currency = (text(obj?.currency) || "usd").toUpperCase() || "USD";
+  const paymentStatus = text(obj?.payment_status).toLowerCase();
+  const paid = (type === "checkout.session.completed" || type === "checkout.session.async_payment_succeeded") && paymentStatus === "paid";
+  const failed = type === "checkout.session.async_payment_failed";
+  return {
+    orderId,
+    phone: text(details?.phone) || text(obj?.customer_phone) || null,
+    email: text(details?.email) || text(obj?.customer_email) || null,
+    name: text(details?.name) || null,
+    amountInr: null,
+    amountUsdCents: amountTotal,
+    currency,
+    gatewayPaymentId: text(obj?.payment_intent) || text(obj?.id) || null,
+    status: paid ? "paid" : failed ? "failed" : "ignored",
+    raw: payload,
+  };
+}

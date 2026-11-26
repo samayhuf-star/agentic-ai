@@ -39,6 +39,45 @@ function loginCustomerId() {
   return digits(process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID || DEFAULT_ADS_LOGIN_CUSTOMER_ID);
 }
 
+
+function usCustomerId() {
+  return digits(process.env.GOOGLE_ADS_US_CUSTOMER_ID || "");
+}
+
+function usLoginCustomerId() {
+  return digits(process.env.GOOGLE_ADS_US_LOGIN_CUSTOMER_ID || "") || usCustomerId();
+}
+
+function usConversionActionName() {
+  const customer = usCustomerId();
+  const id = digits(process.env.GOOGLE_ADS_US_CONVERSION_ACTION_ID || "");
+  if (!customer || !id) return null;
+  return `customers/${customer}/conversionActions/${id}`;
+}
+
+export function usGoogleAdsUploadConfigured() {
+  return googleAdsUploadConfigured() && Boolean(usConversionActionName());
+}
+
+/** Google Ads US account: `yyyy-mm-dd HH:mm:ss+HH:mm` in America/New_York. */
+export function adsConversionDateTimeUs(at: Date) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+    timeZoneName: "longOffset",
+  }).formatToParts(at);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value || "00";
+  const rawOffset = (parts.find((p) => p.type === "timeZoneName")?.value || "GMT-05:00").replace("GMT", "");
+  const offset = rawOffset === "Z" || rawOffset === "+00:00" ? "+00:00" : rawOffset;
+  return `${get("year")}-${get("month")}-${get("day")} ${get("hour")}:${get("minute")}:${get("second")}${offset}`;
+}
+
 function conversionActionName() {
   const id = digits(process.env.GOOGLE_ADS_CONVERSION_ACTION_ID || DEFAULT_ADS_CONVERSION_ACTION_ID);
   return `customers/${customerId()}/conversionActions/${id}`;
@@ -111,12 +150,15 @@ export function clickConversionPayload(input: {
   email?: string | null;
   phone?: string | null;
   enhanced: boolean;
+  currencyCode?: string;
+  conversionAction?: string;
+  conversionDateTime?: string;
 }) {
   const conversion: Record<string, unknown> = {
-    conversionAction: conversionActionName(),
-    conversionDateTime: adsConversionDateTime(input.at),
+    conversionAction: input.conversionAction || conversionActionName(),
+    conversionDateTime: input.conversionDateTime || adsConversionDateTime(input.at),
     conversionValue: input.value,
-    currencyCode: "INR",
+    currencyCode: input.currencyCode || "INR",
     orderId: input.orderId,
   };
   if (input.gclid) conversion.gclid = input.gclid;
@@ -143,13 +185,16 @@ export async function uploadPaidGoogleConversion(orderId: string) {
   if (!payment || payment.isTest) return { ok: false as const, skipped: "not_sale" as const };
   if (payment.status !== "paid" && payment.status !== "paid_unassigned") return { ok: false as const, skipped: "not_sale" as const };
   if (payment.gateway === "cashfree" && !payment.gatewayConfirmedAt) return { ok: false as const, skipped: "unconfirmed" as const };
-  if (payment.gateway !== "cashfree" && payment.gateway !== "razorpay") return { ok: false as const, skipped: "gateway" as const };
+  if (payment.gateway === "stripe" && !payment.gatewayConfirmedAt) return { ok: false as const, skipped: "unconfirmed" as const };
+  if (payment.gateway !== "cashfree" && payment.gateway !== "razorpay" && payment.gateway !== "stripe") return { ok: false as const, skipped: "gateway" as const };
+  if (payment.gateway === "stripe" && !usConversionActionName()) return { ok: false as const, skipped: "no_us_action" as const };
 
   const clicks = clickIdsFromPayment(payment);
   const enhanced = enhancedConversionsEnabled();
+  const isUs = payment.gateway === "stripe";
   const payload = clickConversionPayload({
     orderId: payment.id,
-    value: payment.amountInr,
+    value: isUs ? (payment.amountUsdCents ?? 0) / 100 : payment.amountInr,
     at: payment.paidAt || payment.gatewayConfirmedAt || new Date(),
     gclid: clicks.gclid,
     gbraid: clicks.gbraid,
@@ -157,6 +202,9 @@ export async function uploadPaidGoogleConversion(orderId: string) {
     email: payment.email,
     phone: payment.phone,
     enhanced,
+    currencyCode: isUs ? "USD" : "INR",
+    conversionAction: isUs ? usConversionActionName() || undefined : undefined,
+    conversionDateTime: isUs ? adsConversionDateTimeUs(payment.paidAt || payment.gatewayConfirmedAt || new Date()) : undefined,
   });
   if (!payload) return { ok: false as const, skipped: "no_click_id" as const };
 
@@ -168,13 +216,14 @@ export async function uploadPaidGoogleConversion(orderId: string) {
 
   try {
     const token = await accessToken();
-    const cid = customerId();
+    const isUs = payment.gateway === "stripe";
+    const cid = isUs ? usCustomerId() : customerId();
     const response = await fetch(`https://googleads.googleapis.com/${API_VERSION}/customers/${cid}:uploadClickConversions`, {
       method: "POST",
       headers: {
         authorization: `Bearer ${token}`,
         "developer-token": process.env.GOOGLE_ADS_DEVELOPER_TOKEN!.trim(),
-        "login-customer-id": loginCustomerId(),
+        "login-customer-id": isUs ? usLoginCustomerId() : loginCustomerId(),
         "content-type": "application/json",
       },
       body: JSON.stringify(payload),
