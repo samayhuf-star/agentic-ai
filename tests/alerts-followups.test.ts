@@ -141,3 +141,58 @@ test("recovery sequence stops the older checkout is still open emails", async ()
     delete process.env.RECOVERY_CUTOFF;
   }
 });
+
+test("recovery starts 15 minutes after an unpaid checkout and not before", async () => {
+  const { runRecovery, DROPPED_AFTER } = await import("../lib/followups/recovery");
+  assert.equal(DROPPED_AFTER, 15 * 60 * 1000);
+  process.env.RESEND_API_KEY = "re_test";
+  process.env.RESEND_FROM = "AI Time Machine <no-reply@adiology.io>";
+  process.env.RECOVERY_EMAILS = "on";
+  process.env.RECOVERY_CUTOFF = "2026-11-20T00:00:00Z";
+  const original = globalThis.fetch;
+  const sent: string[] = [];
+  globalThis.fetch = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+    const body = JSON.parse(String(init?.body || "{}")) as { subject?: string; to?: string };
+    if (body.subject) sent.push(body.subject);
+    return new Response(JSON.stringify({ id: "re_test_id" }), { status: 200 });
+  }) as typeof fetch;
+  const stamp = Date.now();
+  const ripeEmail = `ripe-${stamp}@shop.test`;
+  const freshEmail = `fresh-${stamp}@shop.test`;
+  await prisma.payment.create({
+    data: {
+      id: `brripe${stamp}`,
+      gateway: "cashfree",
+      amountInr: 1999,
+      status: "pending",
+      email: ripeEmail,
+      name: "Ripe",
+      createdAt: new Date(Date.now() - 16 * 60 * 1000),
+    },
+  });
+  await prisma.payment.create({
+    data: {
+      id: `brfresh${stamp}`,
+      gateway: "cashfree",
+      amountInr: 1999,
+      status: "pending",
+      email: freshEmail,
+      name: "Fresh",
+      createdAt: new Date(Date.now() - 5 * 60 * 1000),
+    },
+  });
+  try {
+    const first = await runRecovery();
+    assert.ok(first.sent >= 1);
+    assert.equal(await prisma.followupSend.count({ where: { key: `recovery:${ripeEmail}:r1` } }), 1);
+    assert.equal(await prisma.followupSend.count({ where: { key: `recovery:${freshEmail}:r1` } }), 0);
+    assert.ok(sent.some((s) => s.includes("did not go through")));
+    const again = await runRecovery();
+    assert.equal(again.sent, 0);
+  } finally {
+    globalThis.fetch = original;
+    delete process.env.RESEND_API_KEY;
+    delete process.env.RECOVERY_EMAILS;
+    delete process.env.RECOVERY_CUTOFF;
+  }
+});

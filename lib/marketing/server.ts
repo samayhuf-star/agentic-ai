@@ -1,7 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { readCookie } from "@/lib/affiliates/core";
 import { clientIp } from "@/lib/rate-limit";
-import { channelOf, decodeMarketing, MT_COOKIE, sourceOf, type Touch } from "@/lib/marketing/touch";
+import { channelOf, decodeMarketing, MT_COOKIE, sourceOf, touchFromRequest, type Touch } from "@/lib/marketing/touch";
 import { prisma } from "@/lib/prisma";
 import { metaCapiEnabled } from "@/lib/marketing/meta";
 
@@ -10,8 +10,24 @@ export type StoredTouch = Touch & { _fbp?: string; _fbc?: string; _ua?: string; 
 /** Marketing fields for a new checkout payment, from the visitor's first-party cookie. */
 export function marketingFromRequest(request: Request, affiliateId: string | null) {
   const mk = decodeMarketing(readCookie(request, MT_COOKIE));
-  const first: StoredTouch | null = mk?.f || null;
-  const last: StoredTouch | null = mk?.l ? { ...mk.l } : null;
+  let first: StoredTouch | null = mk?.f || null;
+  let last: StoredTouch | null = mk?.l ? { ...mk.l } : null;
+  try {
+    const url = new URL(request.url);
+    const forwarded = request.headers.get("x-forwarded-host")?.split(",")[0].trim();
+    if (forwarded) {
+      url.host = forwarded;
+      url.port = "";
+    }
+    const own = [url.hostname, forwarded || "", "theaitimemachine.com", "www.theaitimemachine.com"].filter(Boolean);
+    const fresh = touchFromRequest(url, request.headers.get("referer"), own);
+    if (fresh) {
+      last = { ...fresh };
+      if (!first) first = last;
+    }
+  } catch {
+    // ignore a bad request URL
+  }
   if (metaCapiEnabled()) {
     const extra: StoredTouch = last || { at: Math.floor(Date.now() / 1000) };
     const fbp = readCookie(request, "_fbp");

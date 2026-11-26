@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { applyMarketingToUser } from "@/lib/marketing/server";
 import { isAdminEmail, isProduction, isStaffEmail } from "@/lib/config";
 import { hashSecret, randomToken, sixDigitCode } from "@/lib/crypto";
+import { CODE_TTL_COPY, CODE_TTL_MS, codeFromEmailBody } from "@/lib/login-code";
 import { sendEmail } from "@/lib/messaging/email";
 import { clientIp, hitLimit } from "@/lib/rate-limit";
 import { welcomeEmail } from "@/lib/copy";
@@ -47,13 +48,26 @@ async function issueCode(email: string, request: Request) {
   if (!emailLimit.ok || !ipLimit.ok) {
     return { ok: false as const, status: 429, message: "Too many codes were asked for. Wait a few minutes and try again." };
   }
-  const code = sixDigitCode();
-  await prisma.loginCode.deleteMany({ where: { email } });
-  const codeRow = await prisma.loginCode.create({
-    data: { email, codeHash: hashSecret(code), expiresAt: new Date(Date.now() + TEN_MINUTES) },
+  const existing = await prisma.loginCode.findFirst({
+    where: { email, expiresAt: { gt: new Date() } },
+    orderBy: { createdAt: "desc" },
   });
+  const prior = await prisma.emailLog.findFirst({
+    where: { toEmail: email, subject: { in: ["Your AI Time Machine code", "Payment of ₹1,999 confirmed — your sign-in code"] } },
+    orderBy: { createdAt: "desc" },
+  });
+  const priorCode = prior ? codeFromEmailBody(prior.body) : null;
+  const reusable = Boolean(existing && priorCode && existing.codeHash === hashSecret(priorCode));
+  const code = reusable && priorCode ? priorCode : sixDigitCode();
+  let codeRow = existing;
+  if (!reusable) {
+    await prisma.loginCode.deleteMany({ where: { email } });
+    codeRow = await prisma.loginCode.create({
+      data: { email, codeHash: hashSecret(code), expiresAt: new Date(Date.now() + CODE_TTL_MS) },
+    });
+  }
   const subject = "Your AI Time Machine code";
-  const text = `Your AI Time Machine code is ${code}. It expires in 10 minutes. If you did not ask for it, ignore this email.`;
+  const text = `Your AI Time Machine code is ${code}. It expires in ${CODE_TTL_COPY}. If you did not ask for it, ignore this email.`;
   try {
     await sendEmail(email, subject, text);
   } catch {
@@ -65,7 +79,7 @@ async function issueCode(email: string, request: Request) {
     status: "requested",
     summary: `Sign-in code emailed to ${email}`,
     tag: eventTag({ email }),
-    dedupeKey: `otp:${codeRow.id}`,
+    dedupeKey: `otp:${codeRow!.id}`,
   });
   const emailIsMock = !process.env.RESEND_API_KEY;
   const showCode = emailIsMock || !isProduction();

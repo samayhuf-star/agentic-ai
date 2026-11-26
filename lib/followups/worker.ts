@@ -1,4 +1,9 @@
 /** Node-only worker for payment recovery emails (off unless RECOVERY_EMAILS=on). */
+export function recoveryWorkerRunning() {
+  const g = globalThis as typeof globalThis & { __recoveryTimer?: ReturnType<typeof setInterval> };
+  return Boolean(g.__recoveryTimer);
+}
+
 export async function startRecoveryWorker() {
   if (process.env.NODE_ENV !== "production") return;
   const g = globalThis as typeof globalThis & { __recoveryTimer?: ReturnType<typeof setInterval> };
@@ -34,4 +39,7 @@ export async function startRecoveryWorker() {
     }
   };
   g.__recoveryTimer = setInterval(tick, 60 * 1000);
+  setTimeout(() => {
+    void tick();
+  }, 5 * 1000);
 }

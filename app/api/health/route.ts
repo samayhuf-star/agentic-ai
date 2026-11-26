@@ -6,5 +6,5 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   const health = await checkHealth();
-  return NextResponse.json({ ok: health.ok, db: health.db, ms: health.ms, checkedAt: health.checkedAt }, { status: health.ok ? 200 : 503 });
+  return NextResponse.json({ ok: health.ok, db: health.db, ms: health.ms, checkedAt: health.checkedAt, recovery: health.recovery }, { status: health.ok ? 200 : 503 });
 }

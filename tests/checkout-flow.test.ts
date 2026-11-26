@@ -158,7 +158,7 @@ test("checkout, webhook, email code, and team setup in mock mode", async () => {
     assert.equal(sent.body.from, "AI Time Machine <no-reply@adiology.io>");
     assert.equal(sent.body.to, "resend-owner@example.com");
     assert.equal(sent.body.subject, "Your AI Time Machine code");
-    assert.match(sent.body.text || "", /^Your AI Time Machine code is \d{6}\. It expires in 10 minutes\./);
+    assert.match(sent.body.text || "", /^Your AI Time Machine code is \d{6}\. It expires in 24 hours\./);
     assert.equal(sent.body.reply_to, "support@theaitimemachine.com");
     const log = await prisma.emailLog.findFirst({ where: { toEmail: "resend-owner@example.com" }, orderBy: { createdAt: "desc" } });
     assert.equal(log?.provider, "resend");
@@ -502,4 +502,51 @@ test("UPI checkout asks Cashfree for UPI only, and the card path excludes UPI", 
     delete process.env.CASHFREE_APP_ID;
     delete process.env.CASHFREE_SECRET_KEY;
   }
+});
+
+test("requesting a sign-in code again reuses the unexpired 24-hour code", async () => {
+  const { requestLoginCode } = await import("../lib/auth");
+  const { hashSecret } = await import("../lib/crypto");
+  process.env.RESEND_API_KEY = "re_test_key";
+  process.env.RESEND_FROM = "AI Time Machine <no-reply@adiology.io>";
+  process.env.ADMIN_EMAILS = "reuse-owner@example.com";
+  const original = globalThis.fetch;
+  const bodies: string[] = [];
+  globalThis.fetch = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+    const body = JSON.parse(String(init?.body || "{}")) as { text?: string };
+    if (body.text) bodies.push(body.text);
+    return new Response("{}", { status: 200 });
+  }) as typeof fetch;
+  try {
+    const first = await requestLoginCode(
+      "reuse-owner@example.com",
+      new Request("http://localhost/api/auth/request-code", { headers: { "x-forwarded-for": "203.0.113.81" } }),
+    );
+    const second = await requestLoginCode(
+      "reuse-owner@example.com",
+      new Request("http://localhost/api/auth/request-code", { headers: { "x-forwarded-for": "203.0.113.81" } }),
+    );
+    assert.equal(first.ok, true);
+    assert.equal(second.ok, true);
+    assert.equal(bodies.length, 2);
+    const code = bodies[0].match(/code is (\d{6})/)?.[1];
+    assert.equal(code, bodies[1].match(/code is (\d{6})/)?.[1]);
+    assert.match(bodies[0], /expires in 24 hours/);
+    const rows = await prisma.loginCode.findMany({ where: { email: "reuse-owner@example.com" } });
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].codeHash, hashSecret(code!));
+    assert.ok(rows[0].expiresAt.getTime() - Date.now() > 20 * 60 * 60 * 1000);
+  } finally {
+    globalThis.fetch = original;
+    delete process.env.RESEND_API_KEY;
+  }
+});
+
+test("Cashfree expiry and drop webhooks count as failed payments for recovery", async () => {
+  const { parseCashfreeEvent } = await import("../lib/payments/parse");
+  const expired = parseCashfreeEvent({ type: "ORDER_EXPIRED", data: { order: { order_id: "brexpire1", order_amount: 1999, order_currency: "INR" } } });
+  assert.equal(expired.status, "failed");
+  assert.equal(expired.orderId, "brexpire1");
+  const dropped = parseCashfreeEvent({ type: "PAYMENT_USER_DROPPED_WEBHOOK", data: { order: { order_id: "brdrop1", order_amount: 1999, order_currency: "INR" }, payment: { payment_status: "USER_DROPPED" } } });
+  assert.equal(dropped.status, "failed");
 });

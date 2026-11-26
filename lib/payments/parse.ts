@@ -24,7 +24,14 @@ export function parseCashfreeEvent(payload: unknown): PaidEvent {
   const type = text(root?.type);
   const paymentStatus = text(payment?.payment_status).toUpperCase();
   const success = type === "PAYMENT_SUCCESS_WEBHOOK" || paymentStatus === "SUCCESS";
-  const failed = type === "PAYMENT_FAILED_WEBHOOK" || paymentStatus === "FAILED";
+  const failed =
+    type === "PAYMENT_FAILED_WEBHOOK" ||
+    type === "PAYMENT_USER_DROPPED_WEBHOOK" ||
+    type === "ORDER_EXPIRED" ||
+    type.includes("EXPIRED") ||
+    paymentStatus === "FAILED" ||
+    paymentStatus === "USER_DROPPED" ||
+    paymentStatus === "EXPIRED";
   return {
     orderId: text(order?.order_id),
     phone: text(customer?.customer_phone) || text(asRecord(payment?.customer_details)?.customer_phone) || null,

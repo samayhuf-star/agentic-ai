@@ -207,3 +207,24 @@ export function newVisitorId() {
   crypto.getRandomValues(bytes);
   return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 }
+
+/** Path stored on MarketingVisit is the pathname only; query is applied to the marketing cookie. */
+export function splitPathQuery(raw: string) {
+  const text = (raw || "").trim();
+  if (!text.startsWith("/")) return { pathname: "/", search: "" };
+  const cut = text.slice(0, 400);
+  const q = cut.indexOf("?");
+  if (q < 0) return { pathname: cut.slice(0, 200) || "/", search: "" };
+  return { pathname: cut.slice(0, q).slice(0, 200) || "/", search: cut.slice(q) };
+}
+
+export function marketingCookieOptions(host: string, secure: boolean, maxAge = MT_DAYS * 86400) {
+  return {
+    path: "/",
+    sameSite: "lax" as const,
+    httpOnly: true,
+    secure,
+    maxAge,
+    ...(host.endsWith("theaitimemachine.com") ? { domain: ".theaitimemachine.com" } : {}),
+  };
+}

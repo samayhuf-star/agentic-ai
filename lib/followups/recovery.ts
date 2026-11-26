@@ -7,7 +7,8 @@ import { razorpayBackupUrl } from "@/lib/payments/razorpay-backup";
 
 /**
  * Payment recovery emails for failed or dropped checkouts.
- * r1 goes out immediately when a payment fails or is dropped, then +10 min, +2 h, +24 h and +3 days (final),
+ * r1 goes out when Cashfree reports failure or expiry, or when an order stays unpaid for about 15 minutes,
+ * then +10 min, +2 h, +24 h and +3 days (final),
  * measured from r1. Stops as soon as the buyer pays or opts out. One sequence per email address.
  * Customer sends need RECOVERY_EMAILS=on. Test sends (force) go only to the address given.
  */
@@ -23,8 +24,8 @@ export const RECOVERY_STEPS = [
 ] as const;
 type Step = (typeof RECOVERY_STEPS)[number]["step"];
 
-/** A Cashfree order expires 30 minutes after it is created; past that, an unpaid order counts as dropped. */
-const DROPPED_AFTER = 31 * MINUTE;
+/** Start the recovery sequence once an order has sat unpaid for this long. */
+export const DROPPED_AFTER = 15 * MINUTE;
 
 export function recoveryEnabled() {
   return process.env.RECOVERY_EMAILS === "on";
@@ -217,6 +218,13 @@ export async function triggerRecovery(orderId: string) {
   if (payment.createdAt < recoveryCutoff()) return null;
   const email = payment.email.toLowerCase();
   if (await blocked(email)) return null;
+  const lead = await prisma.lead.findUnique({ where: { orderId: payment.id }, select: { id: true } });
+  if (lead) {
+    const already = await prisma.followupSend.count({
+      where: { leadId: lead.id, step: { startsWith: "checkout_" } },
+    });
+    if (already) return null;
+  }
   return sendStep(orderId, "r1");
 }
 

@@ -2,6 +2,7 @@ import { audit } from "@/lib/admin/audit";
 import { logEvent, paymentSource } from "@/lib/activity/log";
 import { fulfillPayment } from "@/lib/payments/fulfill";
 import { prisma } from "@/lib/prisma";
+import { uploadPaidGoogleConversion } from "@/lib/marketing/google-ads";
 
 /** Public Razorpay payment link for recovery emails only. Never shown on checkout. */
 export const RAZORPAY_BACKUP_DEFAULT = "https://rzp.io/rzp/THEAITIMEMACHINE";
@@ -30,7 +31,7 @@ export function normalizeOrderId(value: unknown) {
 
 /**
  * Grant access for a buyer who paid the Razorpay backup link, same as a Cashfree payment.
- * Does not confirm the order as Cashfree and does not fire Google Ads / Meta purchase events.
+ * Does not confirm the order as Cashfree and does not fire Meta purchase events. Google Ads purchase is uploaded when a click id is stored.
  */
 export async function markPaidViaRazorpay(input: { orderId: string; razorpayPaymentId: string; actor: string }) {
   const order = normalizeOrderId(input.orderId);
@@ -131,6 +132,8 @@ export async function markPaidViaRazorpay(input: { orderId: string; razorpayPaym
     tag: "admin",
     dedupeKey: `payment.razorpay:${payment.id}`,
   });
+
+  await uploadPaidGoogleConversion(payment.id);
 
   const email = updated?.email || payment.email;
   const message = email

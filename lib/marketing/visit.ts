@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { readCookie } from "@/lib/affiliates/core";
-import { channelOf, decodeMarketing, isValidVisitorId, MT_COOKIE, newVisitorId, sourceOf, VID_COOKIE, type Touch } from "@/lib/marketing/touch";
+import { channelOf, decodeMarketing, isValidVisitorId, mergeTouch, MT_COOKIE, newVisitorId, sourceOf, splitPathQuery, touchFromRequest, VID_COOKIE, type MarketingCookie, type Touch } from "@/lib/marketing/touch";
 import { logEvent } from "@/lib/activity/log";
 import { deviceLabel, inAppKind } from "@/lib/device";
 
@@ -15,30 +15,53 @@ export function shouldRecordPath(path: string) {
   return !PRIVATE.test(path);
 }
 
+/** Build a marketing cookie from the request cookie plus any query on the reported path. */
+export function marketingFromVisit(request: Request, rawPath: string) {
+  const { pathname, search } = splitPathQuery(rawPath);
+  const prev = decodeMarketing(readCookie(request, MT_COOKIE));
+  try {
+    const url = new URL(request.url);
+    const forwarded = request.headers.get("x-forwarded-host")?.split(",")[0].trim();
+    if (forwarded) {
+      url.host = forwarded;
+      url.port = "";
+    }
+    url.pathname = pathname;
+    url.search = search;
+    const own = [url.hostname, forwarded || "", "theaitimemachine.com", "www.theaitimemachine.com"].filter(Boolean);
+    const touch = touchFromRequest(url, request.headers.get("referer"), own);
+    const next = mergeTouch(prev, touch, pathname);
+    return { pathname, cookie: next || prev };
+  } catch {
+    return { pathname, cookie: prev };
+  }
+}
+
 /** Persist one landing so the admin Sources view can count unique visitors. */
-export async function recordVisit(request: Request, path: string) {
-  if (!shouldRecordPath(path)) {
+export async function recordVisit(request: Request, path: string, marketing?: MarketingCookie | null) {
+  const { pathname } = splitPathQuery(path);
+  if (!shouldRecordPath(pathname)) {
     const visitorId = visitorIdFromRequest(request) || newVisitorId();
     return { visitorId, created: false, minted: !visitorIdFromRequest(request) };
   }
-  const mk = decodeMarketing(readCookie(request, MT_COOKIE));
+  const mk = marketing ?? decodeMarketing(readCookie(request, MT_COOKIE));
   const last: Touch | null = mk?.l || mk?.f || null;
   const source = sourceOf(last, { absent: "Direct" });
   let visitorId = visitorIdFromRequest(request);
   const minted = !visitorId;
   if (!visitorId) visitorId = newVisitorId();
   const recent = await prisma.marketingVisit.findFirst({
-    where: { visitorId, path, createdAt: { gte: new Date(Date.now() - 30 * 60 * 1000) } },
+    where: { visitorId, path: pathname, createdAt: { gte: new Date(Date.now() - 30 * 60 * 1000) } },
     select: { id: true },
   });
   if (recent) {
-    await logInAppPrompt(request, path, source, `visit:${recent.id}`);
-    return { visitorId, created: false, minted };
+    await logInAppPrompt(request, pathname, source, `visit:${recent.id}`);
+    return { visitorId, created: false, minted, marketing: mk };
   }
   const visit = await prisma.marketingVisit.create({
     data: {
       visitorId,
-      path: path.slice(0, 200),
+      path: pathname.slice(0, 200),
       source,
       channel: channelOf(last),
       campaign: last?.c?.slice(0, 120) || null,
@@ -49,12 +72,12 @@ export async function recordVisit(request: Request, path: string) {
     type: "visit",
     source,
     status: channelOf(last),
-    summary: `Visited ${path} from ${source}`,
+    summary: `Visited ${pathname} from ${source}`,
     detail: last?.c ? `Campaign ${last.c}` : null,
     dedupeKey: `visit:${visit.id}`,
   });
-  await logInAppPrompt(request, path, source, `visit:${visit.id}`);
-  return { visitorId, created: true, minted };
+  await logInAppPrompt(request, pathname, source, `visit:${visit.id}`);
+  return { visitorId, created: true, minted, marketing: mk };
 }
 
 async function logInAppPrompt(request: Request, path: string, source: string, dedupe: string) {

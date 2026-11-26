@@ -10,11 +10,12 @@ export function VisitBeacon() {
   const pathname = usePathname() || "/";
   useEffect(() => {
     if (PRIVATE.test(pathname)) return;
-    const path = `${pathname}${typeof window !== "undefined" ? window.location.search : ""}`.slice(0, 200);
+    const search = typeof window !== "undefined" ? window.location.search : "";
+    const path = `${pathname}${search}`.slice(0, 400);
     void fetch("/api/marketing/visit", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ path: path.split("?")[0] || "/" }),
+      body: JSON.stringify({ path }),
       credentials: "same-origin",
       keepalive: true,
     }).catch(() => {});

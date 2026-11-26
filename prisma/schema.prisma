@@ -83,6 +83,7 @@ model Payment {
   channelLast         String?
   gclid               String?
   capiPurchaseAt      DateTime?
+  googleAdsUploadedAt DateTime?
   userAgent           String?
   device              String?
 

@@ -1,12 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { appOrigin, isProduction } from "@/lib/config";
 import { hashSecret, sixDigitCode } from "@/lib/crypto";
+import { CODE_TTL_COPY, CODE_TTL_MS, codeFromEmailBody } from "@/lib/login-code";
 import { sendEmail } from "@/lib/messaging/email";
 
 export const SIGN_IN_CODE_SUBJECT = "Payment of ₹1,999 confirmed — your sign-in code";
 export const SIGN_IN_CODE_SUBJECTS = [SIGN_IN_CODE_SUBJECT, "Your AI Time Machine code"];
-const TEN_MINUTES = 10 * 60 * 1000;
-
 function rupees(amountInr: number) {
   return `₹${amountInr.toLocaleString("en-IN")}`;
 }
@@ -20,7 +19,7 @@ export function fulfilmentEmail(code: string, email: string, amountInr = 1999) {
       `Payment of ${amount} confirmed.`,
       "",
       "Thank you for buying AI Time Machine. Your 6-digit sign-in code is " + code + ".",
-      "It expires in 10 minutes.",
+      `It expires in ${CODE_TTL_COPY}.`,
       "",
       "Sign in here. Your email is already filled in:",
       login,
@@ -33,10 +32,6 @@ export function fulfilmentEmail(code: string, email: string, amountInr = 1999) {
       "support@theaitimemachine.com",
     ].join("\n"),
   };
-}
-
-function codeFromBody(body: string) {
-  return body.match(/code is (\d{6})/)?.[1] || null;
 }
 
 export async function sendFulfilmentCode(orderId: string, email: string, mode: "once" | "resend") {
@@ -57,7 +52,7 @@ export async function sendFulfilmentCode(orderId: string, email: string, mode: "
           where: { toEmail: clean, subject: { in: SIGN_IN_CODE_SUBJECTS } },
           orderBy: { createdAt: "desc" },
         });
-        const priorCode = prior ? codeFromBody(prior.body) : null;
+        const priorCode = prior ? codeFromEmailBody(prior.body) : null;
         const reusable = Boolean(existing && priorCode && existing.codeHash === hashSecret(priorCode));
 
         if (reusable && mode === "once") {
@@ -68,7 +63,7 @@ export async function sendFulfilmentCode(orderId: string, email: string, mode: "
         if (!reusable) {
           await tx.loginCode.deleteMany({ where: { email: clean } });
           await tx.loginCode.create({
-            data: { email: clean, codeHash: hashSecret(code), expiresAt: new Date(Date.now() + TEN_MINUTES) },
+            data: { email: clean, codeHash: hashSecret(code), expiresAt: new Date(Date.now() + CODE_TTL_MS) },
           });
         }
         const note = fulfilmentEmail(code, clean, payment.amountInr);

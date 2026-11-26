@@ -85,6 +85,11 @@ function recoveryCoversCheckout(lead: { createdAt: Date }) {
   return lead.createdAt.getTime() >= cutoff;
 }
 
+async function alreadyInRecoverySequence(email: string | null | undefined) {
+  if (!email) return false;
+  return (await prisma.followupSend.count({ where: { key: `recovery:${email.toLowerCase()}:r1` } })) > 0;
+}
+
 export async function runFollowups(now = new Date()) {
   let sent = 0;
   const pending = await prisma.lead.findMany({
@@ -93,7 +98,7 @@ export async function runFollowups(now = new Date()) {
   });
   for (const lead of pending) {
     if (!lead.email) continue;
-    if (recoveryCoversCheckout(lead)) continue;
+    if (recoveryCoversCheckout(lead) || (await alreadyInRecoverySequence(lead.email))) continue;
     const sentSteps = new Set((await prisma.followupSend.findMany({ where: { leadId: lead.id }, select: { step: true } })).map((row) => row.step));
     const age = now.getTime() - lead.createdAt.getTime();
     const due = CHECKOUT_STEPS.find((step) => age >= step.after && !sentSteps.has(step.step));

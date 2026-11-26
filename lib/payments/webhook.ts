@@ -59,7 +59,7 @@ export async function handleWebhook(gatewayName: string, raw: string, headers: H
   await fulfillPayment(gatewayName, event);
   if (gatewayName === "cashfree" && event.status === "paid" && event.orderId) await markCashfreeConfirmed(event.orderId, "webhook");
   // Failed or dropped payment: recovery email #1 right away (no-op unless RECOVERY_EMAILS=on).
-  if (gatewayName === "cashfree" && event.orderId && (event.status === "failed" || raw.includes("USER_DROPPED"))) {
+  if (gatewayName === "cashfree" && event.orderId && (event.status === "failed" || /USER_DROPPED|ORDER_EXPIRED|PAYMENT_EXPIRED|EXPIRED/.test(raw))) {
     await triggerRecovery(event.orderId).catch((error) => console.error("recovery trigger", error));
   }
   return { status: 200, body: { ok: true } };

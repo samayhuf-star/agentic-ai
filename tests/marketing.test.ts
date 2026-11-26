@@ -108,3 +108,36 @@ test("checkout stores attribution; only a verified Cashfree confirmation makes i
   const byCampaign = await salesBySource(from, to, "campaign", "last");
   assert.equal(byCampaign.find((r) => r.key === "launch-reel")?.sales, 1);
 });
+
+test("a visit with query params stores gclid and checkout copies the cookie through a later POST", async () => {
+  const { POST } = await import("../app/api/marketing/visit/route");
+  const email = `gclid-${Date.now()}@shop.test`;
+  const visit = await POST(
+    new Request("https://www.theaitimemachine.com/api/marketing/visit", {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-forwarded-host": "www.theaitimemachine.com", "x-forwarded-proto": "https" },
+      body: JSON.stringify({ path: "/55-ai-agents?gclid=CjwTEST123&gbraid=GBRAID1&utm_source=google&utm_medium=cpc&utm_campaign=sales-india" }),
+    }),
+  );
+  assert.equal(visit.status, 200);
+  const cookie = visit.headers.getSetCookie?.().join("; ") || visit.headers.get("set-cookie") || "";
+  assert.match(cookie, /aitm_mt=/);
+  const row = await prisma.marketingVisit.findFirst({ where: { path: "/55-ai-agents" }, orderBy: { createdAt: "desc" } });
+  assert.equal(row?.source, "Google Ads");
+  assert.equal((row?.mkt as { g?: string } | null)?.g, "CjwTEST123");
+
+  const mt = cookie.split(";").map((p) => p.trim()).find((p) => p.startsWith("aitm_mt="))!;
+  const checkout = await createCheckout(
+    new Request("https://www.theaitimemachine.com/api/checkout", {
+      method: "POST",
+      headers: { "content-type": "application/json", cookie: mt, "x-forwarded-host": "www.theaitimemachine.com" },
+      body: JSON.stringify({ name: "G Clicks", email, phone: `+91 8${String(Date.now()).slice(-9)}` }),
+    }),
+  );
+  const orderId = (checkout.redirect || "").split("order=")[1]?.split("&")[0] || (checkout as { orderId?: string }).orderId;
+  assert.ok(orderId);
+  const payment = await prisma.payment.findUniqueOrThrow({ where: { id: orderId } });
+  assert.equal(payment.gclid, "CjwTEST123");
+  assert.equal(payment.channelLast, "Paid Google");
+  assert.equal((payment.mktLast as { gb?: string }).gb, "GBRAID1");
+});

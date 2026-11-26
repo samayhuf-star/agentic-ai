@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { syncCommission } from "@/lib/affiliates/commission";
 import { afterPaid } from "@/lib/marketing/after-paid";
+import { uploadPaidGoogleConversion } from "@/lib/marketing/google-ads";
 
 /**
  * Sales rule: a gateway sale counts (affiliate commission, sales-by-source) only once Cashfree itself
@@ -14,6 +15,7 @@ export async function markCashfreeConfirmed(orderId: string, via: "webhook" | "a
   });
   await syncCommission(orderId);
   await afterPaid(orderId);
+  await uploadPaidGoogleConversion(orderId);
 }
 
 /** SQL/Prisma filter for a sale that counts. Manual payments are counted separately. */
