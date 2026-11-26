@@ -27,7 +27,7 @@ export default function CookiePolicyPage() {
         until we turn them on. They never run on your dashboard or account pages.
       </p>
       <p>
-        On the payment success page we load Google Tag Manager (GTM-P3L723D9). After Cashfree confirms a payment as paid, we send a purchase event with the order id and
+        On the payment success page we load Google Tag Manager (GTM-P3L723D9). After a payment is confirmed as paid, we send a purchase event with the order id and
         amount in INR. That event is not sent if the payment failed or is still pending.
       </p>
       <p>You can block or clear cookies in your browser settings. The site still works; we just can&apos;t tell which link brought you.</p>

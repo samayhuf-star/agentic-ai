@@ -131,7 +131,7 @@ If you are leaving for a while and want to be sure nothing goes out, pause first
 
 ## Who you pay
 
-The payment is taken in Indian rupees through Cashfree. The charge may show as **Rizwiz Enterprises**, which is our legal name.
+The payment is taken in Indian rupees through Razorpay. The charge may show as **Rizwiz Enterprises**, which is our legal name.
 
 We accept cards, debit cards, UPI, net banking and some app wallets. We do not store your card number or UPI pin.
 

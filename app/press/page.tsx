@@ -25,7 +25,7 @@ export default function PressPage() {
           <tr><th>Founder</th><td>{SITE.founder}</td></tr>
           <tr><th>What it is</th><td>A one-time software tool with 55 AI agents across eight teams. Agents draft plans, messages and reminders. Nothing is posted, sent, or spent until the owner says yes.</td></tr>
           <tr><th>Price</th><td>₹1,999 once. No monthly fee for that purchase. AI usage is billed by the provider whose key the customer connects (Claude, ChatGPT or Grok).</td></tr>
-          <tr><th>Payments</th><td>Taken in Indian rupees through Cashfree. The charge may show as Rizwiz Enterprises.</td></tr>
+          <tr><th>Payments</th><td>Taken in Indian rupees through Razorpay. The charge may show as Rizwiz Enterprises.</td></tr>
           <tr><th>Support</th><td>Email only: {BUSINESS.supportEmail}</td></tr>
           <tr><th>Website</th><td><a href={SITE.url}>{SITE.url.replace("https://", "")}</a></td></tr>
         </tbody>

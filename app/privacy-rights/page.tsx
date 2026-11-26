@@ -16,7 +16,7 @@ export default function PrivacyRightsPage() {
       </p>
       <h2>India — Digital Personal Data Protection Act, 2023</h2>
       <p>
-        We process personal data to run your account: name, email, mobile, business profile, payment records from Cashfree, messages you type, and approvals. You can write to us to ask what we hold, to correct it, or to ask us to delete it, and we will handle that request as the law requires. We will also tell you if we cannot delete something we must keep for a legal or accounting reason.
+        We process personal data to run your account: name, email, mobile, business profile, payment records from our payment processor (Razorpay), messages you type, and approvals. You can write to us to ask what we hold, to correct it, or to ask us to delete it, and we will handle that request as the law requires. We will also tell you if we cannot delete something we must keep for a legal or accounting reason.
       </p>
       <p>
         We do not sell personal data. Processors who help us run the product — including the payment company, the email sender, our hosting provider, and the AI provider whose key you connect — receive only what they need for that job. Chat text goes to that AI provider, which may process it outside India.

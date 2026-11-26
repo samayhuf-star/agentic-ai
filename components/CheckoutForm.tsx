@@ -108,18 +108,10 @@ export function CheckoutForm({ price }: { price: string }) {
       </label>
       {shown.form ? <p className="field-error">{shown.form}</p> : null}
       <button className="btn btn-p btn-upi" type="submit" disabled={Boolean(busy) || !ready}>
-        <span className="btn-upi-label">{busy === "upi" ? "Opening UPI…" : `Pay with UPI · ${price}`}</span>
+        <span className="btn-upi-label">{busy ? "Opening secure payment…" : `Pay ${price} securely`}</span>
         <UpiLogos />
       </button>
-      <p className="upi-hint">On a phone, Google Pay, PhonePe or Paytm can open straight away. On a computer, you will get a QR code to scan with your phone.</p>
-      <button
-        className="text-link pay-other"
-        type="button"
-        disabled={Boolean(busy) || !ready}
-        onClick={() => void submit("other")}
-      >
-        {busy === "other" ? "Opening payment…" : "Pay by card / net banking"}
-      </button>
+      <p className="upi-hint">UPI (Google Pay, PhonePe, Paytm), cards and net banking are all available on the next page, secured by Razorpay.</p>
       <p className="key-note">You connect your own AI key (Claude, ChatGPT or Grok) for AI tasks. AI usage is billed by your AI provider. AI Time Machine provides the skills and the platform to manage everything in one place.</p>
       <p className="key-note">Your AI team prepares drafts and ideas for you. Nothing goes out without your yes. Agents do not run on their own in the background yet.</p>
     </form>
