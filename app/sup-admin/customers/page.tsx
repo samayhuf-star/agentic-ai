@@ -7,6 +7,7 @@ import { money, pageParam, qs } from "@/lib/admin/format";
 import { formatIst } from "@/lib/config";
 import { displayPhone } from "@/lib/phone";
 import { sourceFromStored } from "@/lib/marketing/touch";
+import { istRange, listSourcePeople, readDim, readStage, readTouch, stageLabel } from "@/lib/marketing/report";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -20,9 +21,18 @@ const FILTERS: [string, string][] = [
   ["suspended", "Suspended"],
 ];
 
-export default async function CustomersPage({ searchParams }: { searchParams: Promise<{ q?: string; access?: string; page?: string; sort?: string }> }) {
+export default async function CustomersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; access?: string; page?: string; sort?: string; source?: string; stage?: string; dim?: string; touch?: string; from?: string; to?: string }>;
+}) {
   const { readOnly } = await requireAdminPage();
   const params = await searchParams;
+  const stage = readStage(params.stage);
+  const sourceSlugParam = (params.source || "").trim().slice(0, 80);
+  if (stage && sourceSlugParam) {
+    return await SourcePeoplePage({ readOnly, params, stage, sourceSlugParam });
+  }
   const query = (params.q || "").trim().slice(0, 100);
   const access = FILTERS.some(([key]) => key === params.access) ? params.access || "" : "";
   const sort = params.sort === "old" ? "old" : "new";
@@ -130,6 +140,97 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
                     <td>{money(real)}</td>
                     <td className="adm-hide-sm">{user.phone ? displayPhone(user.phone) : "—"}</td>
                     <td className="adm-hide-sm">{formatIst(user.createdAt)}</td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+      <div className="adm-pager">
+        {page > 1 ? <Link href={`/sup-admin/customers${qs(base, { page: page - 1 })}`}>← Previous</Link> : null}
+        <span className="muted">
+          Page {Math.min(page, pages)} of {pages}
+        </span>
+        {page < pages ? <Link href={`/sup-admin/customers${qs(base, { page: page + 1 })}`}>Next →</Link> : null}
+      </div>
+    </main>
+  );
+}
+
+async function SourcePeoplePage({
+  readOnly,
+  params,
+  stage,
+  sourceSlugParam,
+}: {
+  readOnly: boolean;
+  params: { from?: string; to?: string; dim?: string; touch?: string; page?: string };
+  stage: NonNullable<ReturnType<typeof readStage>>;
+  sourceSlugParam: string;
+}) {
+  const { from, to, fromDay, toDay } = istRange(params.from, params.to);
+  const dim = readDim(params.dim);
+  const touch = readTouch(params.touch);
+  const page = pageParam(params.page);
+  const perPage = 50;
+  const { label, rows: all } = await listSourcePeople({ from, to, dim, touch, slug: sourceSlugParam, stage });
+  const total = all.length;
+  const pages = Math.max(1, Math.ceil(total / perPage));
+  const rows = all.slice((page - 1) * perPage, page * perPage);
+  const sourcesHref = `/sup-admin/stats/sources?${new URLSearchParams({ from: fromDay, to: toDay, dim, touch })}`;
+  const base = { source: sourceSlugParam, stage, dim, touch, from: fromDay, to: toDay };
+  const chip = `${label} · ${stageLabel(stage)} · ${fromDay} to ${toDay} IST`;
+  return (
+    <main className="page">
+      <AdminKicker kicker="Customers" readOnly={readOnly} />
+      <div className="adm-head">
+        <h1>{stageLabel(stage)}</h1>
+      </div>
+      <div className="adm-chips">
+        <span className="adm-chip">{chip}</span>
+        <Link className="btn btn-g btn-sm" href="/sup-admin/customers">
+          Clear
+        </Link>
+        <Link className="btn btn-g btn-sm" href={sourcesHref}>
+          Back to Sources
+        </Link>
+      </div>
+      <p className="muted">
+        {total} {total === 1 ? "row" : "rows"} for {label}. {touch === "first" ? "First" : "Last"}-touch, {dim}. Staff and test traffic are left out, same as the Sources table.
+      </p>
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Customer</th>
+              <th>Time</th>
+              <th>Status</th>
+              <th className="adm-hide-sm">Source</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 ? (
+              <tr>
+                <td colSpan={5}>No rows match this source and stage.</td>
+              </tr>
+            ) : (
+              rows.map((row) => {
+                const who = row.email || (row.phone ? displayPhone(row.phone) : null) || row.name || row.detail || "—";
+                return (
+                  <tr key={row.id}>
+                    <td>
+                      {row.href ? <Link href={row.href}>{who}</Link> : who}
+                      {row.email && row.name ? <div className="muted">{row.name}</div> : null}
+                      {row.detail && row.email ? <div className="muted">{row.detail}</div> : null}
+                    </td>
+                    <td>{formatIst(row.time)}</td>
+                    <td>
+                      <span className={`pill ${row.status}`}>{row.status}</span>
+                    </td>
+                    <td className="adm-hide-sm muted">{row.source}</td>
+                    <td>{row.amountInr != null ? money(row.amountInr) : "—"}</td>
                   </tr>
                 );
               })

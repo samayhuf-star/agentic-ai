@@ -20,6 +20,28 @@ export function isInternalEmail(email: string | null | undefined): boolean {
   return false;
 }
 
+/**
+ * Future test checkouts (samayhuf+ aliases, QA / disposable inboxes, "Test Buyer" / "QA …" names).
+ * Plain samayhuf@gmail.com is not flagged — that account has a real paid sale.
+ */
+export function isTestCheckout(input: { email?: string | null; name?: string | null }) {
+  const email = (input.email || "").trim().toLowerCase();
+  const name = (input.name || "").trim();
+  if (/^(test buyer|qa\b)/i.test(name)) return true;
+  if (!email.includes("@")) return false;
+  const [local, domain] = email.split("@");
+  if (local.startsWith("samayhuf+") && (domain === "gmail.com" || domain === "googlemail.com")) return true;
+  if (!domain) return false;
+  if (domain === "theaitimemachine.com" || domain.endsWith(".theaitimemachine.com")) return true;
+  if (DISPOSABLE.has(domain)) return true;
+  if (local === "qa-test" || local.startsWith("qa-test+") || local.includes("+aitm") || local.includes("aitmflow") || local.endsWith("+test")) return true;
+  for (const admin of privilegedEmails()) {
+    const [adminLocal, adminDomain] = admin.split("@");
+    if (adminDomain && domain === adminDomain && adminLocal && local.startsWith(`${adminLocal}+`)) return true;
+  }
+  return false;
+}
+
 /** A row counted as a customer in the admin overview: not staff/test, and has an email. */
 export function isMetricCustomer(email: string | null | undefined) {
   if (!email) return false;

@@ -161,3 +161,161 @@ export function toCsv(rows: (string | number | null | undefined)[][]) {
     )
     .join("\n");
 }
+
+export const SOURCE_STAGES = ["visitors", "signups", "checkouts", "sales", "revenue", "manual"] as const;
+export type SourceStage = (typeof SOURCE_STAGES)[number];
+
+export function sourceSlug(key: string) {
+  return key.trim().toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "") || "unknown";
+}
+
+export function readStage(v?: string): SourceStage | null {
+  return SOURCE_STAGES.includes(v as SourceStage) ? (v as SourceStage) : null;
+}
+
+export function sourceFilterHref(opts: { key: string; stage: SourceStage; from: string; to: string; dim: Dim; touch: TouchKind }) {
+  const params = new URLSearchParams({
+    source: sourceSlug(opts.key),
+    stage: opts.stage,
+    dim: opts.dim,
+    touch: opts.touch,
+    from: opts.from,
+    to: opts.to,
+  });
+  return `/sup-admin/customers?${params}`;
+}
+
+export type SourcePerson = {
+  id: string;
+  href: string | null;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  time: Date;
+  status: string;
+  amountInr: number | null;
+  source: string;
+  detail: string | null;
+};
+
+const STAGE_LABEL: Record<SourceStage, string> = {
+  visitors: "Visitors",
+  signups: "Signups",
+  checkouts: "Checkouts",
+  sales: "Sales",
+  revenue: "Revenue",
+  manual: "Manual sales",
+};
+
+export function stageLabel(stage: SourceStage) {
+  return STAGE_LABEL[stage];
+}
+
+/** Rows behind one Sources-table cell. Same exclusion rules as salesBySource (no staff/test). */
+export async function listSourcePeople(opts: {
+  from: Date;
+  to: Date;
+  dim: Dim;
+  touch: TouchKind;
+  slug: string;
+  stage: SourceStage;
+}): Promise<{ label: string; rows: SourcePerson[] }> {
+  const wanted = opts.slug;
+  const matches = (key: string) => sourceSlug(key) === wanted;
+  const rows: SourcePerson[] = [];
+
+  if (opts.stage === "visitors") {
+    const visits = await prisma.marketingVisit.findMany({
+      where: { createdAt: { gte: opts.from, lt: opts.to } },
+      orderBy: { createdAt: "desc" },
+      take: 2000,
+    });
+    for (const visit of visits) {
+      const key = opts.dim === "channel" ? visit.channel || "Direct" : opts.dim === "campaign" ? visit.campaign || "(none)" : visit.source;
+      if (!matches(key)) continue;
+      rows.push({
+        id: visit.id,
+        href: null,
+        name: null,
+        email: null,
+        phone: null,
+        time: visit.createdAt,
+        status: "visit",
+        amountInr: null,
+        source: key,
+        detail: `${visit.path} · visitor ${visit.visitorId.slice(0, 8)}`,
+      });
+    }
+    return { label: keyLabel(opts, rows), rows };
+  }
+
+  if (opts.stage === "signups") {
+    const users = await prisma.user.findMany({
+      where: { createdAt: { gte: opts.from, lt: opts.to } },
+      orderBy: { createdAt: "desc" },
+    });
+    for (const user of users) {
+      if (!user.email || isInternalEmail(user.email)) continue;
+      const key = touchOf(user, opts.dim, opts.touch);
+      if (!matches(key)) continue;
+      rows.push({
+        id: user.id,
+        href: `/sup-admin/customers/${user.id}`,
+        name: user.name || user.businessName,
+        email: user.email,
+        phone: user.phone,
+        time: user.createdAt,
+        status: user.suspendedAt ? "suspended" : user.compAccess ? "free access" : "signed up",
+        amountInr: null,
+        source: key,
+        detail: null,
+      });
+    }
+    return { label: keyLabel(opts, rows), rows };
+  }
+
+  const payments = await prisma.payment.findMany({
+    where: { isTest: false, OR: [{ createdAt: { gte: opts.from, lt: opts.to } }, { paidAt: { gte: opts.from, lt: opts.to } }] },
+    orderBy: { createdAt: "desc" },
+  });
+  for (const payment of payments) {
+    if (isInternalEmail(payment.email)) continue;
+    const key = touchOf(payment, opts.dim, opts.touch);
+    if (!matches(key)) continue;
+    const paidAt = payment.paidAt || payment.createdAt;
+    const confirmed = payment.status === "paid" && payment.gateway === "cashfree" && payment.gatewayConfirmedAt;
+    const manual = payment.status === "paid" && payment.gateway === "manual";
+    let include = false;
+    let time = payment.createdAt;
+    let status = payment.status;
+    if (opts.stage === "checkouts" && payment.createdAt >= opts.from && payment.createdAt < opts.to) {
+      include = true;
+    } else if ((opts.stage === "sales" || opts.stage === "revenue") && confirmed && paidAt >= opts.from && paidAt < opts.to) {
+      include = true;
+      time = paidAt;
+      status = "paid";
+    } else if (opts.stage === "manual" && manual && paidAt >= opts.from && paidAt < opts.to) {
+      include = true;
+      time = paidAt;
+      status = "manual";
+    }
+    if (!include) continue;
+    rows.push({
+      id: payment.id,
+      href: `/sup-admin/payments/${encodeURIComponent(payment.id)}`,
+      name: payment.name,
+      email: payment.email,
+      phone: payment.phone,
+      time,
+      status,
+      amountInr: payment.amountInr,
+      source: key,
+      detail: payment.id,
+    });
+  }
+  return { label: keyLabel(opts, rows), rows };
+}
+
+function keyLabel(opts: { slug: string }, rows: SourcePerson[]) {
+  return rows[0]?.source || opts.slug.replace(/_/g, " ");
+}

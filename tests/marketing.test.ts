@@ -141,3 +141,23 @@ test("a visit with query params stores gclid and checkout copies the cookie thro
   assert.equal(payment.channelLast, "Paid Google");
   assert.equal((payment.mktLast as { gb?: string }).gb, "GBRAID1");
 });
+
+import { sourceSlug } from "../lib/marketing/report";
+import { isTestCheckout } from "../lib/admin/metrics";
+
+test("source slugs are stable in filter URLs", () => {
+  assert.equal(sourceSlug("Google Ads"), "google_ads");
+  assert.equal(sourceSlug("Instagram Ads"), "instagram_ads");
+  assert.equal(sourceSlug("Direct"), "direct");
+  assert.equal(sourceSlug("qa"), "qa");
+  assert.equal(sourceSlug("ticktime_media"), "ticktime_media");
+});
+
+test("samayhuf plus-aliases and QA names are test checkouts; the plain paid account is not", () => {
+  assert.equal(isTestCheckout({ email: "samayhuf+cfvideo@gmail.com", name: "Test Buyer" }), true);
+  assert.equal(isTestCheckout({ email: "samayhuf+rzpa621l@gmail.com", name: "QA Razorpay" }), true);
+  assert.equal(isTestCheckout({ email: "someone@mailinator.com" }), true);
+  assert.equal(isTestCheckout({ email: "samayhuf@gmail.com", name: "Samay Vashsht" }), false);
+  assert.equal(isTestCheckout({ email: "farooqkhan078645@gmail.com" }), false);
+  assert.equal(isTestCheckout({ email: "kavitadevikyp089@gmail.com", name: "Kavita Devi" }), false);
+});

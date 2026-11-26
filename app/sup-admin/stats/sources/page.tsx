@@ -1,8 +1,9 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { AdminKicker } from "@/components/admin/AdminKicker";
 import { requireAdminPage } from "@/lib/admin/guard";
 import { money } from "@/lib/admin/format";
-import { istRange, readDim, readTouch, salesBySource } from "@/lib/marketing/report";
+import { istRange, readDim, readTouch, salesBySource, sourceFilterHref, type SourceStage } from "@/lib/marketing/report";
 
 export const dynamic = "force-dynamic";
 
@@ -132,23 +133,33 @@ export default async function SalesBySourcePage({ searchParams }: { searchParams
                 </td>
               </tr>
             ) : (
-              rows.map((r) => (
-                <tr key={r.key}>
-                  <td>{r.key}</td>
-                  <td className="num">{r.visitors || "—"}</td>
-                  <td className="num">{r.signups || "—"}</td>
-                  <td className="num">{r.checkouts || "—"}</td>
-                  <td className="num">{r.sales || "—"}</td>
-                  <td className="num">{r.revenue ? money(r.revenue) : "—"}</td>
-                  <td className="num">{conv(r.sales, r.checkouts)}</td>
-                  <td className="num">{r.manualSales || "—"}</td>
-                  <td className="num">{r.manualRevenue ? money(r.manualRevenue) : "—"}</td>
-                </tr>
-              ))
+              rows.map((r) => {
+                const href = (stage: SourceStage) => sourceFilterHref({ key: r.key, stage, from: fromDay, to: toDay, dim, touch });
+                const nameStage: SourceStage = r.sales ? "sales" : r.checkouts ? "checkouts" : r.signups ? "signups" : "visitors";
+                return (
+                  <tr key={r.key}>
+                    <td>
+                      <Link href={href(nameStage)}>{r.key}</Link>
+                    </td>
+                    <Num href={r.visitors ? href("visitors") : null}>{r.visitors || "—"}</Num>
+                    <Num href={r.signups ? href("signups") : null}>{r.signups || "—"}</Num>
+                    <Num href={r.checkouts ? href("checkouts") : null}>{r.checkouts || "—"}</Num>
+                    <Num href={r.sales ? href("sales") : null}>{r.sales || "—"}</Num>
+                    <Num href={r.revenue ? href("revenue") : null}>{r.revenue ? money(r.revenue) : "—"}</Num>
+                    <Num href={r.checkouts ? href("checkouts") : null}>{conv(r.sales, r.checkouts)}</Num>
+                    <Num href={r.manualSales ? href("manual") : null}>{r.manualSales || "—"}</Num>
+                    <Num href={r.manualRevenue ? href("manual") : null}>{r.manualRevenue ? money(r.manualRevenue) : "—"}</Num>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
       </div>
     </main>
   );
+}
+
+function Num({ href, children }: { href: string | null; children: ReactNode }) {
+  return <td className="num">{href ? <Link href={href}>{children}</Link> : children}</td>;
 }

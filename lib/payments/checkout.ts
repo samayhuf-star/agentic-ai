@@ -11,6 +11,7 @@ import { applyMarketingToUser, marketingFromRequest } from "@/lib/marketing/serv
 import { metaCapiEnabled, sendMetaEvent } from "@/lib/marketing/meta";
 import { deviceLabel, inAppKind } from "@/lib/device";
 import { logEvent, paymentSource } from "@/lib/activity/log";
+import { isTestCheckout } from "@/lib/admin/metrics";
 
 export function readBuyer(input: {
   name?: unknown;
@@ -125,6 +126,7 @@ export async function startCheckoutFor(request: Request, buyer: Buyer, opts: { r
       userAgent,
       device,
       adminNote: opts.retryOf ? `Pay again from ${opts.retryOf}` : null,
+      isTest: isTestCheckout({ email: buyer.email, name: buyer.name }),
     },
   });
   await logEvent({
