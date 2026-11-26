@@ -1,8 +1,11 @@
 import type { MetadataRoute } from "next";
-
-const BASE = "https://www.theaitimemachine.com";
-const PAGES = ["", "/55-ai-agents", "/pricing", "/about", "/contact", "/privacy", "/terms", "/refund-policy", "/shipping-policy", "/cookie-policy", "/disclaimer", "/partners/apply"];
+import { publicPages } from "@/lib/public-pages";
+import { SITE } from "@/lib/site";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  return PAGES.map((path) => ({ url: `${BASE}${path}`, changeFrequency: "weekly", priority: path === "" || path === "/55-ai-agents" ? 1 : 0.5 }));
+  return publicPages().map((path) => ({
+    url: path === "/" ? SITE.url : `${SITE.url}${path}`,
+    changeFrequency: path === "/" || path === "/55-ai-agents" || path.startsWith("/blog") ? "weekly" : "monthly",
+    priority: path === "/" || path === "/55-ai-agents" ? 1 : path.startsWith("/blog/") ? 0.7 : 0.5,
+  }));
 }

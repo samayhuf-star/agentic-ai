@@ -1,9 +1,12 @@
 import { Pixels } from "@/components/marketing/Pixels";
 import { VisitBeacon } from "@/components/marketing/VisitBeacon";
+import { JsonLd } from "@/components/marketing/JsonLd";
+import { DEFAULT_OG, organizationJsonLd, SITE } from "@/lib/site";
 import type { Metadata } from "next";
 import "./globals.css";
 import "./landing.css";
 import "./layouts.css";
+import "./marketing.css";
 
 const title = "AI Time Machine: 55 AI agents for your business. Your AI team drafts. You decide.";
 const description = "55 AI agents across 8 teams, your own dashboard and 4 bonuses. ₹1,999 once. Your AI team drafts. You decide. One-time ₹1,999.";
@@ -11,19 +14,22 @@ const description = "55 AI agents across 8 teams, your own dashboard and 4 bonus
 export const metadata: Metadata = {
   title,
   description,
-  metadataBase: new URL(process.env.APP_URL || "https://adiology.io"),
+  metadataBase: new URL(process.env.APP_URL || SITE.url),
   openGraph: {
     title,
     description,
-    siteName: "AI Time Machine",
+    siteName: SITE.name,
     type: "website",
     url: "/",
+    images: [{ url: DEFAULT_OG, width: 1200, height: 630, alt: "AI Time Machine" }],
   },
   twitter: {
     card: "summary_large_image",
     title,
     description,
+    images: [DEFAULT_OG],
   },
+  icons: { icon: "/media-kit/logo-lime.png", apple: "/media-kit/logo-lime.png" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -39,6 +45,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
+        <JsonLd data={organizationJsonLd()} />
         {children}
         <VisitBeacon />
         <Pixels />

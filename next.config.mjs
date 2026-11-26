@@ -24,8 +24,10 @@ const nextConfig = {
     ];
   },
   outputFileTracingIncludes: {
-    "/": ["./components/landing/body.html"],
+    "/": ["./components/landing/body.html", "./content/blog/**/*"],
     "/55-ai-agents": ["./components/landing/body.html"],
+    "/blog": ["./content/blog/**/*"],
+    "/blog/[slug]": ["./content/blog/**/*"],
   },
 };
 

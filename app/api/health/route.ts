@@ -1,14 +1,10 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { checkHealth } from "@/lib/health";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  try {
-    await prisma.$queryRaw`SELECT 1`;
-    return NextResponse.json({ ok: true });
-  } catch {
-    return NextResponse.json({ ok: false }, { status: 503 });
-  }
+  const health = await checkHealth();
+  return NextResponse.json({ ok: health.ok, db: health.db, ms: health.ms, checkedAt: health.checkedAt }, { status: health.ok ? 200 : 503 });
 }
