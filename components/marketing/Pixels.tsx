@@ -7,7 +7,7 @@ import { GOOGLE_ADS_ID, META_PIXEL_ID } from "@/lib/marketing/pixel-client";
 
 const PRIVATE = /^\/(sup-admin|admin|partner\/|dashboard|onboarding|welcome|unsubscribe)/;
 
-/** Meta Pixel + Google Ads tag. Off unless NEXT_PUBLIC_META_PIXEL_ID / NEXT_PUBLIC_GOOGLE_ADS_ID are set. Never on private pages. */
+/** Meta Pixel (if configured) + Google Ads tag on public pages. Never on private pages. */
 export function Pixels() {
   const pathname = usePathname() || "/";
   const first = useRef(true);
@@ -19,6 +19,8 @@ export function Pixels() {
       return; // the base code sends the first PageView
     }
     window.fbq?.("track", "PageView");
+    // Send the new URL so remarketing lists can match /checkout and /payment on client navigations.
+    window.gtag?.("event", "page_view", { page_path: pathname, page_location: window.location.href });
   }, [pathname, off]);
   if (off || (!META_PIXEL_ID && !GOOGLE_ADS_ID)) return null;
   return (

@@ -10,8 +10,9 @@ declare global {
 }
 
 export const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID || "";
-export const GOOGLE_ADS_ID = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID || "";
-export const GOOGLE_ADS_PURCHASE_LABEL = process.env.NEXT_PUBLIC_GOOGLE_ADS_PURCHASE_LABEL || "";
+/** Production Google Ads account 909-928-3797. Fallback keeps remarketing on if the env var is unset. */
+export const GOOGLE_ADS_ID = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID || "AW-18595562469";
+export const GOOGLE_ADS_PURCHASE_LABEL = process.env.NEXT_PUBLIC_GOOGLE_ADS_PURCHASE_LABEL || "_Ku4CN3W478dEOWHh6NF";
 
 export function trackLead(eventId: string) {
   window.fbq?.("track", "Lead", {}, { eventID: eventId });
