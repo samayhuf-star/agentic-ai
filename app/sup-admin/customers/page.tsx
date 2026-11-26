@@ -6,6 +6,7 @@ import { ACCESS_LABEL, accessOf, accessWhere } from "@/lib/admin/customers";
 import { money, pageParam, qs } from "@/lib/admin/format";
 import { formatIst } from "@/lib/config";
 import { displayPhone } from "@/lib/phone";
+import { sourceFromStored } from "@/lib/marketing/touch";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -52,7 +53,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
       skip: (page - 1) * PER_PAGE,
       take: PER_PAGE,
       include: {
-        payments: { where: { status: "paid" }, select: { amountInr: true, isTest: true } },
+        payments: { where: { status: "paid", isTest: false, gateway: "cashfree", gatewayConfirmedAt: { not: null } }, select: { amountInr: true } },
         _count: { select: { sessions: true } },
       },
     }),
@@ -98,6 +99,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
             <tr>
               <th>Customer</th>
               <th>Access</th>
+              <th>Source</th>
               <th>Paid</th>
               <th className="adm-hide-sm">Mobile</th>
               <th className="adm-hide-sm">Joined</th>
@@ -111,7 +113,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
             ) : (
               users.map((user) => {
                 const kind = accessOf({ suspendedAt: user.suspendedAt, compAccess: user.compAccess, paidCount: user.payments.length });
-                const real = user.payments.filter((p) => !p.isTest).reduce((sum, p) => sum + p.amountInr, 0);
+                const real = user.payments.reduce((sum, p) => sum + p.amountInr, 0);
                 return (
                   <tr key={user.id}>
                     <td>
@@ -124,6 +126,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
                     <td>
                       <span className={`pill ${kind}`}>{ACCESS_LABEL[kind]}</span>
                     </td>
+                    <td className="muted">{sourceFromStored(user.mktLast || user.mktFirst, user.channelLast || user.channelFirst)}</td>
                     <td>{money(real)}</td>
                     <td className="adm-hide-sm">{user.phone ? displayPhone(user.phone) : "—"}</td>
                     <td className="adm-hide-sm">{formatIst(user.createdAt)}</td>

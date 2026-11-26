@@ -1,4 +1,5 @@
 import { Pixels } from "@/components/marketing/Pixels";
+import { VisitBeacon } from "@/components/marketing/VisitBeacon";
 import type { Metadata } from "next";
 import "./globals.css";
 import "./landing.css";
@@ -39,6 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         {children}
+        <VisitBeacon />
         <Pixels />
       </body>
     </html>

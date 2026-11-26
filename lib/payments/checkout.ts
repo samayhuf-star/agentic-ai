@@ -7,7 +7,7 @@ import { createHostedCheckout, gatewayHasKeys } from "@/lib/payments/gateways";
 import { indianMobile } from "@/lib/phone";
 import { getActiveGateway } from "@/lib/settings";
 import { attributionFromRequest } from "@/lib/affiliates/attribution";
-import { marketingFromRequest } from "@/lib/marketing/server";
+import { applyMarketingToUser, marketingFromRequest } from "@/lib/marketing/server";
 import { metaCapiEnabled, sendMetaEvent } from "@/lib/marketing/meta";
 
 export function readBuyer(input: {
@@ -103,6 +103,8 @@ export async function createCheckout(request: Request) {
       ...marketingFromRequest(request, attribution?.affiliateId ?? null),
     },
   });
+  const existingUser = await prisma.user.findUnique({ where: { email: buyer.email }, select: { id: true } });
+  if (existingUser) await applyMarketingToUser(existingUser.id, request, attribution?.affiliateId ?? null);
   // Lead = buyer details entered and checkout started. Browser pixel sends the same event id.
   if (metaCapiEnabled()) {
     const mk = await prisma.payment.findUnique({

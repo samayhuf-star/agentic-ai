@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   const body = await readJson(request);
-  const result = await verifyLoginCode(String(body.email || ""), String(body.code || ""));
+  const result = await verifyLoginCode(String(body.email || ""), String(body.code || ""), request);
   if (!result.ok) return NextResponse.json({ message: result.message }, { status: result.status });
   const response = NextResponse.json({ redirect: result.redirect });
   response.headers.set("Cache-Control", "no-store");

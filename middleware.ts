@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { decodeMarketing, encodeMarketing, mergeTouch, MT_COOKIE, MT_DAYS, touchFromRequest } from "@/lib/marketing/touch";
+import { decodeMarketing, encodeMarketing, isValidVisitorId, mergeTouch, MT_COOKIE, MT_DAYS, newVisitorId, touchFromRequest, VID_COOKIE, VID_DAYS } from "@/lib/marketing/touch";
 
 const CODE_RE = /^[A-Za-z0-9][A-Za-z0-9_-]{2,31}$/;
 
@@ -15,22 +15,28 @@ function publicUrl(request: NextRequest) {
   return url;
 }
 
-/** First-party first/last-touch cookie (90 days): UTMs, click ids, landing path, external referrer. */
+/** First-party first/last-touch cookie (90 days) plus a durable visitor id for Sources. */
 function withMarketing(request: NextRequest, response: NextResponse) {
+  const host = publicUrl(request).hostname;
+  const secure = request.headers.get("x-forwarded-proto") === "https" || request.nextUrl.protocol === "https:";
+  const cookieBase = {
+    path: "/",
+    sameSite: "lax" as const,
+    httpOnly: true,
+    secure,
+    ...(host.endsWith("theaitimemachine.com") ? { domain: ".theaitimemachine.com" } : {}),
+  };
+  const prevVid = request.cookies.get(VID_COOKIE)?.value;
+  const visitorId = isValidVisitorId(prevVid) ? prevVid : newVisitorId();
+  if (prevVid !== visitorId) {
+    response.cookies.set(VID_COOKIE, visitorId, { ...cookieBase, maxAge: VID_DAYS * 86400 });
+  }
   const prev = decodeMarketing(request.cookies.get(MT_COOKIE)?.value);
   const own = [request.nextUrl.hostname, request.headers.get("x-forwarded-host")?.split(",")[0].trim() || "", "theaitimemachine.com", "www.theaitimemachine.com"].filter(Boolean);
   const touch = touchFromRequest(request.nextUrl, request.headers.get("referer"), own);
   const next = mergeTouch(prev, touch, request.nextUrl.pathname);
   if (next) {
-    const host = publicUrl(request).hostname;
-    response.cookies.set(MT_COOKIE, encodeMarketing(next), {
-      path: "/",
-      maxAge: MT_DAYS * 86400,
-      sameSite: "lax",
-      httpOnly: true,
-      secure: request.headers.get("x-forwarded-proto") === "https" || request.nextUrl.protocol === "https:",
-      ...(host.endsWith("theaitimemachine.com") ? { domain: ".theaitimemachine.com" } : {}),
-    });
+    response.cookies.set(MT_COOKIE, encodeMarketing(next), { ...cookieBase, maxAge: MT_DAYS * 86400 });
   }
   return response;
 }

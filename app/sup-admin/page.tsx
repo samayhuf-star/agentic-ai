@@ -4,8 +4,10 @@ import { AdminKicker } from "@/components/admin/AdminKicker";
 import { requireAdminPage } from "@/lib/admin/guard";
 import { ACCESS_LABEL, accessOf } from "@/lib/admin/customers";
 import { money } from "@/lib/admin/format";
-import { formatIst, privilegedEmails } from "@/lib/config";
+import { confirmedSaleWhere, isInternalEmail, isMetricCustomer, PENDING_WINDOW_MS } from "@/lib/admin/metrics";
+import { formatIst } from "@/lib/config";
 import { istDayStart } from "@/lib/ist";
+import { sourceFromStored } from "@/lib/marketing/touch";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -22,43 +24,60 @@ export default async function AdminOverviewPage({ searchParams }: { searchParams
   const today = istDayStart(now);
   const d7 = new Date(now.getTime() - 7 * 86400000);
   const d30 = new Date(now.getTime() - 30 * 86400000);
-  const notStaff = { OR: [{ email: null }, { email: { notIn: privilegedEmails() } }] };
-  const realPaid = { status: "paid", isTest: false };
+  const pendingSince = new Date(now.getTime() - PENDING_WINDOW_MS);
+  const confirmed = confirmedSaleWhere();
 
-  const [
-    totalCustomers,
-    paidCustomers,
-    compCustomers,
-    suspended,
-    signups7,
-    revenueAll,
-    revenue30,
-    revenueToday,
-    refunded,
-    pending,
-    recentUsers,
-    recentPayments,
-    recentAudit,
-  ] = await Promise.all([
-    prisma.user.count({ where: notStaff }),
-    prisma.user.count({ where: { ...notStaff, suspendedAt: null, payments: { some: realPaid } } }),
-    prisma.user.count({ where: { ...notStaff, suspendedAt: null, compAccess: true } }),
-    prisma.user.count({ where: { NOT: { suspendedAt: null } } }),
-    prisma.user.count({ where: { ...notStaff, createdAt: { gte: d7 } } }),
-    prisma.payment.aggregate({ where: realPaid, _sum: { amountInr: true }, _count: true }),
-    prisma.payment.aggregate({ where: { ...realPaid, paidAt: { gte: d30 } }, _sum: { amountInr: true }, _count: true }),
-    prisma.payment.aggregate({ where: { ...realPaid, paidAt: { gte: today } }, _sum: { amountInr: true }, _count: true }),
-    prisma.payment.aggregate({ where: { status: "refunded", isTest: false }, _sum: { amountInr: true }, _count: true }),
-    prisma.payment.count({ where: { status: "pending", isTest: false } }),
+  const [users, paidRows, refundRows, pendingRows, recentPayments, recentAudit] = await Promise.all([
     prisma.user.findMany({
-      where: notStaff,
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        businessName: true,
+        compAccess: true,
+        suspendedAt: true,
+        createdAt: true,
+        payments: { where: confirmed, select: { id: true } },
+      },
+    }),
+    prisma.payment.findMany({
+      where: confirmed,
+      select: { amountInr: true, paidAt: true, createdAt: true, email: true, userId: true },
+    }),
+    prisma.payment.findMany({
+      where: { status: "refunded", isTest: false },
+      select: { amountInr: true, email: true },
+    }),
+    prisma.payment.findMany({
+      where: { status: "pending", isTest: false },
+      select: { id: true, createdAt: true, email: true },
+    }),
+    prisma.payment.findMany({
+      where: { isTest: false },
       orderBy: { createdAt: "desc" },
       take: 8,
-      include: { _count: { select: { payments: { where: { status: "paid" } } } } },
+      include: { user: { select: { id: true, email: true, name: true, businessName: true } } },
     }),
-    prisma.payment.findMany({ orderBy: { createdAt: "desc" }, take: 8, include: { user: { select: { id: true, email: true, name: true, businessName: true } } } }),
     prisma.adminAudit.findMany({ orderBy: { createdAt: "desc" }, take: 6 }),
   ]);
+
+  const customers = users.filter((user) => isMetricCustomer(user.email));
+  const totalCustomers = customers.length;
+  const paidCustomers = customers.filter((user) => !user.suspendedAt && user.payments.length > 0).length;
+  const compCustomers = customers.filter((user) => !user.suspendedAt && user.compAccess).length;
+  const suspended = users.filter((user) => user.suspendedAt).length;
+  const signups7 = customers.filter((user) => user.createdAt >= d7).length;
+  const liveRevenue = paidRows.filter((row) => !isInternalEmail(row.email));
+  const instant = (row: { paidAt: Date | null; createdAt: Date }) => row.paidAt || row.createdAt;
+  const sum = (rows: typeof liveRevenue) => rows.reduce((n, row) => n + row.amountInr, 0);
+  const revenueAll = sum(liveRevenue);
+  const revenue30 = sum(liveRevenue.filter((row) => instant(row) >= d30));
+  const revenueToday = sum(liveRevenue.filter((row) => instant(row) >= today));
+  const refunded = refundRows.filter((row) => !isInternalEmail(row.email)).reduce((n, row) => n + row.amountInr, 0);
+  const realPending = pendingRows.filter((row) => !isInternalEmail(row.email));
+  const pending48 = realPending.filter((row) => row.createdAt >= pendingSince).length;
+  const abandoned = realPending.filter((row) => row.createdAt < pendingSince).length;
+  const recentUsers = customers.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(0, 8);
 
   return (
     <main className="page">
@@ -76,7 +95,7 @@ export default async function AdminOverviewPage({ searchParams }: { searchParams
           </div>
         )}
       </div>
-      <p className="muted">Revenue counts real paid payments only. Test payments, admin and staff accounts are left out.</p>
+      <p className="muted">Revenue and paid counts include only Cashfree-confirmed, non-test orders. Staff and test accounts are left out.</p>
       <div className="stats">
         <div className="stat">
           <small>Customers</small>
@@ -100,23 +119,27 @@ export default async function AdminOverviewPage({ searchParams }: { searchParams
         </div>
         <div className="stat y">
           <small>Revenue, all time</small>
-          <b>{money(revenueAll._sum.amountInr || 0)}</b>
+          <b>{money(revenueAll)}</b>
         </div>
         <div className="stat">
           <small>Revenue, 30 days</small>
-          <b>{money(revenue30._sum.amountInr || 0)}</b>
+          <b>{money(revenue30)}</b>
         </div>
         <div className="stat">
           <small>Revenue, today (IST)</small>
-          <b>{money(revenueToday._sum.amountInr || 0)}</b>
+          <b>{money(revenueToday)}</b>
         </div>
         <div className="stat">
           <small>Refunded</small>
-          <b>{money(refunded._sum.amountInr || 0)}</b>
+          <b>{money(refunded)}</b>
         </div>
         <div className="stat">
-          <small>Pending payments</small>
-          <b>{pending}</b>
+          <small>Pending (48h)</small>
+          <b>{pending48}</b>
+        </div>
+        <div className="stat">
+          <small>Abandoned checkouts</small>
+          <b>{abandoned}</b>
         </div>
       </div>
 
@@ -134,12 +157,13 @@ export default async function AdminOverviewPage({ searchParams }: { searchParams
                   <th>Customer</th>
                   <th>Amount</th>
                   <th>Status</th>
+                  <th>Source</th>
                 </tr>
               </thead>
               <tbody>
                 {recentPayments.length === 0 ? (
                   <tr>
-                    <td colSpan={4}>No payments yet.</td>
+                    <td colSpan={5}>No payments yet.</td>
                   </tr>
                 ) : (
                   recentPayments.map((payment) => (
@@ -153,6 +177,7 @@ export default async function AdminOverviewPage({ searchParams }: { searchParams
                         <span className={`pill ${payment.status}`}>{payment.status}</span>
                         {payment.isTest ? <span className="test-badge">TEST</span> : null}
                       </td>
+                      <td className="muted">{sourceFromStored(payment.mktLast || payment.mktFirst, payment.channelLast || payment.channelFirst)}</td>
                     </tr>
                   ))
                 )}
@@ -180,7 +205,7 @@ export default async function AdminOverviewPage({ searchParams }: { searchParams
                   </tr>
                 ) : (
                   recentUsers.map((user) => {
-                    const kind = accessOf({ suspendedAt: user.suspendedAt, compAccess: user.compAccess, paidCount: user._count.payments });
+                    const kind = accessOf({ suspendedAt: user.suspendedAt, compAccess: user.compAccess, paidCount: user.payments.length });
                     return (
                       <tr key={user.id}>
                         <td>

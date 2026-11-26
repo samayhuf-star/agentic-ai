@@ -39,10 +39,10 @@ test("00:10 IST and 23:50 IST land on the same India day in the cards, chart and
   try {
     await prisma.payment.createMany({
       data: [
-        { id: "buck-early", gateway: "cashfree", amountInr: 1999, status: "paid", paidAt: early, createdAt: previousEvening, email: "buck@local.test" },
-        { id: "buck-late", gateway: "cashfree", amountInr: 1999, status: "paid", paidAt: late, createdAt: early, email: "buck@local.test" },
-        { id: "buck-fallback", gateway: "cashfree", amountInr: 1999, status: "paid", paidAt: null, createdAt: late, email: "buck@local.test" },
-        { id: "buck-next", gateway: "cashfree", amountInr: 1999, status: "paid", paidAt: nextMorning, email: "buck@local.test" },
+        { id: "buck-early", gateway: "cashfree", amountInr: 1999, status: "paid", paidAt: early, createdAt: previousEvening, gatewayConfirmedAt: early, email: "buck@local.test" },
+        { id: "buck-late", gateway: "cashfree", amountInr: 1999, status: "paid", paidAt: late, createdAt: early, gatewayConfirmedAt: late, email: "buck@local.test" },
+        { id: "buck-fallback", gateway: "cashfree", amountInr: 1999, status: "paid", paidAt: null, createdAt: late, gatewayConfirmedAt: late, email: "buck@local.test" },
+        { id: "buck-next", gateway: "cashfree", amountInr: 1999, status: "paid", paidAt: nextMorning, gatewayConfirmedAt: nextMorning, email: "buck@local.test" },
         { id: "buck-pending", gateway: "cashfree", amountInr: 1999, status: "pending", createdAt: early, email: "buck@local.test" },
         { id: "buck-before", gateway: "cashfree", amountInr: 1999, status: "pending", createdAt: previousEvening, email: "buck@local.test" },
       ],
@@ -81,8 +81,8 @@ test("today's paid count matches the today bar", async () => {
   try {
     await prisma.payment.createMany({
       data: [
-        { id: "buck-today", gateway: "cashfree", amountInr: 1999, status: "paid", paidAt: paidToday, createdAt: lateYesterday, email: "buck@local.test" },
-        { id: "buck-yesterday", gateway: "cashfree", amountInr: 1999, status: "refunded", paidAt: lateYesterday, refundedAt: now, email: "buck@local.test" },
+        { id: "buck-today", gateway: "cashfree", amountInr: 1999, status: "paid", paidAt: paidToday, createdAt: lateYesterday, gatewayConfirmedAt: paidToday, email: "buck@local.test" },
+        { id: "buck-yesterday", gateway: "cashfree", amountInr: 1999, status: "paid", paidAt: lateYesterday, gatewayConfirmedAt: lateYesterday, email: "buck@local.test" },
       ],
     });
     const sales = await salesSnapshot(readStatsRange({ range: "all", tests: "1" }));

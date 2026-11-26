@@ -7,8 +7,8 @@ import { istRange, readDim, readTouch, salesBySource } from "@/lib/marketing/rep
 export const dynamic = "force-dynamic";
 
 const DIMS = [
-  ["channel", "Channel"],
   ["source", "Source"],
+  ["channel", "Channel"],
   ["campaign", "Campaign"],
 ] as const;
 
@@ -19,21 +19,27 @@ export default async function SalesBySourcePage({ searchParams }: { searchParams
   const dim = readDim(sp.dim);
   const touch = readTouch(sp.touch);
   const rows = await salesBySource(from, to, dim, touch);
-  const total = rows.reduce((t, r) => ({ sales: t.sales + r.sales, revenue: t.revenue + r.revenue, manual: t.manual + r.manualSales, manualRev: t.manualRev + r.manualRevenue, signups: t.signups + r.signups }), {
-    sales: 0,
-    revenue: 0,
-    manual: 0,
-    manualRev: 0,
-    signups: 0,
-  });
+  const total = rows.reduce(
+    (t, r) => ({
+      visitors: t.visitors + r.visitors,
+      signups: t.signups + r.signups,
+      checkouts: t.checkouts + r.checkouts,
+      sales: t.sales + r.sales,
+      revenue: t.revenue + r.revenue,
+      manual: t.manual + r.manualSales,
+      manualRev: t.manualRev + r.manualRevenue,
+    }),
+    { visitors: 0, signups: 0, checkouts: 0, sales: 0, revenue: 0, manual: 0, manualRev: 0 },
+  );
   const q = (extra: Record<string, string>) => `?${new URLSearchParams({ from: fromDay, to: toDay, dim, touch, ...extra })}`;
   const csv = `/api/admin/reports/sources${q({})}`;
+  const conv = (sales: number, checkouts: number) => (checkouts ? `${((sales / checkouts) * 100).toFixed(1)}%` : "—");
   return (
     <main className="page">
       <AdminKicker kicker="Stats" readOnly={readOnly} />
-      <h1>Sales by source</h1>
+      <h1>Sources</h1>
       <p className="muted">
-        Sales count only when Cashfree confirmed the payment. Manual payments recorded by an admin are shown separately. Signups = people who started checkout. Dates are IST.
+        First-touch and last-touch from ads, organic social, search, affiliates and referrals. Sales and revenue count only Cashfree-confirmed payments. Staff and test traffic are left out. Dates are IST. Older orders with no recorded source show as Unknown.
       </p>
       <form className="adm-toolbar">
         <label>
@@ -74,8 +80,16 @@ export default async function SalesBySourcePage({ searchParams }: { searchParams
       </div>
       <div className="stats">
         <div className="stat">
+          <small>Visitors</small>
+          <b>{total.visitors}</b>
+        </div>
+        <div className="stat">
           <small>Signups</small>
           <b>{total.signups}</b>
+        </div>
+        <div className="stat">
+          <small>Checkouts started</small>
+          <b>{total.checkouts}</b>
         </div>
         <div className="stat y">
           <small>Sales (Cashfree)</small>
@@ -87,7 +101,7 @@ export default async function SalesBySourcePage({ searchParams }: { searchParams
         </div>
         <div className="stat">
           <small>Conversion</small>
-          <b>{total.signups ? `${((total.sales / total.signups) * 100).toFixed(1)}%` : "—"}</b>
+          <b>{conv(total.sales, total.checkouts)}</b>
         </div>
         <div className="stat">
           <small>Manual sales</small>
@@ -100,7 +114,9 @@ export default async function SalesBySourcePage({ searchParams }: { searchParams
           <thead>
             <tr>
               <th>{DIMS.find(([k]) => k === dim)![1]}</th>
+              <th className="num">Visitors</th>
               <th className="num">Signups</th>
+              <th className="num">Checkouts</th>
               <th className="num">Sales</th>
               <th className="num">Revenue</th>
               <th className="num">Conversion</th>
@@ -111,7 +127,7 @@ export default async function SalesBySourcePage({ searchParams }: { searchParams
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={7} className="muted">
+                <td colSpan={9} className="muted">
                   Nothing in this range.
                 </td>
               </tr>
@@ -119,10 +135,12 @@ export default async function SalesBySourcePage({ searchParams }: { searchParams
               rows.map((r) => (
                 <tr key={r.key}>
                   <td>{r.key}</td>
-                  <td className="num">{r.signups}</td>
-                  <td className="num">{r.sales}</td>
-                  <td className="num">{money(r.revenue)}</td>
-                  <td className="num">{r.signups ? `${((r.sales / r.signups) * 100).toFixed(1)}%` : "—"}</td>
+                  <td className="num">{r.visitors || "—"}</td>
+                  <td className="num">{r.signups || "—"}</td>
+                  <td className="num">{r.checkouts || "—"}</td>
+                  <td className="num">{r.sales || "—"}</td>
+                  <td className="num">{r.revenue ? money(r.revenue) : "—"}</td>
+                  <td className="num">{conv(r.sales, r.checkouts)}</td>
                   <td className="num">{r.manualSales || "—"}</td>
                   <td className="num">{r.manualRevenue ? money(r.manualRevenue) : "—"}</td>
                 </tr>
@@ -131,9 +149,6 @@ export default async function SalesBySourcePage({ searchParams }: { searchParams
           </tbody>
         </table>
       </div>
-      <p className="muted" style={{ marginTop: 10 }}>
-        Payments before 25 Nov 2026 have no marketing data and show as Direct.
-      </p>
     </main>
   );
 }

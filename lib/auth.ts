@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { applyMarketingToUser } from "@/lib/marketing/server";
 import { isAdminEmail, isProduction, isStaffEmail } from "@/lib/config";
 import { hashSecret, randomToken, sixDigitCode } from "@/lib/crypto";
 import { sendEmail } from "@/lib/messaging/email";
@@ -126,7 +127,7 @@ export async function startWelcome(token: string, emailInput: string, request: R
   return { ...issued, message: issued.devCode ? "Email is in test mode. Use the code shown here." : "Code sent. Check your inbox." };
 }
 
-export async function verifyLoginCode(emailInput: string, codeInput: string) {
+export async function verifyLoginCode(emailInput: string, codeInput: string, request?: Request) {
   const email = cleanEmail(emailInput || "");
   const code = (codeInput || "").replace(/\D/g, "");
   if (!isEmail(email) || code.length !== 6) {
@@ -186,6 +187,7 @@ export async function verifyLoginCode(emailInput: string, codeInput: string) {
       });
     }
     await attachLeadContact({ userId: user.id, phone: user.phone, email: user.email || email, name: user.businessName });
+    if (request) await applyMarketingToUser(user.id, request);
   }
 
   const token = randomToken();

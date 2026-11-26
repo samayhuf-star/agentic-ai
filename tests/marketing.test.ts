@@ -4,7 +4,7 @@ import { prisma } from "../lib/prisma";
 import { createCheckout } from "../lib/payments/checkout";
 import { handleWebhook } from "../lib/payments/webhook";
 import { mockSignature } from "../lib/payments/signature";
-import { channelOf, decodeMarketing, encodeMarketing, mergeTouch, MT_COOKIE, touchFromRequest } from "../lib/marketing/touch";
+import { channelOf, decodeMarketing, encodeMarketing, mergeTouch, MT_COOKIE, sourceFromStored, sourceOf, touchFromRequest } from "../lib/marketing/touch";
 import { salesBySource, toCsv } from "../lib/marketing/report";
 
 if (!process.env.AUTH_SECRET) process.env.AUTH_SECRET = "test-secret";
@@ -34,9 +34,31 @@ test("channel rules", () => {
   assert.deepEqual(decodeMarketing(encodeMarketing(next)), decodeMarketing(encodeMarketing(decodeMarketing(encodeMarketing(next))!)));
   assert.equal(decodeMarketing("garbage!!"), null);
   assert.equal(toCsv([["=cmd", 'a"b']]), `'=cmd,"a""b"`);
+
+  assert.equal(sourceOf(t("https://www.theaitimemachine.com/?gclid=x")), "Google Ads");
+  assert.equal(sourceOf(t("https://www.theaitimemachine.com/?gbraid=x")), "Google Ads");
+  assert.equal(sourceOf(t("https://www.theaitimemachine.com/?wbraid=x")), "Google Ads");
+  assert.equal(sourceOf(t("https://www.theaitimemachine.com/?fbclid=abc&utm_source=instagram")), "Instagram Ads");
+  assert.equal(sourceOf(t("https://www.theaitimemachine.com/?fbclid=abc")), "Facebook Ads");
+  assert.equal(sourceOf(t("https://www.theaitimemachine.com/?ttclid=x")), "TikTok Ads");
+  assert.equal(sourceOf(t("https://www.theaitimemachine.com/?li_fat_id=x")), "LinkedIn Ads");
+  assert.equal(sourceOf(t("https://www.theaitimemachine.com/", "https://www.google.co.in/")), "Google organic");
+  assert.equal(sourceOf(t("https://www.theaitimemachine.com/", "https://www.bing.com/search")), "Bing");
+  assert.equal(sourceOf(t("https://www.theaitimemachine.com/", "https://l.instagram.com/")), "Instagram organic");
+  assert.equal(sourceOf(t("https://www.theaitimemachine.com/", "https://www.facebook.com/")), "Facebook organic");
+  assert.equal(sourceOf(t("https://www.theaitimemachine.com/", "https://youtu.be/abc")), "YouTube");
+  assert.equal(sourceOf(t("https://www.theaitimemachine.com/", "https://www.linkedin.com/feed")), "LinkedIn");
+  assert.equal(sourceOf(t("https://www.theaitimemachine.com/", "https://x.com/u")), "X");
+  assert.equal(sourceOf(t("https://www.theaitimemachine.com/", "https://wa.me/91")), "WhatsApp");
+  assert.equal(sourceOf(t("https://www.theaitimemachine.com/?ref=PRIYA")), "Affiliate (PRIYA)");
+  assert.equal(sourceOf(null), "Unknown");
+  assert.equal(sourceOf(null, { absent: "Direct" }), "Direct");
+  assert.equal(sourceFromStored(null, null), "Unknown");
+  assert.equal(channelOf(t("https://www.theaitimemachine.com/?gbraid=x")), "Paid Google");
 });
 
 test("checkout stores attribution; only a verified Cashfree confirmation makes it a sale", async () => {
+  await prisma.payment.deleteMany({ where: { email: { startsWith: "mkt-" } } });
   const email = `mkt-${Date.now()}@shop.test`;
   const cookie = encodeMarketing({
     f: { s: "google", m: "organic", p: "/", at: Math.floor(Date.now() / 1000) - 3600 },
@@ -58,7 +80,7 @@ test("checkout stores attribution; only a verified Cashfree confirmation makes i
   const from = new Date(Date.now() - 3600e3);
   const to = new Date(Date.now() + 3600e3);
   const meta = () => salesBySource(from, to, "channel", "last").then((r) => r.find((x) => x.key === "Paid Meta"));
-  assert.equal((await meta())?.signups, 1);
+  assert.equal((await meta())?.checkouts, 1);
   assert.equal((await meta())?.sales, 0);
 
   // Unsigned webhook: rejected, nothing confirmed.
@@ -78,6 +100,7 @@ test("checkout stores attribution; only a verified Cashfree confirmation makes i
   assert.equal(p.status, "paid");
   assert.equal(p.gatewayConfirmedVia, "webhook");
   const row = await meta();
+  assert.equal(row?.checkouts, 1);
   assert.equal(row?.sales, 1);
   assert.equal(row?.revenue, 1999);
   const user = await prisma.user.findUniqueOrThrow({ where: { email } });

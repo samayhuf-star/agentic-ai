@@ -1,7 +1,8 @@
 import type { Prisma } from "@prisma/client";
 import { readCookie } from "@/lib/affiliates/core";
 import { clientIp } from "@/lib/rate-limit";
-import { channelOf, decodeMarketing, MT_COOKIE, type Touch } from "@/lib/marketing/touch";
+import { channelOf, decodeMarketing, MT_COOKIE, sourceOf, type Touch } from "@/lib/marketing/touch";
+import { prisma } from "@/lib/prisma";
 import { metaCapiEnabled } from "@/lib/marketing/meta";
 
 export type StoredTouch = Touch & { _fbp?: string; _fbc?: string; _ua?: string; _ip?: string };
@@ -49,8 +50,29 @@ export function describeTouch(raw: unknown) {
   add("Referrer", t.r);
   add("Affiliate code", t.a);
   add("gclid", t.g);
+  add("gbraid", t.gb);
+  add("wbraid", t.w);
   add("fbclid", t.f);
   add("ttclid", t.k);
+  add("li_fat_id", t.l);
+  add("Source label", sourceOf(t));
   if (t.at) rows.push(["Seen", new Date(t.at * 1000).toISOString()]);
   return rows;
+}
+
+
+/** Copy first/last touch from the visitor cookie onto a signed-in or newly created user. */
+export async function applyMarketingToUser(userId: string, request: Request, affiliateId: string | null = null) {
+  const fields = marketingFromRequest(request, affiliateId);
+  if (!fields.mktFirst && !fields.mktLast) return;
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { mktFirst: true } });
+  if (!user) return;
+  if (user.mktFirst) {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { mktLast: fields.mktLast, channelLast: fields.channelLast },
+    });
+    return;
+  }
+  await prisma.user.update({ where: { id: userId }, data: fields });
 }

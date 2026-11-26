@@ -187,9 +187,9 @@ test("admin and staff emails stay out of customer signups and the funnel", async
       const buyer = await prisma.user.findUniqueOrThrow({ where: { email: buyerEmail } });
       await prisma.payment.createMany({
         data: [
-          { id: ids[0], gateway: "cashfree", amountInr: 1999, status: "paid", email: adminEmail, userId: admin.id, paidAt: at, createdAt: at },
-          { id: ids[1], gateway: "cashfree", amountInr: 1999, status: "paid", email: staffEmail, userId: staff.id, paidAt: at, createdAt: at },
-          { id: ids[2], gateway: "cashfree", amountInr: 1999, status: "paid", email: buyerEmail, userId: buyer.id, paidAt: at, createdAt: at },
+          { id: ids[0], gateway: "cashfree", amountInr: 1999, status: "paid", email: adminEmail, userId: admin.id, paidAt: at, createdAt: at, gatewayConfirmedAt: at },
+          { id: ids[1], gateway: "cashfree", amountInr: 1999, status: "paid", email: staffEmail, userId: staff.id, paidAt: at, createdAt: at, gatewayConfirmedAt: at },
+          { id: ids[2], gateway: "cashfree", amountInr: 1999, status: "paid", email: buyerEmail, userId: buyer.id, paidAt: at, createdAt: at, gatewayConfirmedAt: at },
         ],
       });
       await prisma.session.createMany({

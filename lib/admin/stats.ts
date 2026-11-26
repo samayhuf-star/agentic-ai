@@ -68,9 +68,11 @@ async function paidGross(from: Date | null, to: Date, includeTest: boolean) {
   const rows = await prisma.$queryRaw<Array<{ revenue: number; orders: number; kept: number }>>`
     SELECT COALESCE(SUM("amountInr"), 0)::int AS revenue,
            COUNT(*)::int AS orders,
-           COALESCE(SUM("amountInr") FILTER (WHERE status = 'paid'), 0)::int AS kept
+           COALESCE(SUM("amountInr"), 0)::int AS kept
     FROM "Payment"
-    WHERE status IN ('paid', 'refunded')
+    WHERE status = 'paid'
+      AND gateway = 'cashfree'
+      AND "gatewayConfirmedAt" IS NOT NULL
       AND ${since(paidAtExpr, from, to)}
       ${live(includeTest)}
   `;
@@ -140,7 +142,9 @@ export async function salesSnapshot(range: StatsRange): Promise<SalesSnapshot> {
              COALESCE(SUM("amountInr"), 0)::int AS revenue,
              COUNT(*)::int AS orders
       FROM "Payment"
-      WHERE status IN ('paid', 'refunded')
+      WHERE status = 'paid'
+        AND gateway = 'cashfree'
+        AND "gatewayConfirmedAt" IS NOT NULL
         AND ${since(paidAtExpr, range.from, range.to)}
         ${live(range.includeTest)}
       GROUP BY 1
@@ -282,7 +286,9 @@ export async function funnelSnapshot(range: StatsRange) {
     prisma.$queryRaw<Array<{ orders: number }>>`
       SELECT COUNT(*)::int AS orders
       FROM "Payment" p
-      WHERE p.status IN ('paid', 'refunded')
+      WHERE p.status = 'paid'
+        AND p.gateway = 'cashfree'
+        AND p."gatewayConfirmedAt" IS NOT NULL
         AND ${paidInWindow}
         ${live(range.includeTest)}
         ${hidePaid}

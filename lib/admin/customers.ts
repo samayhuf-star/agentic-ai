@@ -17,7 +17,7 @@ export function accessOf(user: { suspendedAt: Date | null; compAccess: boolean; 
 }
 
 export function accessWhere(kind: string | undefined): Prisma.UserWhereInput | undefined {
-  const paid: Prisma.UserWhereInput = { payments: { some: { status: "paid" } } };
+  const paid: Prisma.UserWhereInput = { payments: { some: { status: "paid", isTest: false, gateway: "cashfree", gatewayConfirmedAt: { not: null } } } };
   switch (kind) {
     case "paid":
       return { suspendedAt: null, ...paid };

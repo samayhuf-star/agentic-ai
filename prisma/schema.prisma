@@ -408,3 +408,19 @@ model AffiliatePost {
 
   @@index([affiliateId, createdAt])
 }
+
+model MarketingVisit {
+  id        String   @id @default(cuid())
+  visitorId String
+  path      String
+  source    String
+  channel   String?
+  campaign  String?
+  mkt       Json?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([visitorId, createdAt])
+  @@index([source, createdAt])
+}
+

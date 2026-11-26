@@ -20,7 +20,7 @@ const GROUPS: SideGroup[] = [
       { href: "/sup-admin/stats/orders", label: "Orders", icon: "list" },
       { href: "/sup-admin/stats/customers", label: "Customer stats", icon: "pie" },
       { href: "/sup-admin/stats/funnel", label: "Funnel", icon: "funnel" },
-      { href: "/sup-admin/stats/sources", label: "Sales by source", icon: "pie" },
+      { href: "/sup-admin/stats/sources", label: "Sources", icon: "pie" },
     ],
   },
   {

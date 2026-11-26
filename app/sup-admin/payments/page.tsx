@@ -5,6 +5,8 @@ import { requireAdminPage } from "@/lib/admin/guard";
 import { money, pageParam, qs } from "@/lib/admin/format";
 import { METHOD_LABEL } from "@/lib/admin/validate";
 import { formatIst } from "@/lib/config";
+import { confirmedSaleWhere } from "@/lib/admin/metrics";
+import { sourceFromStored } from "@/lib/marketing/touch";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -23,7 +25,7 @@ export default async function PaymentsPage({
   const query = (params.q || "").trim().slice(0, 100);
   const status = STATUSES.includes(params.status || "") ? params.status || "" : "";
   const gateway = GATEWAYS.includes(params.gateway || "") ? params.gateway || "" : "";
-  const tests = params.tests === "only" ? "only" : params.tests === "hide" ? "hide" : "";
+  const tests = params.tests === "only" ? "only" : params.tests === "all" ? "all" : "hide";
   const page = pageParam(params.page);
 
   const filters: Prisma.PaymentWhereInput[] = [];
@@ -47,7 +49,7 @@ export default async function PaymentsPage({
 
   const [total, sum, payments] = await Promise.all([
     prisma.payment.count({ where }),
-    prisma.payment.aggregate({ where: { AND: [where, { status: "paid", isTest: false }] }, _sum: { amountInr: true } }),
+    prisma.payment.aggregate({ where: { AND: [where, confirmedSaleWhere()] }, _sum: { amountInr: true } }),
     prisma.payment.findMany({
       where,
       orderBy: { createdAt: "desc" },
@@ -57,7 +59,7 @@ export default async function PaymentsPage({
     }),
   ]);
   const pages = Math.max(1, Math.ceil(total / PER_PAGE));
-  const base = { q: query || undefined, status: status || undefined, gateway: gateway || undefined, tests: tests || undefined };
+  const base = { q: query || undefined, status: status || undefined, gateway: gateway || undefined, tests: tests !== "hide" ? tests : undefined };
 
   return (
     <main className="page">
@@ -87,8 +89,8 @@ export default async function PaymentsPage({
           ))}
         </select>
         <select name="tests" defaultValue={tests} aria-label="Test payments">
-          <option value="">Tests included</option>
           <option value="hide">Hide tests</option>
+          <option value="all">Tests included</option>
           <option value="only">Tests only</option>
         </select>
         <button className="btn btn-g btn-sm" type="submit">
@@ -96,7 +98,7 @@ export default async function PaymentsPage({
         </button>
       </form>
       <p className="muted">
-        {total} payment{total === 1 ? "" : "s"} · real paid in this view: <b style={{ color: "var(--text)" }}>{money(sum._sum.amountInr || 0)}</b>
+        {total} payment{total === 1 ? "" : "s"} · Cashfree-confirmed in this view: <b style={{ color: "var(--text)" }}>{money(sum._sum.amountInr || 0)}</b>
       </p>
       <div className="table-wrap">
         <table>
@@ -107,6 +109,7 @@ export default async function PaymentsPage({
               <th>Amount</th>
               <th>Status</th>
               <th className="adm-hide-sm">Source</th>
+              <th className="adm-hide-sm">Gateway</th>
               <th className="adm-hide-sm">Reference</th>
             </tr>
           </thead>
@@ -129,6 +132,7 @@ export default async function PaymentsPage({
                     <span className={`pill ${p.status}`}>{p.status}</span>
                     {p.isTest ? <span className="test-badge">TEST</span> : null}
                   </td>
+                  <td className="adm-hide-sm">{sourceFromStored(p.mktLast || p.mktFirst, p.channelLast || p.channelFirst, { affiliate: Boolean(p.affiliateId) })}</td>
                   <td className="adm-hide-sm">
                     {p.gateway}
                     {p.method ? <span className="muted"> · {METHOD_LABEL[p.method] || p.method}</span> : null}
