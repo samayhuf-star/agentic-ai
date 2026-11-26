@@ -29,16 +29,27 @@
 }
 .creator-app {
   display: flex;
-  gap: 12px;
-  text-align: left;
-  align-items: flex-start;
+  flex-direction: column;
+  align-items: stretch;
   padding: 12px;
   border-radius: 14px;
   border: 1px solid var(--line, #243038);
   background: #10161b;
   color: inherit;
+  width: 100%;
+}
+.creator-app-main {
+  display: flex;
+  gap: 12px;
+  text-align: left;
+  align-items: flex-start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
   cursor: pointer;
   width: 100%;
+  font: inherit;
 }
 .creator-app b {
   display: block;
@@ -62,14 +73,32 @@
 }
 .creator-app-icon {
   flex: 0 0 auto;
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   border-radius: 12px;
   display: grid;
   place-items: center;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.02em;
+  overflow: hidden;
+  background: #0b0f12;
+}
+.creator-app-icon img {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  display: block;
+}
+.creator-app-link {
+  margin: 8px 0 0 60px;
+  font-size: 13px;
+  color: var(--lime, #c8f25a);
+  text-decoration: none;
+  width: fit-content;
+}
+.creator-app-link:hover {
+  text-decoration: underline;
 }
 .creator-chips {
   border: 0;

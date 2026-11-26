@@ -2,7 +2,7 @@ import * as v from "@/lib/admin/validate";
 import {
   CONTENT_TYPE_IDS,
   COUNTRIES,
-  CREATOR_APP_IDS,
+  SELECTABLE_APP_IDS,
   FOLLOWER_RANGES,
   PLATFORM_IDS,
   RATE_TYPE_IDS,
@@ -103,7 +103,7 @@ export function parseApplication(body: Record<string, unknown>): CreatorApplyInp
   const rateNote = v.text(body.rateNote, "Rate note", 200);
   const sampleLinks = parseUrlList(body.sampleLinks, "Sample work link", { required: false, max: 8 });
   const note = v.text(body.note, "Note", 2000);
-  const selectedApps = stringList(body.selectedApps, CREATOR_APP_IDS, "App", { required: true });
+  const selectedApps = stringList(body.selectedApps, SELECTABLE_APP_IDS, "App", { required: true });
   if (!v.bool(body.consent) && body.consent !== true) throw new v.InputError("Please confirm you agree to be contacted about this application.");
   return {
     name,

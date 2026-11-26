@@ -4,10 +4,10 @@ import { useMemo, useState } from "react";
 import {
   CONTENT_TYPES,
   COUNTRIES,
-  CREATOR_APPS,
   FOLLOWER_RANGES,
   PLATFORMS,
   RATE_TYPES,
+  SELECTABLE_APPS,
 } from "@/lib/creators/apps";
 
 const empty = {
@@ -35,7 +35,7 @@ export function CreatorApplyForm() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState("");
-  const allSelected = apps.length === CREATOR_APPS.length;
+  const allSelected = apps.length === SELECTABLE_APPS.length;
   const set = (k: keyof typeof empty) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setF({ ...f, [k]: e.target.value });
 
@@ -46,7 +46,7 @@ export function CreatorApplyForm() {
   }
 
   function toggleAll() {
-    setApps(allSelected ? [] : CREATOR_APPS.map((app) => app.id));
+    setApps(allSelected ? [] : SELECTABLE_APPS.map((app) => app.id));
   }
 
   function toggleContent(id: string) {
@@ -99,24 +99,25 @@ export function CreatorApplyForm() {
           </button>
         </div>
         <div className="creator-apps" role="group" aria-label="Apps">
-          {CREATOR_APPS.map((app) => {
+          {SELECTABLE_APPS.map((app) => {
             const on = apps.includes(app.id);
             return (
-              <button
-                key={app.id}
-                type="button"
-                className={on ? "creator-app is-on" : "creator-app"}
-                aria-pressed={on}
-                onClick={() => toggleApp(app.id)}
-              >
-                <span className="creator-app-icon" style={{ background: `${app.tone}22`, color: app.tone }}>
-                  {app.initials}
-                </span>
-                <span>
-                  <b>{app.name}</b>
-                  <small>{app.blurb}</small>
-                </span>
-              </button>
+              <div key={app.id} className={on ? "creator-app is-on" : "creator-app"}>
+                <button type="button" className="creator-app-main" aria-pressed={on} onClick={() => toggleApp(app.id)}>
+                  <span className="creator-app-icon">
+                    {app.icon ? <img src={app.icon} alt="" width={48} height={48} /> : app.initials}
+                  </span>
+                  <span>
+                    <b>{app.name}</b>
+                    <small>{app.blurb}</small>
+                  </span>
+                </button>
+                {app.href ? (
+                  <a className="creator-app-link" href={app.href} target="_blank" rel="noreferrer">
+                    {app.hrefLabel || "Open"} ↗
+                  </a>
+                ) : null}
+              </div>
             );
           })}
         </div>

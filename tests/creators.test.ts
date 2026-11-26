@@ -6,7 +6,7 @@ import { POST as apply } from "../app/api/creators/apply/route";
 import { GET as exportCsv } from "../app/api/admin/creators.csv/route";
 import { PATCH as patchCreator } from "../app/api/admin/creators/[id]/route";
 import { hashSecret, randomToken } from "../lib/crypto";
-import { CREATOR_APPS } from "../lib/creators/apps";
+import { CREATOR_APPS, SELECTABLE_APPS } from "../lib/creators/apps";
 import { looksLikeTest, parseApplication } from "../lib/creators/input";
 import { prisma } from "../lib/prisma";
 import { publicPages } from "../lib/public-pages";
@@ -43,7 +43,7 @@ const APPLICATION = {
   rateNote: "Open to discuss",
   sampleLinks: "https://instagram.com/reel/example",
   note: "[TEST] Internal QA application — please ignore.",
-  selectedApps: ["ai-time-machine", "sozal", "playsz"],
+  selectedApps: ["ai-time-machine", "klenzer", "alarm-klock"],
   consent: true,
 };
 
@@ -60,28 +60,27 @@ async function cleanup() {
   await prisma.rateLimit.deleteMany({ where: { id: { startsWith: "creators:" } } });
 }
 
-test("creator catalog includes the live apps and public route", () => {
-  const names = CREATOR_APPS.map((app) => app.name);
-  for (const needed of [
+test("creator catalog lists only the live App Store apps plus AI Time Machine", () => {
+  const listed = SELECTABLE_APPS.map((app) => app.name);
+  assert.deepEqual(listed, [
     "AI Time Machine",
-    "Sozal",
-    "Playsz",
-    "Klenzer",
-    "Clean Inbox",
-    "Ramayan: Watch & Talk",
-    "Mahabharat",
-    "2 Patti",
-    "Klarity",
-    "Scanwise",
-    "Twist 21",
-    "Lulla",
-    "45 Days Abs Challenge",
-    "Momentum Men's Workout",
-    "Momentum Women's Workout",
-    "Krosz",
-    "Chezz",
-  ]) {
-    assert.ok(names.includes(needed), needed);
+    "Klenzer: Photo Storage Cleaner",
+    "Alarm Klock",
+    "Ank Numerology",
+    "Stargaze Lite: AR Star Finder",
+    "Divi Mood - Wife mood tracker",
+  ]);
+  assert.equal(SELECTABLE_APPS.length, 6);
+  const hidden = CREATOR_APPS.filter((app) => !app.listed).map((app) => app.id);
+  for (const needed of ["sozal", "playsz", "lulla", "klarity", "chezz"]) {
+    assert.ok(hidden.includes(needed), needed);
+  }
+  const atm = SELECTABLE_APPS[0];
+  assert.equal(atm.href, "https://www.theaitimemachine.com");
+  assert.ok(atm.icon && fs.existsSync(path.join(process.cwd(), "public", atm.icon.replace(/^\//, ""))));
+  for (const app of SELECTABLE_APPS.slice(1)) {
+    assert.match(app.href || "", /^https:\/\/apps\.apple\.com\/app\/id\d+$/);
+    assert.ok(app.icon && fs.existsSync(path.join(process.cwd(), "public", app.icon.replace(/^\//, ""))), app.id);
   }
   assert.ok(publicPages().includes("/creators"));
   const page = fs.readFileSync(path.join(process.cwd(), "app/creators/page.tsx"), "utf8");
@@ -96,10 +95,11 @@ test("parseApplication validates fields and flags test notes", () => {
   assert.equal(parsed.email, EMAIL);
   assert.equal(parsed.isTest, true);
   assert.equal(parsed.profileUrls[0], "https://instagram.com/test.creator");
-  assert.deepEqual(parsed.selectedApps, ["ai-time-machine", "sozal", "playsz"]);
+  assert.deepEqual(parsed.selectedApps, ["ai-time-machine", "klenzer", "alarm-klock"]);
   assert.throws(() => parseApplication({ ...APPLICATION, consent: false }), /agree/);
   assert.throws(() => parseApplication({ ...APPLICATION, selectedApps: [] }), /app/i);
   assert.throws(() => parseApplication({ ...APPLICATION, selectedApps: ["not-an-app"] }), /valid app/i);
+  assert.throws(() => parseApplication({ ...APPLICATION, selectedApps: ["sozal"] }), /valid app/i);
   assert.throws(() => parseApplication({ ...APPLICATION, profileUrls: "" }), /Profile URL/);
   assert.throws(() => parseApplication({ ...APPLICATION, phone: "123" }), /phone/);
 });
@@ -119,7 +119,7 @@ test("apply API stores a multi-app test submission, blocks honeypots, and export
   assert.ok(row);
   assert.equal(row!.isTest, true);
   assert.equal(row!.status, "new");
-  assert.ok(row!.selectedApps.includes("sozal"));
+  assert.ok(row!.selectedApps.includes("klenzer"));
   assert.equal(row!.country, "United States");
 
   const denied = await exportCsv(req("/api/admin/creators.csv", "GET"));
