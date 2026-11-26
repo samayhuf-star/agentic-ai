@@ -24,6 +24,8 @@ export async function createHostedCheckout(input: CheckoutInput): Promise<{ url:
 }
 
 export const CASHFREE_METHODS = "cc,dc,upi,nb,app";
+export const CASHFREE_METHODS_UPI = "upi";
+export const CASHFREE_METHODS_OTHER = "cc,dc,nb,app";
 export const CHECKOUT_TTL_MS = 30 * 60 * 1000;
 
 /** ISO time in IST, now + 30 minutes (Cashfree needs at least 15). */
@@ -60,8 +62,8 @@ async function createCashfree(input: CheckoutInput) {
       order_meta: {
         return_url: `${input.origin}/payment/success?order_id=${input.orderId}`,
         notify_url: `${input.origin}/api/webhooks/cashfree`,
-        // Instant methods only: cards, UPI, net banking, wallets. No bank transfer, EMI or pay later.
-        payment_methods: CASHFREE_METHODS,
+        // Instant methods only. Default is all of them; checkout can limit to UPI or to card/netbanking/wallets.
+        payment_methods: input.paymentMethods || CASHFREE_METHODS,
       },
     }),
   });

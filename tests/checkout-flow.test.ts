@@ -419,3 +419,65 @@ test("production refuses mock checkout and an unconfigured Razorpay or PayU webh
     process.env.ALLOW_MOCK_PAYMENTS = previousAllow;
   }
 });
+
+
+test("UPI checkout asks Cashfree for UPI only, and the card path excludes UPI", async () => {
+  const { paymentMethodsFor } = await import("../lib/payments/checkout");
+  const { CASHFREE_METHODS_UPI, CASHFREE_METHODS_OTHER, CASHFREE_METHODS, createHostedCheckout } = await import("../lib/payments/gateways");
+  const { shouldHoldCashfreeHandoff } = await import("../lib/device");
+  assert.equal(paymentMethodsFor("upi"), "upi");
+  assert.equal(paymentMethodsFor("other"), "cc,dc,nb,app");
+  assert.equal(paymentMethodsFor(undefined), undefined);
+  assert.equal(CASHFREE_METHODS_UPI, "upi");
+  assert.equal(CASHFREE_METHODS_OTHER, "cc,dc,nb,app");
+  assert.equal(CASHFREE_METHODS, "cc,dc,upi,nb,app");
+  assert.equal(shouldHoldCashfreeHandoff("snapchat"), true);
+  assert.equal(shouldHoldCashfreeHandoff("facebook"), true);
+  assert.equal(shouldHoldCashfreeHandoff("instagram"), true);
+  assert.equal(shouldHoldCashfreeHandoff("google"), false);
+  assert.equal(shouldHoldCashfreeHandoff(null), false);
+
+  process.env.CASHFREE_APP_ID = "test_id";
+  process.env.CASHFREE_SECRET_KEY = "test_secret";
+  process.env.CASHFREE_ENV = "TEST";
+  const original = globalThis.fetch;
+  const bodies: unknown[] = [];
+  globalThis.fetch = (async (_url: unknown, init?: RequestInit) => {
+    bodies.push(JSON.parse(String(init?.body || "{}")));
+    return new Response(JSON.stringify({ payment_session_id: "sess_test" }), { status: 200 });
+  }) as typeof fetch;
+  try {
+    const upi = await createHostedCheckout({
+      orderId: "brupi1",
+      amountInr: 1999,
+      origin: "https://www.theaitimemachine.com",
+      gateway: "cashfree",
+      customer: { name: "Asha", email: "a@shop.test", phone: "9999999999" },
+      paymentMethods: CASHFREE_METHODS_UPI,
+    });
+    assert.match(upi.url, /checkout\/start\?session=sess_test/);
+    const other = await createHostedCheckout({
+      orderId: "brother1",
+      amountInr: 1999,
+      origin: "https://www.theaitimemachine.com",
+      gateway: "cashfree",
+      customer: { name: "Asha", email: "a@shop.test", phone: "9999999999" },
+      paymentMethods: CASHFREE_METHODS_OTHER,
+    });
+    assert.ok(other.url);
+    const fallback = await createHostedCheckout({
+      orderId: "brall1",
+      amountInr: 1999,
+      origin: "https://www.theaitimemachine.com",
+      gateway: "cashfree",
+      customer: { name: "Asha", email: "a@shop.test", phone: "9999999999" },
+    });
+    assert.ok(fallback.url);
+    const methods = bodies.map((body) => (body as { order_meta?: { payment_methods?: string } }).order_meta?.payment_methods);
+    assert.deepEqual(methods, ["upi", "cc,dc,nb,app", "cc,dc,upi,nb,app"]);
+  } finally {
+    globalThis.fetch = original;
+    delete process.env.CASHFREE_APP_ID;
+    delete process.env.CASHFREE_SECRET_KEY;
+  }
+});

@@ -28,3 +28,8 @@ export function deviceLabel(ua: string | null | undefined): string | null {
   const app = inAppKind(ua);
   return [mobile ? "mobile" : "desktop", os, app ? `${app}-app` : "browser"].join("/");
 }
+
+/** In-app browsers where UPI intent usually fails. Don't auto-open Cashfree; show Open in Chrome first. */
+export function shouldHoldCashfreeHandoff(kind: InAppKind) {
+  return kind === "instagram" || kind === "facebook" || kind === "snapchat";
+}

@@ -1,4 +1,4 @@
-import { CashfreeHandoff } from "@/components/CashfreeHandoff";
+import { CashfreeStart } from "@/components/CashfreeStart";
 
 export const dynamic = "force-dynamic";
 
@@ -12,5 +12,5 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
       </main>
     );
   }
-  return <CashfreeHandoff sessionId={session} mode={mode === "production" ? "production" : "sandbox"} />;
+  return <CashfreeStart sessionId={session} mode={mode === "production" ? "production" : "sandbox"} />;
 }

@@ -18,8 +18,8 @@ export default async function PaymentSuccessPage({ searchParams }: { searchParam
   const payment = orderId ? await prisma.payment.findUnique({ where: { id: orderId } }) : null;
   const paid = payment?.status === "paid" || payment?.status === "paid_unassigned";
   const failed = payment?.status === "failed";
-  // Buyer came back without paying: recovery email #1 now (no-op unless RECOVERY_EMAILS=on).
-  if (payment && !paid) void triggerRecovery(payment.id).catch((error) => console.error("recovery trigger", error));
+  // Buyer came back without paying: recovery email #1 now, once per order/email (no-op unless RECOVERY_EMAILS=on).
+  if (payment && !paid) await triggerRecovery(payment.id).catch((error) => console.error("recovery trigger", error));
   const gtmPurchase =
     payment &&
     paid &&

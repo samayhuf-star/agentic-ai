@@ -1316,3 +1316,43 @@ button.text-link:disabled {
 .inapp-note-compact { margin: 0; border-radius: 0; }
 .payee-note { font-size: 0.88rem; opacity: 0.8; margin: 8px 0 0; }
 .pay-ways { font-size: 0.9rem; margin: 4px 0 12px; }
+
+.btn-upi {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  min-height: 72px;
+  padding: 16px 18px;
+  font-size: 1.15rem;
+  line-height: 1.2;
+}
+.btn-upi-label { font-weight: 800; }
+.upi-logos {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+.upi-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #fff;
+  color: #111;
+  border-radius: 999px;
+  padding: 3px 8px 3px 3px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.upi-logo svg { display: block; flex: 0 0 auto; }
+.upi-hint { font-size: 0.88rem; margin: 2px 0 4px; opacity: 0.85; }
+.pay-other {
+  display: inline-block;
+  margin: 4px 0 8px;
+  text-align: center;
+  width: 100%;
+  min-height: 36px;
+}
+

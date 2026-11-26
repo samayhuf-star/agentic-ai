@@ -76,6 +76,15 @@ async function claim(key: string, step: string, toEmail: string, leadId?: string
   }
 }
 
+
+/** Newer unpaid checkouts get the recovery sequence instead of "checkout is still open". */
+function recoveryCoversCheckout(lead: { createdAt: Date }) {
+  if (process.env.RECOVERY_EMAILS !== "on") return false;
+  const at = Date.parse(process.env.RECOVERY_CUTOFF || "2026-11-26T07:40:00Z");
+  const cutoff = Number.isFinite(at) ? at : 0;
+  return lead.createdAt.getTime() >= cutoff;
+}
+
 export async function runFollowups(now = new Date()) {
   let sent = 0;
   const pending = await prisma.lead.findMany({
@@ -84,6 +93,7 @@ export async function runFollowups(now = new Date()) {
   });
   for (const lead of pending) {
     if (!lead.email) continue;
+    if (recoveryCoversCheckout(lead)) continue;
     const sentSteps = new Set((await prisma.followupSend.findMany({ where: { leadId: lead.id }, select: { step: true } })).map((row) => row.step));
     const age = now.getTime() - lead.createdAt.getTime();
     const due = CHECKOUT_STEPS.find((step) => age >= step.after && !sentSteps.has(step.step));

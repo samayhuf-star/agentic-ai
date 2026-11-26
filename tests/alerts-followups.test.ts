@@ -48,6 +48,7 @@ test("owner payment alerts send once per order", async () => {
 });
 
 test("follow-up notes send once and stop after payment or unsubscribe", async () => {
+  delete process.env.RECOVERY_EMAILS;
   process.env.RESEND_API_KEY = "re_test";
   process.env.RESEND_FROM = "AI Time Machine <no-reply@adiology.io>";
   const original = globalThis.fetch;
@@ -90,5 +91,53 @@ test("follow-up notes send once and stop after payment or unsubscribe", async ()
     globalThis.fetch = original;
     delete process.env.CRON_SECRET;
     delete process.env.RESEND_API_KEY;
+  }
+});
+
+
+test("recovery sequence stops the older checkout is still open emails", async () => {
+  process.env.RESEND_API_KEY = "re_test";
+  process.env.RESEND_FROM = "AI Time Machine <no-reply@adiology.io>";
+  process.env.RECOVERY_EMAILS = "on";
+  process.env.RECOVERY_CUTOFF = "2026-11-26T07:40:00Z";
+  const original = globalThis.fetch;
+  globalThis.fetch = (async () => new Response("{}", { status: 200 })) as typeof fetch;
+  const stamp = Date.now();
+  const covered = await prisma.lead.create({
+    data: {
+      orderId: `lead-new-${stamp}`,
+      email: `new-${stamp}@shop.test`,
+      amountInr: 1999,
+      status: "pending",
+      createdAt: new Date("2026-11-26T10:00:00Z"),
+    },
+  });
+  const older = await prisma.lead.create({
+    data: {
+      orderId: `lead-old-${stamp}`,
+      email: `old-${stamp}@shop.test`,
+      amountInr: 1999,
+      status: "pending",
+      createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+    },
+  });
+  try {
+    // Make the "older" lead also older than 1 hour but before cutoff if now is after cutoff.
+    // If "older" is actually after cutoff (today), force it before cutoff.
+    const cutoff = new Date("2026-11-26T07:40:00Z");
+    if (older.createdAt >= cutoff) {
+      await prisma.lead.update({
+        where: { id: older.id },
+        data: { createdAt: new Date(cutoff.getTime() - 2 * 60 * 60 * 1000) },
+      });
+    }
+    await runFollowups();
+    assert.equal(await prisma.followupSend.count({ where: { leadId: covered.id } }), 0);
+    assert.equal(await prisma.followupSend.count({ where: { leadId: older.id, step: "checkout_1h" } }), 1);
+  } finally {
+    globalThis.fetch = original;
+    delete process.env.RESEND_API_KEY;
+    delete process.env.RECOVERY_EMAILS;
+    delete process.env.RECOVERY_CUTOFF;
   }
 });

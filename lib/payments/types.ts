@@ -18,4 +18,6 @@ export type CheckoutInput = {
   origin: string;
   gateway: GatewayName;
   customer: { name: string; email: string; phone: string };
+  /** Cashfree payment_methods string. */
+  paymentMethods?: string;
 };

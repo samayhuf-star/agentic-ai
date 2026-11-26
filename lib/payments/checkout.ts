@@ -3,7 +3,7 @@ import { appOrigin, mockPaymentsAllowed, pricing } from "@/lib/config";
 import { isEmail } from "@/lib/auth";
 import { randomToken } from "@/lib/crypto";
 import { openLead, saveBuyerContact } from "@/lib/leads";
-import { createHostedCheckout, gatewayHasKeys } from "@/lib/payments/gateways";
+import { CASHFREE_METHODS_OTHER, CASHFREE_METHODS_UPI, createHostedCheckout, gatewayHasKeys } from "@/lib/payments/gateways";
 import { indianMobile } from "@/lib/phone";
 import { getActiveGateway } from "@/lib/settings";
 import { attributionFromRequest } from "@/lib/affiliates/attribution";
@@ -60,6 +60,7 @@ async function bodyOf(request: Request) {
       name?: unknown;
       email?: unknown;
       phone?: unknown;
+      pay?: unknown;
     };
   }
   if (
@@ -71,13 +72,22 @@ async function bodyOf(request: Request) {
       name: form.get("name"),
       email: form.get("email"),
       phone: form.get("phone"),
+      pay: form.get("pay"),
     };
   }
   return {};
 }
 
+export function paymentMethodsFor(pay: unknown) {
+  const value = String(pay || "").trim().toLowerCase();
+  if (value === "upi") return CASHFREE_METHODS_UPI;
+  if (value === "other") return CASHFREE_METHODS_OTHER;
+  return undefined;
+}
+
 export async function createCheckout(request: Request) {
-  const buyer = readBuyer(await bodyOf(request));
+  const body = await bodyOf(request);
+  const buyer = readBuyer(body);
   if (!buyer.ok) {
     const contentType = request.headers.get("content-type") || "";
     if (!contentType.includes("application/json"))
@@ -85,13 +95,13 @@ export async function createCheckout(request: Request) {
     return { status: 400, message: buyer.message, field: buyer.field };
   }
 
-  return startCheckoutFor(request, buyer);
+  return startCheckoutFor(request, buyer, { paymentMethods: paymentMethodsFor(body.pay) });
 }
 
 type Buyer = { name: string; email: string; phone: string; digits: string };
 
 /** Create a fresh order for known buyer details (new checkout, or "Pay again" on an expired order). */
-export async function startCheckoutFor(request: Request, buyer: Buyer, opts: { retryOf?: string } = {}) {
+export async function startCheckoutFor(request: Request, buyer: Buyer, opts: { retryOf?: string; paymentMethods?: string } = {}) {
   const gateway = await getActiveGateway();
   const amountInr = pricing().inr;
   const userAgent = (request.headers.get("user-agent") || "").slice(0, 400) || null;
@@ -208,6 +218,7 @@ export async function startCheckoutFor(request: Request, buyer: Buyer, opts: { r
         origin,
         gateway,
         customer: { name: buyer.name, email: buyer.email, phone: buyer.digits },
+        paymentMethods: opts.paymentMethods,
       });
       return { status: 303, orderId, redirect: hosted.url };
     } catch (error) {

@@ -17,7 +17,7 @@ export default function CheckoutPage() {
         <p className="br-kicker">One payment</p>
         <h1>Pay {price}</h1>
         <p className="lead">We use this to send your sign-in code and open your team. Cashfree takes the payment on the next page.</p>
-        <p className="pay-ways">Pay with any UPI app, UPI ID, QR code, card, net banking or wallet.</p>
+        <p className="pay-ways">Pay with Google Pay, PhonePe, Paytm or another UPI app. On a computer you will get a QR code to scan with your phone.</p>
         <CheckoutForm price={price} />
         <p className="payee-note">Payment goes to Rizwiz Enterprises, the company behind AI Time Machine. You will see that name on the payment page and in your UPI app.</p>
       </main>
