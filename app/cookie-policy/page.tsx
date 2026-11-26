@@ -30,6 +30,10 @@ export default function CookiePolicyPage() {
         On the payment success page we load Google Tag Manager (GTM-P3L723D9). After Cashfree confirms a payment as paid, we send a purchase event with the order id and
         amount in INR. That event is not sent if the payment failed or is still pending.
       </p>
+      <h2>Session replay (only if switched on)</h2>
+      <p>
+        If Microsoft Clarity is switched on, it sets first-party cookies such as <b>_clck</b> and <b>_clsk</b> so we can watch a session replay of the landing, checkout and payment-return pages. All inputs and personal details are masked. It is not loaded on the payment company&apos;s page.
+      </p>
       <p>You can block or clear cookies in your browser settings. The site still works; we just can&apos;t tell which link brought you.</p>
       <p>Questions about cookies: {BUSINESS.supportEmail}.</p>
     </PolicyFrame>

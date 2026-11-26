@@ -11,6 +11,8 @@ import { PAYMENT_METHODS } from "@/lib/admin/validate";
 import { formatIst } from "@/lib/config";
 import { displayPhone } from "@/lib/phone";
 import { prisma } from "@/lib/prisma";
+import { loadPaymentJourney } from "@/lib/admin/journey";
+import { JourneySection } from "@/components/admin/console/JourneySection";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +21,10 @@ export default async function PaymentDetailPage({ params }: { params: Promise<{ 
   const id = decodeURIComponent((await params).id);
   const payment = await prisma.payment.findUnique({ where: { id }, include: { user: true } });
   if (!payment) notFound();
-  const audit = await prisma.adminAudit.findMany({ where: { entity: "payment", entityId: id }, orderBy: { createdAt: "desc" }, take: 20 });
+  const [audit, journey] = await Promise.all([
+    prisma.adminAudit.findMany({ where: { entity: "payment", entityId: id }, orderBy: { createdAt: "desc" }, take: 20 }),
+    loadPaymentJourney(id),
+  ]);
   const manual = payment.gateway === "manual";
   const deletable = manual || payment.isTest;
   const defaultMethod = (PAYMENT_METHODS as readonly string[]).includes(payment.method || "")
@@ -54,6 +59,7 @@ export default async function PaymentDetailPage({ params }: { params: Promise<{ 
         </div>
       </div>
       <AttributionCard first={payment.mktFirst} last={payment.mktLast} channelFirst={payment.channelFirst} channelLast={payment.channelLast} note={payment.gclid ? `gclid on file for Google Ads offline upload.` : undefined} />
+      {journey ? <JourneySection journey={journey} /> : null}
       <div className="adm-cols">
         <section className="adm-section">
           <h2>Edit</h2>

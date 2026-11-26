@@ -3,6 +3,7 @@
 import { trackLead } from "@/lib/marketing/pixel-client";
 import { useState } from "react";
 import { indianMobile } from "@/lib/phone";
+import { readClaritySessionId } from "@/lib/marketing/clarity";
 
 type Errors = { name?: string; email?: string; phone?: string; form?: string };
 type PayMethod = "upi" | "other" | "all";
@@ -66,10 +67,28 @@ export function CheckoutForm({ price }: { price: string }) {
     setErrors(local);
     if (Object.keys(local).length > 0) return;
     setBusy(pay);
+    let claritySessionId: string | null = null;
+    try {
+      await new Promise<void>((resolve) => {
+        const done = (value?: unknown) => {
+          claritySessionId = readClaritySessionId(value);
+          resolve();
+        };
+        try {
+          const clarity = (window as Window & { clarity?: (...args: unknown[]) => void }).clarity;
+          clarity?.("get", "sessionId", done);
+        } catch {
+          done();
+        }
+        window.setTimeout(() => done(), 400);
+      });
+    } catch {
+      /* ignore */
+    }
     const response = await fetch("/api/checkout", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ name, email, phone, pay }),
+      body: JSON.stringify({ name, email, phone, pay, claritySessionId }),
     });
     const data = (await response.json().catch(() => ({}))) as { message?: string; field?: string; redirect?: string; leadEventId?: string };
     setBusy(null);
@@ -93,17 +112,17 @@ export function CheckoutForm({ price }: { price: string }) {
     >
       <label className="field">
         Full name
-        <input value={name} onChange={(event) => setName(event.target.value)} onBlur={() => setTouched((state) => ({ ...state, name: true }))} autoComplete="name" autoCapitalize="words" />
+        <input value={name} onChange={(event) => setName(event.target.value)} onBlur={() => setTouched((state) => ({ ...state, name: true }))} autoComplete="name" autoCapitalize="words" data-clarity-mask="true" className="clarity-mask" />
         {shown.name ? <span className="field-error">{shown.name}</span> : null}
       </label>
       <label className="field">
         Email
-        <input value={email} onChange={(event) => setEmail(event.target.value)} onBlur={() => setTouched((state) => ({ ...state, email: true }))} autoComplete="email" inputMode="email" />
+        <input value={email} onChange={(event) => setEmail(event.target.value)} onBlur={() => setTouched((state) => ({ ...state, email: true }))} autoComplete="email" inputMode="email" data-clarity-mask="true" className="clarity-mask" />
         {shown.email ? <span className="field-error">{shown.email}</span> : null}
       </label>
       <label className="field">
         Mobile number
-        <input value={phone} onChange={(event) => setPhone(event.target.value)} onBlur={() => setTouched((state) => ({ ...state, phone: true }))} autoComplete="tel" inputMode="tel" />
+        <input value={phone} onChange={(event) => setPhone(event.target.value)} onBlur={() => setTouched((state) => ({ ...state, phone: true }))} autoComplete="tel" inputMode="tel" data-clarity-mask="true" className="clarity-mask" />
         {shown.phone ? <span className="field-error">{shown.phone}</span> : null}
       </label>
       {shown.form ? <p className="field-error">{shown.form}</p> : null}

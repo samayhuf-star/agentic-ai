@@ -88,6 +88,7 @@ model Payment {
   googleAdsUploadedAt DateTime?
   userAgent           String?
   device              String?
+  claritySessionId    String?
 
   @@index([affiliateId])
   @@index([status])
@@ -250,9 +251,10 @@ model Lead {
   userId          String?
   createdAt       DateTime       @default(now())
   paidAt          DateTime?
-  userAgent       String?
-  device          String?
-  followups       FollowupSend[]
+  userAgent         String?
+  device            String?
+  claritySessionId  String?
+  followups         FollowupSend[]
 
   @@index([status, createdAt])
   @@index([email])

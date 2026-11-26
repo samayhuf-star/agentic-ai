@@ -21,6 +21,9 @@ export default function PrivacyPage() {
       <p>
         We use this to run your account. We do not sell it. The payment company, the email sender, and the text sender only get what they need to do their job.
       </p>
+      <p>
+        To see where checkout gets stuck, we may use Microsoft Clarity on the landing page, the checkout form and the payment-return page only. Clarity records a session replay of those pages. Names, emails, phone numbers and all form inputs are masked. Clarity is never loaded on the Cashfree or Razorpay payment page, and it does not run on your dashboard or admin pages.
+      </p>
       <p>You can ask what we hold, or ask us to correct it, by writing to {BUSINESS.supportEmail}. We reply from that address.</p>
     </PolicyFrame>
   );

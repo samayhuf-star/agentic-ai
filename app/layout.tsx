@@ -1,4 +1,6 @@
 import { Pixels } from "@/components/marketing/Pixels";
+import { Clarity } from "@/components/marketing/Clarity";
+import { Suspense } from "react";
 import { VisitBeacon } from "@/components/marketing/VisitBeacon";
 import { JsonLd } from "@/components/marketing/JsonLd";
 import { DEFAULT_OG, organizationJsonLd, SITE } from "@/lib/site";
@@ -49,6 +51,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {children}
         <VisitBeacon />
         <Pixels />
+        <Suspense fallback={null}>
+          <Clarity />
+        </Suspense>
       </body>
     </html>
   );

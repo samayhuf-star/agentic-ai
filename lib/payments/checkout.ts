@@ -12,6 +12,7 @@ import { metaCapiEnabled, sendMetaEvent } from "@/lib/marketing/meta";
 import { deviceLabel, inAppKind } from "@/lib/device";
 import { logEvent, paymentSource } from "@/lib/activity/log";
 import { isTestCheckout } from "@/lib/admin/metrics";
+import { readClaritySessionId } from "@/lib/marketing/clarity";
 
 export function readBuyer(input: {
   name?: unknown;
@@ -62,6 +63,7 @@ async function bodyOf(request: Request) {
       email?: unknown;
       phone?: unknown;
       pay?: unknown;
+      claritySessionId?: unknown;
     };
   }
   if (
@@ -74,6 +76,7 @@ async function bodyOf(request: Request) {
       email: form.get("email"),
       phone: form.get("phone"),
       pay: form.get("pay"),
+      claritySessionId: form.get("claritySessionId"),
     };
   }
   return {};
@@ -96,13 +99,13 @@ export async function createCheckout(request: Request) {
     return { status: 400, message: buyer.message, field: buyer.field };
   }
 
-  return startCheckoutFor(request, buyer, { paymentMethods: paymentMethodsFor(body.pay) });
+  return startCheckoutFor(request, buyer, { paymentMethods: paymentMethodsFor(body.pay), claritySessionId: readClaritySessionId(body.claritySessionId) });
 }
 
 type Buyer = { name: string; email: string; phone: string; digits: string };
 
 /** Create a fresh order for known buyer details (new checkout, or "Pay again" on an expired order). */
-export async function startCheckoutFor(request: Request, buyer: Buyer, opts: { retryOf?: string; paymentMethods?: string } = {}) {
+export async function startCheckoutFor(request: Request, buyer: Buyer, opts: { retryOf?: string; paymentMethods?: string; claritySessionId?: string | null } = {}) {
   const gateway = await getActiveGateway();
   const amountInr = pricing().inr;
   const userAgent = (request.headers.get("user-agent") || "").slice(0, 400) || null;
@@ -125,6 +128,7 @@ export async function startCheckoutFor(request: Request, buyer: Buyer, opts: { r
       ...marketingFromRequest(request, attribution?.affiliateId ?? null),
       userAgent,
       device,
+      claritySessionId: opts.claritySessionId || null,
       adminNote: opts.retryOf ? `Pay again from ${opts.retryOf}` : null,
       isTest: isTestCheckout({ email: buyer.email, name: buyer.name }),
     },
@@ -203,6 +207,7 @@ export async function startCheckoutFor(request: Request, buyer: Buyer, opts: { r
     phone: buyer.phone,
     userAgent,
     device,
+    claritySessionId: opts.claritySessionId || null,
   });
   await saveBuyerContact({
     orderId,

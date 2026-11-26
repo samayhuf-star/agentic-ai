@@ -1,0 +1,2 @@
+ALTER TABLE "Payment" ADD COLUMN IF NOT EXISTS "claritySessionId" TEXT;
+ALTER TABLE "Lead" ADD COLUMN IF NOT EXISTS "claritySessionId" TEXT;
