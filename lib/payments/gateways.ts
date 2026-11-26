@@ -23,6 +23,19 @@ export async function createHostedCheckout(input: CheckoutInput): Promise<{ url:
   return createPayu(input);
 }
 
+export const CASHFREE_METHODS = "cc,dc,upi,nb,app";
+export const CHECKOUT_TTL_MS = 30 * 60 * 1000;
+
+/** ISO time in IST, now + 30 minutes (Cashfree needs at least 15). */
+export function cashfreeExpiry(now = Date.now()) {
+  const ist = new Date(now + CHECKOUT_TTL_MS + 5.5 * 60 * 60 * 1000);
+  return ist.toISOString().replace(/\.\d{3}Z$/, "+05:30");
+}
+
+export function cashfreeStartUrl(origin: string, sessionId: string) {
+  return `${origin}/checkout/start?session=${encodeURIComponent(sessionId)}&mode=${cashfreeTarget().mode}`;
+}
+
 async function createCashfree(input: CheckoutInput) {
   const cashfree = cashfreeTarget();
   const response = await fetch(`${cashfree.apiBase}/orders`, {
@@ -37,6 +50,7 @@ async function createCashfree(input: CheckoutInput) {
       order_id: input.orderId,
       order_amount: input.amountInr,
       order_currency: "INR",
+      order_expiry_time: cashfreeExpiry(),
       customer_details: {
         customer_id: input.orderId,
         customer_name: input.customer.name,
@@ -46,12 +60,8 @@ async function createCashfree(input: CheckoutInput) {
       order_meta: {
         return_url: `${input.origin}/payment/success?order_id=${input.orderId}`,
         notify_url: `${input.origin}/api/webhooks/cashfree`,
-        ...(cashfree.mode === "sandbox"
-          ? {
-              payment_methods: "cc,dc,upi",
-              payment_methods_filters: { methods: { action: "ALLOW", values: ["credit_card", "debit_card", "upi"] } },
-            }
-          : {}),
+        // Instant methods only: cards, UPI, net banking, wallets. No bank transfer, EMI or pay later.
+        payment_methods: CASHFREE_METHODS,
       },
     }),
   });
@@ -59,7 +69,7 @@ async function createCashfree(input: CheckoutInput) {
   if (!response.ok || !body.payment_session_id) {
     throw new Error(body.message || "Cashfree did not open a checkout.");
   }
-  return { url: `${input.origin}/checkout/start?session=${encodeURIComponent(body.payment_session_id)}&mode=${cashfree.mode}` };
+  return { url: cashfreeStartUrl(input.origin, body.payment_session_id) };
 }
 
 async function createRazorpay(input: CheckoutInput) {

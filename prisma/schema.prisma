@@ -82,6 +82,8 @@ model Payment {
   channelLast         String?
   gclid               String?
   capiPurchaseAt      DateTime?
+  userAgent           String?
+  device              String?
 
   @@index([affiliateId])
   @@index([status])
@@ -244,6 +246,8 @@ model Lead {
   userId          String?
   createdAt       DateTime       @default(now())
   paidAt          DateTime?
+  userAgent       String?
+  device          String?
   followups       FollowupSend[]
 
   @@index([status, createdAt])

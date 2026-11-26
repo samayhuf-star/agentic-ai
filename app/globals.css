@@ -1305,3 +1305,14 @@ button.text-link:disabled {
   width: 180px;
   max-width: 100%;
 }
+
+/* In-app browser prompt + payee note (checkout recovery) */
+.inapp-note { border: 1.5px solid #f0b429; background: #fff8e6; color: #3d2c00; border-radius: 12px; padding: 14px 16px; margin: 0 0 16px; text-align: left; }
+.inapp-note strong { display: block; font-size: 1.02rem; margin-bottom: 4px; }
+.inapp-note p { margin: 0 0 10px; font-size: 0.92rem; line-height: 1.4; }
+.inapp-note .inapp-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.inapp-note .btn { min-height: 40px; }
+.inapp-note .inapp-hint { margin: 8px 0 0; font-size: 0.85rem; }
+.inapp-note-compact { margin: 0; border-radius: 0; }
+.payee-note { font-size: 0.88rem; opacity: 0.8; margin: 8px 0 0; }
+.pay-ways { font-size: 0.9rem; margin: 4px 0 12px; }

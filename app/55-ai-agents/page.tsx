@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { Landing } from "@/components/landing/Landing";
 import { publicConfig } from "@/lib/config";
+import { InAppBrowserNotice } from "@/components/InAppBrowserNotice";
 
 export const dynamic = "force-dynamic";
 
@@ -12,5 +13,10 @@ export const metadata = {
 
 export default function AgentsOfferPage() {
   const html = fs.readFileSync(path.join(process.cwd(), "components/landing/body.html"), "utf8");
-  return <Landing html={html} config={publicConfig()} />;
+  return (
+    <>
+      <InAppBrowserNotice compact />
+      <Landing html={html} config={publicConfig()} />
+    </>
+  );
 }

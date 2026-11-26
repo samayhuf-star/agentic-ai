@@ -3,6 +3,7 @@ import { PaymentCodeForm } from "@/components/PaymentCodeForm";
 import { GtmSuccess } from "@/components/marketing/GtmSuccess";
 import { PurchaseEvent } from "@/components/marketing/Pixels";
 import { QuietHeader, SiteFooter } from "@/components/SiteChrome";
+import { InAppBrowserNotice } from "@/components/InAppBrowserNotice";
 import { confirmPendingCashfreeOrder } from "@/lib/payments/confirm";
 import { prisma } from "@/lib/prisma";
 
@@ -10,8 +11,8 @@ export const dynamic = "force-dynamic";
 
 export const metadata = { title: "Payment · AI Time Machine" };
 
-export default async function PaymentSuccessPage({ searchParams }: { searchParams: Promise<{ order_id?: string }> }) {
-  const { order_id: orderId } = await searchParams;
+export default async function PaymentSuccessPage({ searchParams }: { searchParams: Promise<{ order_id?: string; retry?: string }> }) {
+  const { order_id: orderId, retry } = await searchParams;
   if (orderId) await confirmPendingCashfreeOrder(orderId);
   const payment = orderId ? await prisma.payment.findUnique({ where: { id: orderId } }) : null;
   const paid = payment?.status === "paid" || payment?.status === "paid_unassigned";
@@ -52,26 +53,28 @@ export default async function PaymentSuccessPage({ searchParams }: { searchParam
               Contact support
             </Link>
           </>
-        ) : failed ? (
-          <>
-            <h1>The payment did not go through</h1>
-            <p className="lead">Nothing was opened on your account. You can try again.</p>
-            <Link className="btn btn-p" href="/checkout">
-              Try again
-            </Link>
-          </>
         ) : (
           <>
-            <h1>Payment not confirmed yet</h1>
-            <p className="lead">If you just paid, wait a moment and check again. If you left the payment page, you can start again.</p>
+            <InAppBrowserNotice />
+            <h1>{failed ? "The payment did not go through" : "Payment not finished yet"}</h1>
+            <p className="lead">
+              {failed
+                ? "No money was taken. Your details are saved, so you can pay again in one tap."
+                : "If you just paid, wait a moment and check again. If the UPI app did not open or you left the payment page, pay again in one tap. Your details are saved."}
+            </p>
+            {retry === "failed" ? <p className="field-error">We could not reopen the payment. Please try once more.</p> : null}
+            <form method="post" action={`/api/checkout/retry?order=${encodeURIComponent(payment.id)}`} className="stack">
+              <button className="btn btn-p" type="submit">
+                Pay again
+              </button>
+            </form>
+            <p className="pay-ways">Tip: if Google Pay or PhonePe does not open, choose “Pay by UPI ID / QR”, card or net banking on the payment page.</p>
             <p className="stack">
-              <Link className="btn btn-p" href={`/payment/success?order_id=${encodeURIComponent(payment.id)}`}>
-                Check again
-              </Link>
-              <Link className="btn btn-g" href="/checkout">
-                Start checkout again
+              <Link className="btn btn-g" href={`/payment/success?order_id=${encodeURIComponent(payment.id)}`}>
+                I paid, check again
               </Link>
             </p>
+            <p className="payee-note">Payment goes to Rizwiz Enterprises, the company behind AI Time Machine.</p>
           </>
         )}
       </main>

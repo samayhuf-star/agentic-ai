@@ -30,7 +30,7 @@ export async function saveBuyerContact(input: { orderId: string; phone?: string 
   }
 }
 
-export async function openLead(input: { orderId: string; amountInr: number; phone?: string | null; email?: string | null; name?: string | null }) {
+export async function openLead(input: { orderId: string; amountInr: number; phone?: string | null; email?: string | null; name?: string | null; userAgent?: string | null; device?: string | null }) {
   try {
     await prisma.lead.upsert({
       where: { orderId: input.orderId },
@@ -41,6 +41,8 @@ export async function openLead(input: { orderId: string; amountInr: number; phon
         phone: input.phone || null,
         email: input.email || null,
         name: input.name || null,
+        userAgent: input.userAgent || null,
+        device: input.device || null,
       },
       update: {
         phone: input.phone || undefined,

@@ -9,6 +9,7 @@ import { getActiveGateway } from "@/lib/settings";
 import { attributionFromRequest } from "@/lib/affiliates/attribution";
 import { applyMarketingToUser, marketingFromRequest } from "@/lib/marketing/server";
 import { metaCapiEnabled, sendMetaEvent } from "@/lib/marketing/meta";
+import { deviceLabel } from "@/lib/device";
 
 export function readBuyer(input: {
   name?: unknown;
@@ -83,8 +84,17 @@ export async function createCheckout(request: Request) {
     return { status: 400, message: buyer.message, field: buyer.field };
   }
 
+  return startCheckoutFor(request, buyer);
+}
+
+type Buyer = { name: string; email: string; phone: string; digits: string };
+
+/** Create a fresh order for known buyer details (new checkout, or "Pay again" on an expired order). */
+export async function startCheckoutFor(request: Request, buyer: Buyer, opts: { retryOf?: string } = {}) {
   const gateway = await getActiveGateway();
   const amountInr = pricing().inr;
+  const userAgent = (request.headers.get("user-agent") || "").slice(0, 400) || null;
+  const device = deviceLabel(userAgent);
   const orderId = `br${randomToken().slice(0, 16)}`;
   const origin = appOrigin(request);
   const attribution = await attributionFromRequest(request).catch(() => null);
@@ -101,6 +111,9 @@ export async function createCheckout(request: Request) {
       refClickId: attribution?.clickId ?? null,
       refPostId: attribution?.postId ?? null,
       ...marketingFromRequest(request, attribution?.affiliateId ?? null),
+      userAgent,
+      device,
+      adminNote: opts.retryOf ? `Pay again from ${opts.retryOf}` : null,
     },
   });
   const existingUser = await prisma.user.findUnique({ where: { email: buyer.email }, select: { id: true } });
@@ -135,6 +148,8 @@ export async function createCheckout(request: Request) {
     name: buyer.name,
     email: buyer.email,
     phone: buyer.phone,
+    userAgent,
+    device,
   });
   await saveBuyerContact({
     orderId,
