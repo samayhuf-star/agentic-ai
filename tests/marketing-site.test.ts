@@ -36,6 +36,7 @@ test("public pages include the new marketing routes and every agent", () => {
     "/blog",
     "/careers",
     "/contact",
+    "/creators",
     "/help",
     "/integrations",
     "/legal",

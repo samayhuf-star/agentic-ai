@@ -14,6 +14,7 @@ export const STATIC_PUBLIC_PAGES = [
   "/blog",
   "/careers",
   "/contact",
+  "/creators",
   "/cookie-policy",
   "/disclaimer",
   "/help",
