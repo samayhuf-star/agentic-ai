@@ -17,6 +17,8 @@ export type AgentFunction = {
   cat: CategoryId;
   dept: string;
   answer: string;
+  /** Short verb phrase for the core job, e.g. "answers buyer questions and drafts follow-ups". */
+  job: string;
   defn: string;
   does: string[];
   tools: string[];
@@ -50,8 +52,9 @@ export type Industry = {
   pains: string[];
   regs: [string, string][];
   uses: Partial<Record<CategoryId, string>>;
+  /** One concrete scenario per job category. */
+  ex: Partial<Record<CategoryId, string>>;
   kpis: [string, string][];
-  example: string;
   faq: [string, string];
 };
 
@@ -122,7 +125,6 @@ function functionPage(fn: AgentFunction): AgentPage {
 
 function industryPage(fn: AgentFunction, ind: Industry): AgentPage {
   const name = `${fn.name} for ${ind.name.toLowerCase()}`;
-  const use = ind.uses[fn.cat];
   return {
     slug: `${fn.slug}-for-${ind.slug}`,
     path: `/ai-agents/${fn.slug}-for-${ind.slug}`,
@@ -130,8 +132,8 @@ function industryPage(fn: AgentFunction, ind: Industry): AgentPage {
     fn,
     ind,
     name,
-    title: `${titleCaseName(fn.name)} for ${ind.name}: Use Cases, Stack and Build Guide`,
-    description: clip(`How an ${fn.name} works for ${ind.who}: ${use ?? fn.does[0].toLowerCase()}. Architecture, open-source repos, platforms, KPIs and risks.`, 158),
+    title: `${titleCaseName(fn.name)} for ${titleCaseName(ind.name)}: Use Cases, Stack and Build Guide`,
+    description: clip(`${capFirst(fn.name)} for ${ind.who}: it ${fn.job}. Uses, build steps, free repos, platforms, KPIs and risks.`, 158),
   };
 }
 

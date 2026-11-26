@@ -92,6 +92,18 @@ export default async function AgentTypePage({ params }: { params: Promise<{ slug
         <div className="mk-prose aa-prose">
           <DocBody doc={doc} />
         </div>
+        {doc.variants.length ? (
+          <section className="aa-related" aria-labelledby="industries-h">
+            <h2 id="industries-h">{page.name.replace(/^./, (c) => c.toUpperCase())} by industry</h2>
+            <ul>
+              {doc.variants.map((v) => (
+                <li key={v.slug}>
+                  <Link href={v.path}>{v.ind!.name.replace(/^./, (c) => c.toUpperCase())}</Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
         {doc.related.length ? (
           <section className="aa-related" aria-labelledby="related-h">
             <h2 id="related-h">Related AI agents</h2>

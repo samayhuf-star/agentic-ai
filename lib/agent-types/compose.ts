@@ -40,6 +40,8 @@ export type AgentDoc = {
   howTo: { name: string; steps: { name: string; text: string }[] };
   sources: Source[];
   related: AgentPage[];
+  /** Function pages only: every industry version, for crawlable internal links. */
+  variants: AgentPage[];
   updated: string;
   wordCount: number;
 };
@@ -104,6 +106,7 @@ function hash(text: string) {
 }
 
 function lc(text: string) {
+  if (/^[A-Z]{2}/.test(text)) return text;
   return text.charAt(0).toLowerCase() + text.slice(1);
 }
 
@@ -212,7 +215,7 @@ export function composeAgentDoc(page: AgentPage): AgentDoc {
   // --- direct answer ---
   const use = ind?.uses[fn.cat];
   const answer = ind
-    ? `${an(name)[0].toUpperCase()}${an(name).slice(1)} ${name} is a language-model agent that ${use ?? lc(fn.does[0])}. It connects to systems such as ${shortTool(ind.systems[0])} and ${shortTool(ind.systems[1])}, works from approved ${lc(ind.data[0])}, and keeps a person approving anything that commits money, terms or ${lc(ind.customers)}' personal data.`
+    ? `${an(name)[0].toUpperCase()}${an(name).slice(1)} ${name} is a language-model agent that ${fn.job} for ${ind.who}. It works in tools such as ${shortTool(fn.tools[0])} and ${shortTool(ind.systems[0])}, follows written rules for ${ind.name.toLowerCase()}, and leaves money, terms and personal data decisions to a person.`
     : fn.answer;
 
   const repoIds = fn.repos.filter((id) => REPOS[id]);
@@ -242,10 +245,10 @@ export function composeAgentDoc(page: AgentPage): AgentDoc {
   // --- what it does / use cases ---
   if (ind) {
     blocks.push({ t: "h2", id: "use-cases", text: `What does ${an(name)} ${name} do?` });
-    blocks.push({ t: "p", text: `The core job${where}: ${use ?? lc(fn.does[0])}. A typical example: ${lc(ind.example)}` });
+    blocks.push({ t: "p", text: `Its core job${where}: it ${fn.job}. A common ${categoryName(fn.cat).toLowerCase()} task for ${ind.who}: the agent ${use ?? lc(fn.does[0])}. For example: ${ind.ex[fn.cat] ?? fn.flow.join("; ")}` });
     blocks.push({ t: "h3", text: `Tasks it can take on for ${ind.who}` });
     blocks.push({ t: "ul", items: fn.does });
-    blocks.push({ t: "h3", text: `Problems it helps with${where}` });
+    blocks.push({ t: "h3", text: `Day-to-day pressures${where}` });
     blocks.push({ t: "ul", items: ind.pains });
   } else {
     blocks.push({ t: "h2", id: "what-it-does", text: `What does ${an(name)} ${name} do?` });
@@ -267,7 +270,7 @@ export function composeAgentDoc(page: AgentPage): AgentDoc {
     ["Orchestration", pattern.label, activeRepos.slice(0, 2).map((id) => REPOS[id].repo.split("/")[1]).join(" or ")],
     ["Guardrails & approval", fn.hitl, "Approval queue, allow-listed actions, logging"],
   ];
-  if (ind) compRows.splice(2, 0, ["Industry systems", `Where ${ind.customers} records and work items live`, ind.systems.slice(0, 3).map(shortTool).join(", ")]);
+  if (ind) compRows.splice(2, 0, ["Industry systems", "Where customer records and day-to-day work items live", ind.systems.slice(0, 3).map(shortTool).join(", ")]);
   blocks.push({ t: "table", caption: `Components of ${an(name)} ${name}`, head: ["Component", "Role in this agent", "Example options"], rows: compRows });
   blocks.push({ t: "h3", text: "Data the agent needs" });
   blocks.push({ t: "ul", items: ind ? [...ind.data, ...fn.data.slice(0, 2)] : fn.data });
@@ -339,8 +342,8 @@ export function composeAgentDoc(page: AgentPage): AgentDoc {
   blocks.push({ t: "table", caption: "Risks and controls", head: ["Risk", "Control"], rows: fn.risks });
   if (ind) {
     blocks.push({ t: "h3", text: `Rules and standards to check${where}` });
-    blocks.push({ t: "ul", items: ind.regs.map(([text, id]) => (SOURCES[id] ? `${text} (${link(SOURCES[id].publisher, SOURCES[id].url)})` : text)) });
-    for (const [, id] of ind.regs) if (SOURCES[id]) sourceIds.add(id);
+    blocks.push({ t: "ul", items: ind.regs.map(([text, id]) => (id && SOURCES[id] ? `${text} (${link(SOURCES[id].publisher, SOURCES[id].url)})` : text)) });
+    for (const [, id] of ind.regs) if (id && SOURCES[id]) sourceIds.add(id);
     blocks.push({ t: "note", text: "This is general information, not legal advice. Requirements depend on your country, state and use case." });
   }
   blocks.push({ t: "p", text: `General AI security risks such as prompt injection, data leakage and excessive agent permissions are catalogued in the ${src("owasp-llm")}. For governance, the ${src("nist-rmf")} is a widely used framework.` });
@@ -411,6 +414,7 @@ export function composeAgentDoc(page: AgentPage): AgentDoc {
     howTo: { name: `How to build ${an(name)} ${name}`, steps },
     sources,
     related: related.slice(0, 8),
+    variants: ind ? [] : allAgentPages().filter((p) => p.fn.slug === fn.slug && p.ind),
     updated: AGENT_TYPES_UPDATED,
     wordCount,
   };

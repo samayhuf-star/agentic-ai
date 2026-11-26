@@ -24,7 +24,7 @@ test("dataset references only verified repos, platforms and sources", () => {
     for (const id of fn.repos) assert.ok(REPOS[id], `${fn.slug} repo ${id}`);
     for (const id of fn.platforms) assert.ok(PLATFORMS[id], `${fn.slug} platform ${id}`);
   }
-  for (const ind of INDUSTRIES) for (const [, id] of ind.regs) assert.ok(SOURCES[id], `${ind.slug} source ${id}`);
+  for (const ind of INDUSTRIES) for (const [, id] of ind.regs) assert.ok(id === "" || SOURCES[id], `${ind.slug} source ${id}`);
 });
 
 test("JSON-LD graph has article, FAQ, HowTo and an honest product offer", () => {
