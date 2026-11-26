@@ -171,7 +171,10 @@ export async function verifyLoginCode(emailInput: string, codeInput: string, req
     return { ok: false as const, status: 400, message: "That code is not right." };
   }
   await prisma.loginCode.delete({ where: { id: row.id } });
+  return completeLogin(email, request);
+}
 
+export async function completeLogin(email: string, request?: Request, via?: "otp" | "pin") {
   let user = await prisma.user.findFirst({
     where: { OR: [{ email }, { pendingEmail: email }] },
     include: { payments: { where: { status: "paid" }, take: 1 } },
@@ -241,6 +244,7 @@ export async function verifyLoginCode(emailInput: string, codeInput: string, req
     userId: user?.id,
     status: admin ? "admin" : "ok",
     summary: `${email} signed in`,
+    detail: via === "pin" ? "pin" : null,
     tag: eventTag({ email }),
     dedupeKey: `login:${sessionRow.id}`,
   });

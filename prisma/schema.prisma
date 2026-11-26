@@ -25,6 +25,7 @@ model User {
   marketingOptOut    Boolean     @default(false)
   emailTokenHash     String?     @unique
   emailTokenExpires  DateTime?
+  pinHash            String?
   name               String?
   city               String?
   mktFirst           Json?

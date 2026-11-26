@@ -19,3 +19,10 @@ export async function hitLimit(key: string, limit: number, windowMs: number) {
 export function clientIp(request: Request) {
   return (request.headers.get("x-forwarded-for") || "local").split(",")[0].trim() || "local";
 }
+
+export async function isLimited(key: string, limit: number) {
+  const row = await prisma.rateLimit.findUnique({ where: { id: key } });
+  if (!row || row.resetAt < new Date()) return { locked: false as const };
+  if (row.count >= limit) return { locked: true as const, resetAt: row.resetAt };
+  return { locked: false as const };
+}
