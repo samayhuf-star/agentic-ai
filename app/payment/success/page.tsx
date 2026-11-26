@@ -5,6 +5,7 @@ import { PurchaseEvent } from "@/components/marketing/Pixels";
 import { QuietHeader, SiteFooter } from "@/components/SiteChrome";
 import { InAppBrowserNotice } from "@/components/InAppBrowserNotice";
 import { confirmPendingCashfreeOrder } from "@/lib/payments/confirm";
+import { triggerRecovery } from "@/lib/followups/recovery";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +18,8 @@ export default async function PaymentSuccessPage({ searchParams }: { searchParam
   const payment = orderId ? await prisma.payment.findUnique({ where: { id: orderId } }) : null;
   const paid = payment?.status === "paid" || payment?.status === "paid_unassigned";
   const failed = payment?.status === "failed";
+  // Buyer came back without paying: recovery email #1 now (no-op unless RECOVERY_EMAILS=on).
+  if (payment && !paid) void triggerRecovery(payment.id).catch((error) => console.error("recovery trigger", error));
   const gtmPurchase =
     payment &&
     paid &&

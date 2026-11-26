@@ -12,11 +12,25 @@ export const metadata = {
 };
 
 export default function AgentsOfferPage() {
-  const html = fs.readFileSync(path.join(process.cwd(), "components/landing/body.html"), "utf8");
+  const config = publicConfig();
+  const html = withCountdown(fs.readFileSync(path.join(process.cwd(), "components/landing/body.html"), "utf8"), config.offerEnds);
   return (
     <>
       <InAppBrowserNotice compact />
-      <Landing html={html} config={publicConfig()} />
+      <Landing html={html} config={config} />
     </>
   );
+}
+
+/** Render the launch countdown with real numbers on the server, so it never shows 00s before the script runs. */
+function withCountdown(html: string, offerEnds: string) {
+  const end = Date.parse(offerEnds);
+  const ms = end - Date.now();
+  if (!Number.isFinite(end) || ms <= 0) return html;
+  const s = Math.floor(ms / 1000);
+  const v: Record<string, number> = { d: Math.floor(s / 86400), h: Math.floor((s % 86400) / 3600), m: Math.floor((s % 3600) / 60), s: s % 60 };
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return html
+    .replace(/data-countdown hidden>/g, "data-countdown>")
+    .replace(/<span data-cd="([dhms])">00<\/span>/g, (_m, k: string) => `<span data-cd="${k}">${pad(v[k])}</span>`);
 }
