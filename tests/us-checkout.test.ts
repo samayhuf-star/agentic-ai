@@ -68,13 +68,41 @@ test("the US landing is English, priced in USD, and does not invent an address o
 
 test("the India offer page and India checkout are unchanged", () => {
   const html = fs.readFileSync(path.join(process.cwd(), "components/landing/body.html"), "utf8");
+  const indiaPage = fs.readFileSync(path.join(process.cwd(), "app/55-ai-agents/page.tsx"), "utf8");
   const indiaCheckout = fs.readFileSync(path.join(process.cwd(), "app/checkout/page.tsx"), "utf8");
   assert.match(html, /₹1,999/);
   assert.match(html, /href="\/checkout"/);
   assert.doesNotMatch(html, /\/us\/checkout/);
+  assert.match(indiaPage, /components\/landing\/body\.html/);
+  assert.doesNotMatch(indiaPage, /body-us\.html/);
   assert.match(indiaCheckout, /formatInr\(pricing\(\)\.inr\)/);
   assert.match(indiaCheckout, /Cashfree/);
   assert.doesNotMatch(indiaCheckout, /Stripe/);
+});
+
+test("the US 55-agents page is English, priced in USD, and checks out on Stripe", () => {
+  const html = fs.readFileSync(path.join(process.cwd(), "components/landing/body-us.html"), "utf8");
+  const page = fs.readFileSync(path.join(process.cwd(), "app/us/55-ai-agents/page.tsx"), "utf8");
+  const boot = fs.readFileSync(path.join(process.cwd(), "public/landing-boot-us.js"), "utf8");
+  const usHome = fs.readFileSync(path.join(process.cwd(), "app/us/page.tsx"), "utf8");
+  const footer = fs.readFileSync(path.join(process.cwd(), "components/UsChrome.tsx"), "utf8");
+  const joined = `${html}\n${page}\n${boot}`;
+  assert.match(page, /\$49\.99/);
+  assert.match(page, /lifetime/i);
+  assert.match(page, /US_CHECKOUT_PATH/);
+  assert.match(page, /usFooterAddress/);
+  assert.match(html, /href="\/us\/checkout"/);
+  assert.match(html, /__US_PRICE__/);
+  assert.match(html, /Stripe/);
+  assert.match(html, /href="\/us"/);
+  assert.match(boot, /startUsLanding/);
+  assert.match(boot, /\/us\/checkout/);
+  assert.doesNotMatch(joined, /Cashfree|UPI|PhonePe|Paytm|₹|GSTIN|Vishwas|Kirana|\+91/);
+  assert.doesNotMatch(joined, /\bPIN\b/);
+  assert.doesNotMatch(html, /href="\/checkout"/);
+  assert.doesNotMatch(boot, /CASHFREE|ipapi\.co|stay on INR/);
+  assert.match(usHome, /US_AGENTS_PATH/);
+  assert.match(footer, /US_AGENTS_PATH/);
 });
 
 test("US checkout, Stripe webhook, and sign-in code are idempotent on a confirmed payment", async () => {

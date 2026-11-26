@@ -2,7 +2,7 @@ import Link from "next/link";
 import { UsFooter, UsHeader } from "@/components/UsChrome";
 import { BUSINESS } from "@/lib/business";
 import { pageMeta } from "@/lib/site";
-import { usFooterAddress, usPriceLabel, US_CHECKOUT_PATH } from "@/lib/us";
+import { usFooterAddress, usPriceLabel, US_AGENTS_PATH, US_CHECKOUT_PATH } from "@/lib/us";
 
 export const dynamic = "force-dynamic";
 
@@ -94,7 +94,10 @@ export default function UsLandingPage() {
                 Sign in
               </Link>
             </div>
-            <p className="us-hero-note">No monthly fee for this purchase. Stripe takes the payment. You get a sign-in code by email.</p>
+            <p className="us-hero-note">
+              No monthly fee for this purchase. Stripe takes the payment. You get a sign-in code by email.{" "}
+              <Link href={US_AGENTS_PATH}>See the full 55-agent offer</Link>.
+            </p>
           </div>
         </section>
 
@@ -157,6 +160,9 @@ export default function UsLandingPage() {
             <div className="hero-ctas" style={{ marginTop: 28 }}>
               <Link className="btn btn-p" href={US_CHECKOUT_PATH}>
                 Continue to checkout — {price}
+              </Link>
+              <Link className="btn btn-g" href={US_AGENTS_PATH}>
+                See the 55 agents, bonuses and walkthrough
               </Link>
             </div>
           </div>

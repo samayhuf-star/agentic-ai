@@ -1,7 +1,8 @@
+import Link from "next/link";
 import { UsCheckoutForm } from "@/components/UsCheckoutForm";
 import { UsFooter, UsHeader } from "@/components/UsChrome";
 import { pageMeta } from "@/lib/site";
-import { missingStripeEnv, usPriceLabel } from "@/lib/us";
+import { missingStripeEnv, usPriceLabel, US_AGENTS_PATH, US_LANDING_PATH } from "@/lib/us";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +27,11 @@ export default async function UsCheckoutPage({ searchParams }: { searchParams: P
         {!stripeReady ? <p className="field-error">Card checkout is not open yet. Please write to support@theaitimemachine.com if you need help.</p> : null}
         <UsCheckoutForm price={price} />
         <p className="payee-note">Payment is processed by Stripe and may show as Rizwiz Enterprises, the company behind AI Time Machine.</p>
+        <p className="payee-note">
+          <Link href={US_LANDING_PATH}>US lifetime access</Link>
+          {" · "}
+          <Link href={US_AGENTS_PATH}>55 agents offer</Link>
+        </p>
       </main>
       <UsFooter />
     </>

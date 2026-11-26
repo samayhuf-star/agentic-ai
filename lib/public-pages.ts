@@ -7,6 +7,7 @@ import { agents } from "@/data/agents";
 export const STATIC_PUBLIC_PAGES = [
   "/",
   "/us",
+  "/us/55-ai-agents",
   "/55-ai-agents",
   "/about",
   "/agents",

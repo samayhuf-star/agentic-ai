@@ -51,3 +51,4 @@ export function missingStripeEnv() {
 
 export const US_CHECKOUT_PATH = "/us/checkout";
 export const US_LANDING_PATH = "/us";
+export const US_AGENTS_PATH = "/us/55-ai-agents";

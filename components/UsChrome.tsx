@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { BUSINESS, POLICY_LINKS } from "@/lib/business";
-import { usFooterAddress, usPriceLabel, US_CHECKOUT_PATH, US_LANDING_PATH } from "@/lib/us";
+import { usFooterAddress, usPriceLabel, US_AGENTS_PATH, US_CHECKOUT_PATH, US_LANDING_PATH } from "@/lib/us";
 
 export function UsHeader() {
   const price = usPriceLabel();
@@ -52,6 +52,7 @@ export function UsFooter() {
           <nav className="mega-col" aria-label="US offer">
             <h3>Offer</h3>
             <Link href={US_LANDING_PATH}>US lifetime access</Link>
+            <Link href={US_AGENTS_PATH}>55 agents offer</Link>
             <Link href={US_CHECKOUT_PATH}>Checkout · {price}</Link>
             <Link href="/login">Sign in</Link>
             <Link href="/security">Security & trust</Link>

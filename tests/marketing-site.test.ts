@@ -30,6 +30,7 @@ test("public pages include the new marketing routes and every agent", () => {
   for (const needed of [
     "/",
     "/us",
+    "/us/55-ai-agents",
     "/about",
     "/agents",
     "/blog",

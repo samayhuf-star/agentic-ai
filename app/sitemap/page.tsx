@@ -6,7 +6,7 @@ import { pageMeta } from "@/lib/site";
 export const metadata = pageMeta("Sitemap", "A full list of public pages on theaitimemachine.com.", "/sitemap");
 
 const groups: { title: string; test: (path: string) => boolean }[] = [
-  { title: "Product", test: (p) => ["/", "/55-ai-agents", "/agents", "/pricing", "/integrations", "/security", "/status"].includes(p) || p.startsWith("/agents/") },
+  { title: "Product", test: (p) => ["/", "/55-ai-agents", "/us", "/us/55-ai-agents", "/agents", "/pricing", "/integrations", "/security", "/status"].includes(p) || p.startsWith("/agents/") },
   { title: "Solutions and use cases", test: (p) => p.startsWith("/solutions") || p.startsWith("/use-cases") },
   { title: "Resources", test: (p) => p.startsWith("/blog") || p.startsWith("/help") || p.startsWith("/partners") || p === "/press" || p === "/sitemap" },
   { title: "Company and legal", test: (p) => ["/about", "/careers", "/contact", "/legal", "/acceptable-use", "/privacy-rights", "/privacy", "/terms", "/refund-policy", "/shipping-policy", "/cookie-policy", "/disclaimer"].includes(p) },
