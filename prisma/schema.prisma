@@ -234,9 +234,31 @@ model EmailLog {
   subject   String
   body      String
   provider  String
+  resendId  String?
   createdAt DateTime @default(now())
 
   @@index([toEmail, createdAt])
+  @@index([resendId])
+}
+
+model EmailEvent {
+  id        String   @id @default(cuid())
+  createdAt DateTime
+  type      String
+  email     String
+  resendId  String?
+  leadId    String?
+  paymentId String?
+  subject   String?
+  detail    String?
+  userAgent String?
+  url       String?
+  dedupeKey String?  @unique
+
+  @@index([email, createdAt])
+  @@index([leadId])
+  @@index([paymentId])
+  @@index([resendId])
 }
 
 model Lead {

@@ -159,7 +159,7 @@ async function deliver(to: string, letter: { subject: string; text: string; html
     id = body.id || null;
   }
   await prisma.emailLog
-    .create({ data: { toEmail: to, subject: letter.subject, body: letter.text, provider: process.env.RESEND_API_KEY ? "resend" : "mock" } })
+    .create({ data: { toEmail: to, subject: letter.subject, body: letter.text, provider: process.env.RESEND_API_KEY ? "resend" : "mock", resendId: id } })
     .catch(() => undefined);
   return id;
 }

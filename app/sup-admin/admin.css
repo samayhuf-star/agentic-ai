@@ -467,3 +467,20 @@
 @media (max-width: 760px) {
   .journey-item { grid-template-columns: 1fr; gap: 4px; }
 }
+
+.email-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #f3f1ea;
+  color: #555;
+  white-space: nowrap;
+}
+.email-badge.clicked { background: #e5f8e8; color: #146c2e; }
+.email-badge.opened { background: #e8f0ff; color: #1d4ed8; }
+.email-badge.delivered, .email-badge.sent, .email-badge.manual, .email-badge.delayed { background: #f3f1ea; color: #444; }
+.email-badge.bounced, .email-badge.failed, .email-badge.complained, .email-badge.suppressed { background: #fde8e8; color: #9b1c1c; }
+.email-badge.none { background: transparent; color: var(--muted, #889); font-weight: 500; padding-left: 0; }

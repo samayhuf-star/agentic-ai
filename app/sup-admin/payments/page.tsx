@@ -9,6 +9,7 @@ import { confirmedSaleWhere } from "@/lib/admin/metrics";
 import { sourceFromStored } from "@/lib/marketing/touch";
 import { prisma } from "@/lib/prisma";
 import { RazorpayPaidForm } from "@/components/admin/console/RazorpayPaidForm";
+import { loadEmailBadges } from "@/lib/admin/email-status";
 
 export const dynamic = "force-dynamic";
 
@@ -61,6 +62,7 @@ export default async function PaymentsPage({
   ]);
   const pages = Math.max(1, Math.ceil(total / PER_PAGE));
   const base = { q: query || undefined, status: status || undefined, gateway: gateway || undefined, tests: tests !== "hide" ? tests : undefined };
+  const emailBadges = await loadEmailBadges(payments);
 
   return (
     <main className="page">
@@ -112,16 +114,19 @@ export default async function PaymentsPage({
               <th>Status</th>
               <th className="adm-hide-sm">Source</th>
               <th className="adm-hide-sm">Gateway</th>
+              <th>Email</th>
               <th className="adm-hide-sm">Reference</th>
             </tr>
           </thead>
           <tbody>
             {payments.length === 0 ? (
               <tr>
-                <td colSpan={6}>No payments match.</td>
+                <td colSpan={8}>No payments match.</td>
               </tr>
             ) : (
-              payments.map((p) => (
+              payments.map((p) => {
+                const badge = emailBadges.get(p.id);
+                return (
                 <tr key={p.id}>
                   <td>
                     <Link href={`/sup-admin/payments/${encodeURIComponent(p.id)}`}>{formatIst(p.paidAt || p.createdAt)}</Link>
@@ -139,9 +144,13 @@ export default async function PaymentsPage({
                     {p.gateway}
                     {p.method ? <span className="muted"> · {METHOD_LABEL[p.method] || p.method}</span> : null}
                   </td>
+                  <td>
+                    <span className={`email-badge ${badge?.key || "none"}`}>{badge?.label || "—"}</span>
+                  </td>
                   <td className="adm-hide-sm muted">{p.reference || p.gatewayPaymentId || "—"}</td>
                 </tr>
-              ))
+                );
+              })
             )}
           </tbody>
         </table>
