@@ -192,3 +192,23 @@ test("copying an ads cookie onto a user does not pass Payment-only fields", asyn
   assert.equal(saved.channelLast, "Paid Google");
   assert.equal((saved.mktFirst as { g?: string } | null)?.g, "GCLIDTEST");
 });
+
+test("a PIN works on the email-code endpoint when the emailed code does not match", async () => {
+  const email = "pin-on-success@example.com";
+  await withAdmin(email, async () => {
+    delete process.env.LOGIN_PIN_HASH;
+    delete process.env.LOGIN_PIN_EMAIL;
+    await removeUser(email);
+    await clearPinLimit(email);
+    const pinHash = await bcrypt.hash(TEST_PIN, 4);
+    await prisma.user.create({ data: { email, compAccess: true, onboardedAt: new Date(), pinHash } });
+    await prisma.loginCode.deleteMany({ where: { email } });
+    await prisma.loginCode.create({
+      data: { email, codeHash: "not-the-pin", expiresAt: new Date(Date.now() + 10 * 60 * 1000) },
+    });
+    const signedIn = await verifyLoginCode(email, TEST_PIN);
+    assert.equal(signedIn.ok, true);
+    if (!signedIn.ok) return;
+    assert.equal(signedIn.redirect, "/sup-admin");
+  });
+});

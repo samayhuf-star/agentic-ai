@@ -1,13 +1,38 @@
 import { prisma } from "@/lib/prisma";
-import { isProduction } from "@/lib/config";
+import { appOrigin, isProduction } from "@/lib/config";
 import { hashSecret, sixDigitCode } from "@/lib/crypto";
 import { sendEmail } from "@/lib/messaging/email";
 
-export const SIGN_IN_CODE_SUBJECT = "Your AI Time Machine code";
+export const SIGN_IN_CODE_SUBJECT = "Payment of ₹1,999 confirmed — your sign-in code";
+export const SIGN_IN_CODE_SUBJECTS = [SIGN_IN_CODE_SUBJECT, "Your AI Time Machine code"];
 const TEN_MINUTES = 10 * 60 * 1000;
 
-function codeText(code: string) {
-  return `Your AI Time Machine code is ${code}. It expires in 10 minutes. If you did not ask for it, ignore this email.`;
+function rupees(amountInr: number) {
+  return `₹${amountInr.toLocaleString("en-IN")}`;
+}
+
+export function fulfilmentEmail(code: string, email: string, amountInr = 1999) {
+  const login = `${appOrigin()}/login?email=${encodeURIComponent(email)}`;
+  const amount = rupees(amountInr);
+  return {
+    subject: SIGN_IN_CODE_SUBJECT,
+    text: [
+      `Payment of ${amount} confirmed.`,
+      "",
+      "Thank you for buying AI Time Machine. Your 6-digit sign-in code is " + code + ".",
+      "It expires in 10 minutes.",
+      "",
+      "Sign in here. Your email is already filled in:",
+      login,
+      "",
+      "On the next screen, enter this code. Future logins use this same email and a new one-time code we email you. There is no password.",
+      "",
+      "If you did not make this payment, write to support@theaitimemachine.com.",
+      "",
+      "— AI Time Machine",
+      "support@theaitimemachine.com",
+    ].join("\n"),
+  };
 }
 
 function codeFromBody(body: string) {
@@ -29,7 +54,7 @@ export async function sendFulfilmentCode(orderId: string, email: string, mode: "
           orderBy: { createdAt: "desc" },
         });
         const prior = await tx.emailLog.findFirst({
-          where: { toEmail: clean, subject: SIGN_IN_CODE_SUBJECT },
+          where: { toEmail: clean, subject: { in: SIGN_IN_CODE_SUBJECTS } },
           orderBy: { createdAt: "desc" },
         });
         const priorCode = prior ? codeFromBody(prior.body) : null;
@@ -46,7 +71,8 @@ export async function sendFulfilmentCode(orderId: string, email: string, mode: "
             data: { email: clean, codeHash: hashSecret(code), expiresAt: new Date(Date.now() + TEN_MINUTES) },
           });
         }
-        await sendEmail(clean, SIGN_IN_CODE_SUBJECT, codeText(code), tx);
+        const note = fulfilmentEmail(code, clean, payment.amountInr);
+        await sendEmail(clean, note.subject, note.text, tx);
         return {
           ok: true as const,
           status: 200,

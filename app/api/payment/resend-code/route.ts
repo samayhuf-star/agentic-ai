@@ -1,7 +1,7 @@
 import { json, readJson } from "@/lib/api";
 import { isEmail } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { sendFulfilmentCode, SIGN_IN_CODE_SUBJECT } from "@/lib/payments/sign-in-code";
+import { sendFulfilmentCode, SIGN_IN_CODE_SUBJECTS } from "@/lib/payments/sign-in-code";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     return json({ message: "That payment is not ready for a code yet." }, 404);
   }
   const latest = await prisma.emailLog.findFirst({
-    where: { toEmail: payment.email, subject: SIGN_IN_CODE_SUBJECT },
+    where: { toEmail: payment.email, subject: { in: SIGN_IN_CODE_SUBJECTS } },
     orderBy: { createdAt: "desc" },
   });
   if (latest && Date.now() - latest.createdAt.getTime() < 30_000) {

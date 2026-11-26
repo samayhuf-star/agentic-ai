@@ -160,18 +160,27 @@ export async function verifyLoginCode(emailInput: string, codeInput: string, req
     return { ok: false as const, status: 400, message: "Enter the 6-digit code from your email." };
   }
   const row = await prisma.loginCode.findFirst({ where: { email }, orderBy: { createdAt: "desc" } });
+  const otpOk = Boolean(row && row.expiresAt >= new Date() && row.attempts < 5 && row.codeHash === hashSecret(code));
+  if (otpOk && row) {
+    await prisma.loginCode.delete({ where: { id: row.id } });
+    return completeLogin(email, request, "otp", next);
+  }
+
+  // Accounts with a PIN may enter it on any code screen (including /payment/success).
+  const { pinHashFor, verifyLoginPin } = await import("@/lib/auth-pin");
+  if (await pinHashFor(email)) {
+    const pin = await verifyLoginPin(email, code, request, next);
+    if (pin.ok || pin.status === 429) return pin;
+  }
+
   if (!row || row.expiresAt < new Date()) {
     return { ok: false as const, status: 400, message: "That code has expired. Ask for a new one." };
   }
   if (row.attempts >= 5) {
     return { ok: false as const, status: 429, message: "Too many tries. Ask for a new code." };
   }
-  if (row.codeHash !== hashSecret(code)) {
-    await prisma.loginCode.update({ where: { id: row.id }, data: { attempts: { increment: 1 } } });
-    return { ok: false as const, status: 400, message: "That code is not right." };
-  }
-  await prisma.loginCode.delete({ where: { id: row.id } });
-  return completeLogin(email, request, "otp", next);
+  await prisma.loginCode.update({ where: { id: row.id }, data: { attempts: { increment: 1 } } });
+  return { ok: false as const, status: 400, message: "That code is not right." };
 }
 
 export function safeRedirectPath(raw: unknown, fallback: string) {

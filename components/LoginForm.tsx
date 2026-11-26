@@ -12,8 +12,13 @@ function nextFromPage() {
   return raw;
 }
 
+function emailFromPage() {
+  if (typeof window === "undefined") return "";
+  return (new URLSearchParams(window.location.search).get("email") || "").trim();
+}
+
 export function LoginForm() {
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(emailFromPage);
   const [code, setCode] = useState("");
   const [pin, setPin] = useState("");
   const [step, setStep] = useState<Step>("email");
