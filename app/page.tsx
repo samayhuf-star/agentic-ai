@@ -110,7 +110,7 @@ export default function HomePage() {
             <div className="mk-grid">
               <article className="mk-card">
                 <h3>One payment</h3>
-                <p>₹1,999 once, through Cashfree. The charge may show as {BUSINESS.legalName}. We do not store your card or UPI pin.</p>
+                <p>₹1,999 once, through Razorpay. The charge may show as {BUSINESS.legalName}. We do not store your card or UPI pin.</p>
                 <Link className="mk-more" href="/pricing">Pricing FAQ</Link>
               </article>
               <article className="mk-card">

@@ -15,7 +15,7 @@ const faqs = [
   { q: "Does ₹1,999 include ChatGPT or Claude usage?", a: "No. You connect your own AI key (Claude, ChatGPT or Grok). That provider bills you separately. AI Time Machine provides the skills and the place to manage drafts." },
   { q: "Do agents run by themselves?", a: "Not yet. Your AI team prepares drafts and ideas. Nothing goes out without your yes. Agents do not run on their own in the background yet." },
   { q: "How do I get access after I pay?", a: "Access is digital. After a successful payment we email a sign-in code to the address you paid with. See Shipping and Delivery." },
-  { q: "Who will the charge show as?", a: "The payment goes through Cashfree, and the charge may show as Rizwiz Enterprises, which is our legal name." },
+  { q: "Who will the charge show as?", a: "The payment goes through Razorpay, and the charge may show as Rizwiz Enterprises, which is our legal name." },
   { q: "Can I get a refund?", a: "Read the Refund and Cancellation page, then write to support@theaitimemachine.com from the email you paid with." },
   { q: "Is GST added on top?", a: "The amount you are asked to pay at checkout is ₹1,999. If a GST invoice is needed, write to support with the email you paid with and your GSTIN." },
 ];

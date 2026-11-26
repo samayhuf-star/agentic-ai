@@ -171,3 +171,48 @@ test("mark paid via Razorpay API is admin-only", async () => {
     assert.equal((await markRazorpay(req("/api/admin/payments/razorpay", "POST", staff, body))).status, 403);
   });
 });
+
+test("CASHFREE_DISABLED switches India checkout to the Razorpay payment page and never calls Cashfree", async () => {
+  const { startCheckoutFor } = await import("../lib/payments/checkout");
+  const { gatewayHasKeys, cashfreeDisabled } = await import("../lib/payments/gateways");
+  const { getActiveGateway } = await import("../lib/settings");
+  const { fetchCashfreeOrder } = await import("../lib/payments/cashfree-order");
+  const prev = { d: process.env.CASHFREE_DISABLED, id: process.env.CASHFREE_APP_ID, sk: process.env.CASHFREE_SECRET_KEY, rk: process.env.RAZORPAY_KEY_ID };
+  const original = globalThis.fetch;
+  const calls: string[] = [];
+  globalThis.fetch = (async (url: unknown) => {
+    calls.push(String(url));
+    return new Response("{}", { status: 500 });
+  }) as typeof fetch;
+  try {
+    process.env.CASHFREE_APP_ID = "cf_id";
+    process.env.CASHFREE_SECRET_KEY = "cf_secret";
+    delete process.env.RAZORPAY_KEY_ID;
+    process.env.CASHFREE_DISABLED = "1";
+    await prisma.setting.upsert({ where: { key: "active_gateway" }, update: { value: "cashfree" }, create: { key: "active_gateway", value: "cashfree" } });
+    assert.equal(cashfreeDisabled(), true);
+    assert.equal(gatewayHasKeys("cashfree"), false);
+    assert.equal(await getActiveGateway(), "razorpay");
+    assert.equal(await fetchCashfreeOrder("brwhatever"), null);
+    const email = `rzp-${randomToken().slice(0, 8)}@example.com`;
+    const result = await startCheckoutFor(new Request(`${BASE}/api/checkout`, { method: "POST" }), {
+      name: "Asha",
+      email,
+      phone: "+919876543210",
+      digits: "9876543210",
+    });
+    assert.equal(result.status, 303);
+    assert.match(String(result.redirect), /\/checkout\/start\?rzp=br/);
+    const order = await prisma.payment.findUnique({ where: { id: String(result.orderId) } });
+    assert.equal(order?.gateway, "razorpay");
+    assert.equal(order?.amountInr, 1999);
+    assert.equal(calls.filter((u) => /cashfree/i.test(u)).length, 0);
+  } finally {
+    globalThis.fetch = original;
+    await prisma.setting.deleteMany({ where: { key: "active_gateway" } });
+    for (const [k, v] of [["CASHFREE_DISABLED", prev.d], ["CASHFREE_APP_ID", prev.id], ["CASHFREE_SECRET_KEY", prev.sk], ["RAZORPAY_KEY_ID", prev.rk]] as const) {
+      if (v === undefined) delete process.env[k];
+      else process.env[k] = v;
+    }
+  }
+});

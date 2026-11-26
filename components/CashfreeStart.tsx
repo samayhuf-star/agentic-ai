@@ -5,7 +5,7 @@ import { CashfreeHandoff } from "@/components/CashfreeHandoff";
 import { InAppOpenActions } from "@/components/InAppBrowserNotice";
 import { inAppKind, osOf, preferredBrowser, shouldHoldCashfreeHandoff, type InAppKind } from "@/lib/device";
 
-export function CashfreeStart({ sessionId, mode }: { sessionId: string; mode: string }) {
+export function CashfreeStart({ sessionId, mode, razorpayUrl }: { sessionId: string; mode: string; razorpayUrl?: string }) {
   const [kind, setKind] = useState<InAppKind | "pending">("pending");
   const [os, setOs] = useState<"android" | "ios" | "other">("other");
   const [continueHere, setContinueHere] = useState(false);
@@ -39,5 +39,21 @@ export function CashfreeStart({ sessionId, mode }: { sessionId: string; mode: st
     );
   }
 
+  if (razorpayUrl) return <RazorpayHandoff url={razorpayUrl} />;
   return <CashfreeHandoff sessionId={sessionId} mode={mode} />;
+}
+
+function RazorpayHandoff({ url }: { url: string }) {
+  useEffect(() => {
+    window.location.replace(url);
+  }, [url]);
+  return (
+    <main className="pay-wait">
+      <div className="pay-spin" aria-hidden="true" />
+      <h1>Opening secure payment…</h1>
+      <p>
+        <a href={url}>Tap here if it does not open</a>
+      </p>
+    </main>
+  );
 }

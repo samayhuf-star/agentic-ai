@@ -76,7 +76,7 @@ test("the India offer page and India checkout are unchanged", () => {
   assert.match(indiaPage, /components\/landing\/body\.html/);
   assert.doesNotMatch(indiaPage, /body-us\.html/);
   assert.match(indiaCheckout, /formatInr\(pricing\(\)\.inr\)/);
-  assert.match(indiaCheckout, /Cashfree/);
+  assert.match(indiaCheckout, /next page/);
   assert.doesNotMatch(indiaCheckout, /Stripe/);
 });
 

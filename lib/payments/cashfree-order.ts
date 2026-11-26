@@ -1,4 +1,4 @@
-import { cashfreeTarget } from "@/lib/payments/gateways";
+import { cashfreeDisabled, cashfreeTarget } from "@/lib/payments/gateways";
 
 export type CashfreeOrderView = {
   order_status?: string;
@@ -8,7 +8,7 @@ export type CashfreeOrderView = {
 };
 
 export async function fetchCashfreeOrder(orderId: string): Promise<CashfreeOrderView | null> {
-  if (!process.env.CASHFREE_APP_ID || !process.env.CASHFREE_SECRET_KEY) return null;
+  if (cashfreeDisabled() || !process.env.CASHFREE_APP_ID || !process.env.CASHFREE_SECRET_KEY) return null;
   const cashfree = cashfreeTarget();
   const headers = {
     "x-api-version": "2025-01-01",
@@ -85,7 +85,7 @@ export function attemptsFromCashfreePayload(payload: unknown): CashfreeAttempt[]
 
 /** Payment attempts for one Cashfree order (SUCCESS, USER_DROPPED, FAILED, …). */
 export async function fetchCashfreeAttempts(orderId: string): Promise<CashfreeAttempt[]> {
-  if (!process.env.CASHFREE_APP_ID || !process.env.CASHFREE_SECRET_KEY) return [];
+  if (cashfreeDisabled() || !process.env.CASHFREE_APP_ID || !process.env.CASHFREE_SECRET_KEY) return [];
   const cashfree = cashfreeTarget();
   const headers = {
     "x-api-version": "2025-01-01",

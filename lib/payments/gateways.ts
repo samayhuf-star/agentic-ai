@@ -2,8 +2,23 @@ import { pricing } from "@/lib/config";
 import { payuRequestHash, type GatewayName } from "@/lib/payments/signature";
 import type { CheckoutInput } from "@/lib/payments/types";
 
+/** Kill switch: CASHFREE_DISABLED=1 stops every call to Cashfree (checkout, pay again, admin look-ups). */
+export function cashfreeDisabled() {
+  return /^(1|true|yes|on)$/i.test((process.env.CASHFREE_DISABLED || "").trim());
+}
+
+/** Razorpay without API keys: send buyers to the public Razorpay payment page (fulfilled by the Razorpay email catcher). */
+export function razorpayLinkMode() {
+  return !gatewayHasKeys("razorpay");
+}
+
+/** Our own hand-off page: in-app browser hold, then the Razorpay payment page. */
+export function razorpayStartUrl(origin: string, orderId: string) {
+  return `${origin}/checkout/start?rzp=${encodeURIComponent(orderId)}`;
+}
+
 export function gatewayHasKeys(gateway: GatewayName) {
-  if (gateway === "cashfree") return Boolean(process.env.CASHFREE_APP_ID && process.env.CASHFREE_SECRET_KEY);
+  if (gateway === "cashfree") return !cashfreeDisabled() && Boolean(process.env.CASHFREE_APP_ID && process.env.CASHFREE_SECRET_KEY);
   if (gateway === "razorpay") return Boolean(process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET);
   return Boolean(process.env.PAYU_MERCHANT_KEY && process.env.PAYU_SALT);
 }
@@ -18,7 +33,10 @@ export function cashfreeTarget() {
 }
 
 export async function createHostedCheckout(input: CheckoutInput): Promise<{ url: string }> {
-  if (input.gateway === "cashfree") return createCashfree(input);
+  if (input.gateway === "cashfree") {
+    if (cashfreeDisabled()) throw new Error("Cashfree is switched off.");
+    return createCashfree(input);
+  }
   if (input.gateway === "razorpay") return createRazorpay(input);
   return createPayu(input);
 }

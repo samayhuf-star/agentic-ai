@@ -3,7 +3,7 @@ import { appOrigin, mockPaymentsAllowed, pricing } from "@/lib/config";
 import { isEmail } from "@/lib/auth";
 import { randomToken } from "@/lib/crypto";
 import { openLead, saveBuyerContact } from "@/lib/leads";
-import { CASHFREE_METHODS_OTHER, CASHFREE_METHODS_UPI, createHostedCheckout, gatewayHasKeys } from "@/lib/payments/gateways";
+import { CASHFREE_METHODS_OTHER, CASHFREE_METHODS_UPI, createHostedCheckout, gatewayHasKeys, razorpayStartUrl } from "@/lib/payments/gateways";
 import { indianMobile } from "@/lib/phone";
 import { getActiveGateway } from "@/lib/settings";
 import { attributionFromRequest } from "@/lib/affiliates/attribution";
@@ -228,6 +228,12 @@ export async function startCheckoutFor(request: Request, buyer: Buyer, opts: { r
         message: "We could not open checkout. Please try again.",
       };
     }
+  }
+
+  if (gateway === "razorpay") {
+    // No Razorpay API keys: hand off to the public Razorpay payment page (₹1,999), email + phone prefilled.
+    // Paid orders are matched and fulfilled by the Razorpay email catcher (admin "Mark paid via Razorpay").
+    return { status: 303, orderId, redirect: razorpayStartUrl(origin, orderId) };
   }
 
   if (process.env.CHECKOUT_URL && gateway === "cashfree") {

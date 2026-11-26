@@ -1,5 +1,5 @@
 import { appOrigin } from "@/lib/config";
-import { cashfreeStartUrl, cashfreeTarget, gatewayHasKeys } from "@/lib/payments/gateways";
+import { cashfreeDisabled, cashfreeStartUrl, cashfreeTarget, gatewayHasKeys } from "@/lib/payments/gateways";
 import { startCheckoutFor } from "@/lib/payments/checkout";
 import { startUsCheckoutFor } from "@/lib/payments/us-checkout";
 import { indianMobile, usMobile } from "@/lib/phone";
@@ -11,7 +11,7 @@ import { deviceLabel, inAppKind } from "@/lib/device";
 type CashfreeOrder = { order_status?: string; order_expiry_time?: string; payment_session_id?: string };
 
 async function activeSession(orderId: string): Promise<string | null> {
-  if (!process.env.CASHFREE_APP_ID || !process.env.CASHFREE_SECRET_KEY) return null;
+  if (cashfreeDisabled() || !process.env.CASHFREE_APP_ID || !process.env.CASHFREE_SECRET_KEY) return null;
   const response = await fetch(`${cashfreeTarget().apiBase}/orders/${encodeURIComponent(orderId)}`, {
     headers: {
       "x-api-version": "2025-01-01",

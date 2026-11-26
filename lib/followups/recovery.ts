@@ -26,6 +26,7 @@ type Step = (typeof RECOVERY_STEPS)[number]["step"];
 
 /** Start the recovery sequence once an order has sat unpaid for this long. */
 export const DROPPED_AFTER = 15 * MINUTE;
+export const RAZORPAY_LINK_GRACE = 60 * MINUTE;
 
 export function recoveryEnabled() {
   return process.env.RECOVERY_EMAILS === "on";
@@ -248,6 +249,8 @@ export async function runRecovery(now = new Date()) {
     const email = p.email!.toLowerCase();
     if (seen.has(email)) continue;
     seen.add(email);
+    // Razorpay payment-page orders are matched by the email catcher (every 30 min): wait an hour before nudging.
+    if (p.gateway === "razorpay" && now.getTime() - p.createdAt.getTime() < RAZORPAY_LINK_GRACE) continue;
     const started = await prisma.followupSend.count({ where: { key: `recovery:${email}:r1` } });
     if (!started && (await triggerRecovery(p.id))) sent += 1;
   }
