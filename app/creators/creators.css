@@ -44,12 +44,16 @@
   display: block;
   font-size: 15px;
 }
-.creator-app small {
+.creator-form .creator-app small {
   display: block;
   margin-top: 3px;
   color: var(--muted, #a9b4bd);
   font-size: 13px;
   line-height: 1.4;
+  text-transform: none;
+  letter-spacing: 0;
+  font-family: inherit;
+  font-weight: 400;
 }
 .creator-app.is-on {
   border-color: var(--lime, #c8f25a);
