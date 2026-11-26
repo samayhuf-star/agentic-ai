@@ -28,7 +28,7 @@ A one-time fee is a purchase. You pay, you receive access, and you are not rente
 
 It is not a promise that the product will never change, or that hosting will be free for you forever in every possible future, or that the AI work is included. It is not a promise of a result in the business. And it is not cheaper than a monthly tool in every case: if you would only have used a monthly tool for three weeks, the month might have been the smaller number.
 
-For AI Time Machine, the ₹1,999 is the product and the access. After you pay, we email a sign-in code. You then connect your own key if you want agents to draft. If you never connect a key, you will not be doing the AI work, and you should know that before you buy. Visitors outside India may see a dollar figure on the offer page; the payment is still taken in rupees through Razorpay, and the charge may show as Rizwiz Enterprises.
+For AI Time Machine, the ₹1,999 is the product and the access. After you pay, we email a sign-in code. You then connect your own key if you want agents to draft. If you never connect a key, you will not be doing the AI work, and you should know that before you buy. Visitors outside India may see a dollar figure on the offer page; the payment is still taken in rupees through Cashfree, and the charge may show as Rizwiz Enterprises.
 
 ![One-time software versus a monthly AI subscription: how to think about cost](/blog/one-time-software-vs-monthly-ai-subscription-inline-1.webp)
 

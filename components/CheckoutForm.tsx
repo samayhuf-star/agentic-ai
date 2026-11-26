@@ -5,7 +5,7 @@ import { useState } from "react";
 import { indianMobile } from "@/lib/phone";
 
 type Errors = { name?: string; email?: string; phone?: string; form?: string };
-type PayMethod = "upi" | "other";
+type PayMethod = "upi" | "other" | "all";
 
 function problems(name: string, email: string, phone: string): Errors {
   const next: Errors = {};
@@ -87,7 +87,7 @@ export function CheckoutForm({ price }: { price: string }) {
       className="stack checkout-form"
       onSubmit={(event) => {
         event.preventDefault();
-        void submit("upi");
+        void submit("all");
       }}
       noValidate
     >
@@ -111,7 +111,7 @@ export function CheckoutForm({ price }: { price: string }) {
         <span className="btn-upi-label">{busy ? "Opening secure payment…" : `Pay ${price} securely`}</span>
         <UpiLogos />
       </button>
-      <p className="upi-hint">UPI (Google Pay, PhonePe, Paytm), cards and net banking are all available on the next page, secured by Razorpay.</p>
+      <p className="upi-hint">UPI (Google Pay, PhonePe, Paytm), cards and net banking are all available on the next page, secured by Cashfree.</p>
       <p className="key-note">You connect your own AI key (Claude, ChatGPT or Grok) for AI tasks. AI usage is billed by your AI provider. AI Time Machine provides the skills and the platform to manage everything in one place.</p>
       <p className="key-note">Your AI team prepares drafts and ideas for you. Nothing goes out without your yes. Agents do not run on their own in the background yet.</p>
     </form>

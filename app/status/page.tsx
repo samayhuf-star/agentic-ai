@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata = pageMeta(
   "System status",
-  "Live status for the AI Time Machine website and database. Payments are handled by Razorpay.",
+  "Live status for the AI Time Machine website and database. Payments are handled by Cashfree.",
   "/status",
 );
 
@@ -46,8 +46,8 @@ export default async function StatusPage() {
           </tr>
           <tr>
             <td>Payments</td>
-            <td>Handled by Razorpay</td>
-            <td>We do not run a separate public probe of Razorpay’s network. If a payment fails, check your bank or UPI app, then email support.</td>
+            <td>Handled by Cashfree</td>
+            <td>We do not run a separate public probe of Cashfree’s network. If a payment fails, check your bank or UPI app, then email support.</td>
           </tr>
           <tr>
             <td>Sign-in email</td>

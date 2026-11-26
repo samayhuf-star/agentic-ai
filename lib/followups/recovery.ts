@@ -127,7 +127,7 @@ export function recoveryLetter(input: { orderId: string; amountInr: number; name
 <td style="padding:12px 14px;font-size:14px;color:#78756f">Order total</td><td align="right" style="padding:12px 14px;font-size:20px;font-weight:700">${esc(amt)}</td></tr>
 <tr><td colspan="2" style="padding:0 14px 12px;font-size:12px;color:#78756f">One payment · No monthly fee · Order ${esc(input.orderId)}</td></tr></table></td></tr>
 <tr><td align="center" style="padding:20px 24px 4px"><a href="${pay}" style="display:block;background:#1e1d1c;color:#ffffff;text-decoration:none;font-size:17px;font-weight:700;padding:15px 20px;border-radius:999px">Complete payment · ${esc(amt)}</a></td></tr>
-<tr><td align="center" style="padding:4px 24px 0;font-size:12px;color:#78756f">Opens the secure Razorpay payment page</td></tr>
+<tr><td align="center" style="padding:4px 24px 0;font-size:12px;color:#78756f">Opens the secure Cashfree page with your details filled in</td></tr>
 <tr><td style="padding:20px 24px 0;font-size:15px;font-weight:700">Ways to pay</td></tr>
 <tr><td style="padding:6px 24px 0;font-size:14px;line-height:1.7">
 • Any UPI app: Google Pay, PhonePe, Paytm, CRED<br>

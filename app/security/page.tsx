@@ -23,7 +23,7 @@ export default function SecurityPage() {
         </p>
         <h2>Payments</h2>
         <p>
-          Payments are taken by Razorpay, in Indian rupees. We keep a record of the payment from the payment company. We do not store your card number or UPI pin. The charge may show as {BUSINESS.legalName}.
+          Payments are taken by Cashfree, in Indian rupees. We keep a record of the payment from the payment company. We do not store your card number or UPI pin. The charge may show as {BUSINESS.legalName}.
         </p>
         <h2>AI keys</h2>
         <p>
@@ -39,7 +39,7 @@ export default function SecurityPage() {
         </p>
         <h2>Certifications we do not have</h2>
         <p>
-          We do not currently hold SOC 2, ISO 27001, PCI DSS, or a formal GDPR certification. Razorpay is our payment processor and has its own compliance programme for card data. We would rather say this plainly than display badges we have not earned.
+          We do not currently hold SOC 2, ISO 27001, PCI DSS, or a formal GDPR certification. Cashfree is our payment processor and has its own compliance programme for card data. We would rather say this plainly than display badges we have not earned.
         </p>
         <h2>Your rights and how to reach us</h2>
         <p>

@@ -98,6 +98,14 @@ export default async function PaymentSuccessPage({ searchParams }: { searchParam
               </button>
             </form>
             <p className="pay-ways">Tip: if Google Pay or PhonePe does not open, choose “Pay by UPI ID / QR”, card or net banking on the payment page.</p>
+            <div className="rzp-backup stack">
+              <p className="lead">
+                <strong>Payment didn’t go through?</strong> Pay via Razorpay instead. Same ₹{payment.amountInr.toLocaleString("en-IN")}, UPI, cards or net banking.
+              </p>
+              <a className="btn btn-g" href={`/checkout/start?rzp=${encodeURIComponent(payment.id)}`}>
+                Pay via Razorpay instead
+              </a>
+            </div>
             <p className="stack">
               <Link className="btn btn-g" href={`/payment/success?order_id=${encodeURIComponent(payment.id)}`}>
                 I paid, check again

@@ -223,6 +223,23 @@ export async function startCheckoutFor(request: Request, buyer: Buyer, opts: { r
       return { status: 303, orderId, redirect: hosted.url };
     } catch (error) {
       console.error(error);
+      if (gateway === "cashfree") {
+        // Cashfree could not open: send the buyer straight to the Razorpay payment page (backup), details prefilled.
+        await prisma.payment.update({ where: { id: orderId }, data: { gateway: "razorpay", adminNote: "Cashfree order failed; sent to Razorpay page" } }).catch(() => null);
+        await logEvent({
+          type: "checkout.fallback",
+          email: buyer.email,
+          phone: buyer.phone,
+          paymentId: orderId,
+          amountInr,
+          source: paymentSource(payment),
+          status: "razorpay",
+          summary: `Cashfree order failed for ${orderId}; sent to Razorpay page`,
+          detail: error instanceof Error ? error.message.slice(0, 200) : null,
+          dedupeKey: `checkout.fallback:${orderId}`,
+        }).catch(() => null);
+        return { status: 303, orderId, redirect: razorpayStartUrl(origin, orderId) };
+      }
       return {
         status: 502,
         message: "We could not open checkout. Please try again.",

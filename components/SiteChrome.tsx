@@ -86,7 +86,7 @@ export function SiteFooter() {
           ))}
         </div>
         <div className="mega-bottom">
-          <small>© 2026 {BUSINESS.legalName} · AI Time Machine · Payments secured by Razorpay</small>
+          <small>© 2026 {BUSINESS.legalName} · AI Time Machine · Payments secured by Cashfree</small>
           <nav className="foot-policies" aria-label="Policies">
             {POLICY_LINKS.map((link) => (
               <Link key={link.href} href={link.href}>

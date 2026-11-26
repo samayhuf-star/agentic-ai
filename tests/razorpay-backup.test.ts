@@ -216,3 +216,32 @@ test("CASHFREE_DISABLED switches India checkout to the Razorpay payment page and
     }
   }
 });
+
+test("Cashfree primary: if Cashfree cannot create the order, the buyer is sent to the Razorpay page", async () => {
+  const { startCheckoutFor } = await import("../lib/payments/checkout");
+  const prev = { d: process.env.CASHFREE_DISABLED, f: process.env.PAYMENT_GATEWAY_FORCE, id: process.env.CASHFREE_APP_ID, sk: process.env.CASHFREE_SECRET_KEY };
+  const original = globalThis.fetch;
+  try {
+    delete process.env.CASHFREE_DISABLED;
+    process.env.PAYMENT_GATEWAY_FORCE = "cashfree";
+    process.env.CASHFREE_APP_ID = "cf_id";
+    process.env.CASHFREE_SECRET_KEY = "cf_secret";
+    globalThis.fetch = (async () => new Response(JSON.stringify({ message: "down" }), { status: 500 })) as typeof fetch;
+    const email = `cffail-${randomToken().slice(0, 8)}@example.com`;
+    const result = await startCheckoutFor(new Request(`${BASE}/api/checkout`, { method: "POST" }), { name: "Asha", email, phone: "+919876543210", digits: "9876543210" });
+    assert.equal(result.status, 303);
+    assert.match(String(result.redirect), /\/checkout\/start\?rzp=br/);
+    const order = await prisma.payment.findUnique({ where: { id: String(result.orderId) } });
+    assert.equal(order?.gateway, "razorpay");
+
+    globalThis.fetch = (async () => new Response(JSON.stringify({ payment_session_id: "sess_ok" }), { status: 200 })) as typeof fetch;
+    const ok = await startCheckoutFor(new Request(`${BASE}/api/checkout`, { method: "POST" }), { name: "Asha", email: `cfok-${randomToken().slice(0, 8)}@example.com`, phone: "+919876543211", digits: "9876543211" });
+    assert.match(String(ok.redirect), /\/checkout\/start\?session=sess_ok/);
+  } finally {
+    globalThis.fetch = original;
+    for (const [k, v] of [["CASHFREE_DISABLED", prev.d], ["PAYMENT_GATEWAY_FORCE", prev.f], ["CASHFREE_APP_ID", prev.id], ["CASHFREE_SECRET_KEY", prev.sk]] as const) {
+      if (v === undefined) delete process.env[k];
+      else process.env[k] = v;
+    }
+  }
+});
