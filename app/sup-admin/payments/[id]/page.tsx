@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { AdminKicker } from "@/components/admin/AdminKicker";
 import { ActionButton } from "@/components/admin/console/ActionButton";
 import { PaymentForm } from "@/components/admin/console/PaymentForm";
+import { RazorpayPaidForm } from "@/components/admin/console/RazorpayPaidForm";
 import { requireAdminPage } from "@/lib/admin/guard";
 import { money, toIstInput } from "@/lib/admin/format";
 import { PAYMENT_METHODS } from "@/lib/admin/validate";
@@ -40,10 +41,14 @@ export default async function PaymentDetailPage({ params }: { params: Promise<{ 
             {payment.id} ·{" "}
             {manual ? (
               <span className="pill">manual</span>
-            ) : payment.gatewayConfirmedAt ? (
+            ) : payment.gateway === "razorpay" && (payment.status === "paid" || payment.status === "paid_unassigned") ? (
+              <span className="pill paid">
+                Razorpay (admin) {payment.gatewayPaymentId || payment.reference} {payment.paidAt ? formatIst(payment.paidAt) : ""}
+              </span>
+            ) : payment.gateway === "cashfree" && payment.gatewayConfirmedAt ? (
               <span className="pill paid">Cashfree-confirmed ({payment.gatewayConfirmedVia}) {formatIst(payment.gatewayConfirmedAt)}</span>
             ) : (
-              <span className="pill">not confirmed by {payment.gateway}: not counted as a sale</span>
+              <span className="pill">not confirmed by {payment.gateway}: not counted as a Cashfree sale</span>
             )}
           </p>
         </div>
@@ -71,6 +76,9 @@ export default async function PaymentDetailPage({ params }: { params: Promise<{ 
               manual,
             }}
           />
+          {readOnly || payment.status === "paid" || payment.status === "refunded" ? null : (
+            <RazorpayPaidForm orderId={payment.id} readOnly={readOnly} />
+          )}
         </section>
         <section className="adm-section">
           <h2>Record</h2>

@@ -3,6 +3,7 @@ import { BUSINESS } from "@/lib/business";
 import { unsubscribeLink } from "@/lib/followups/run";
 import { prisma } from "@/lib/prisma";
 import { logEvent } from "@/lib/activity/log";
+import { razorpayBackupUrl } from "@/lib/payments/razorpay-backup";
 
 /**
  * Payment recovery emails for failed or dropped checkouts.
@@ -103,6 +104,10 @@ export function recoveryLetter(input: { orderId: string; amountInr: number; name
     "Reading this on a computer? Scan the QR code in this email with your phone camera to pay on your phone.",
     "If Google Pay or PhonePe does not open, open the link in Chrome or Safari, or choose “Pay by UPI ID / QR”.",
     "",
+    "Having trouble? Pay with Visa/card/UPI via Razorpay:",
+    razorpayBackupUrl(),
+    "Please use the same email address you used at checkout so we can match the payment.",
+    "",
     rizwiz,
     "If you already paid, you can ignore this note.",
     "",
@@ -131,6 +136,8 @@ export function recoveryLetter(input: { orderId: string; amountInr: number; name
 <tr><td align="center" style="padding:6px 24px 0;font-size:13px;color:#78756f">On a computer? Scan with your phone camera to pay on your phone.</td></tr>
 <tr><td style="padding:20px 24px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fff8e6;border:1px solid #f0d58a;border-radius:10px"><tr><td style="padding:12px 14px;font-size:14px;line-height:1.5"><b>Heads up:</b> ${esc(rizwiz)} Our company name is Rizwiz Enterprises.</td></tr></table></td></tr>
 <tr><td style="padding:14px 24px 0;font-size:13px;line-height:1.5;color:#78756f">If Google Pay or PhonePe does not open, open the link in Chrome or Safari, or pay by UPI ID, QR, card or net banking. If you already paid, ignore this email.</td></tr>
+<tr><td style="padding:16px 24px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f2ee;border-radius:10px"><tr><td style="padding:14px 14px 6px;font-size:15px;font-weight:700;line-height:1.4"><a href="${razorpayBackupUrl()}" style="color:#1e1d1c;text-decoration:underline">Having trouble? Pay with Visa/card/UPI via Razorpay</a></td></tr>
+<tr><td style="padding:0 14px 14px;font-size:13px;line-height:1.5;color:#78756f">Please use the same email address you used at checkout so we can match the payment.</td></tr></table></td></tr>
 <tr><td style="padding:20px 24px 24px;font-size:12px;line-height:1.6;color:#9a968f">Rizwiz Enterprises · <a href="mailto:${BUSINESS.supportEmail}" style="color:#9a968f">${BUSINESS.supportEmail}</a><br><a href="${input.unsubscribeUrl}" style="color:#9a968f">Stop these emails</a></td></tr>
 </table></td></tr></table></body></html>`;
   return { subject, text, html };

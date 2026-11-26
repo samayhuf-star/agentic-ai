@@ -19,10 +19,12 @@ export async function markCashfreeConfirmed(orderId: string, via: "webhook" | "a
 /** SQL/Prisma filter for a sale that counts. Manual payments are counted separately. */
 export const CONFIRMED_GATEWAY_SALE = { status: "paid", isTest: false, gateway: "cashfree", gatewayConfirmedAt: { not: null } } as const;
 export const MANUAL_SALE = { status: "paid", isTest: false, gateway: "manual" } as const;
+export const RAZORPAY_SALE = { status: "paid", isTest: false, gateway: "razorpay" } as const;
 
 export function saleKind(p: { gateway: string; gatewayConfirmedAt: Date | null; status: string; isTest: boolean }) {
   if (p.status !== "paid" || p.isTest) return null;
   if (p.gateway === "manual") return "manual" as const;
   if (p.gateway === "cashfree" && p.gatewayConfirmedAt) return "cashfree" as const;
+  if (p.gateway === "razorpay") return "razorpay" as const;
   return null;
 }

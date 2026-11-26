@@ -8,6 +8,7 @@ import { formatIst } from "@/lib/config";
 import { confirmedSaleWhere } from "@/lib/admin/metrics";
 import { sourceFromStored } from "@/lib/marketing/touch";
 import { prisma } from "@/lib/prisma";
+import { RazorpayPaidForm } from "@/components/admin/console/RazorpayPaidForm";
 
 export const dynamic = "force-dynamic";
 
@@ -97,6 +98,7 @@ export default async function PaymentsPage({
           Filter
         </button>
       </form>
+      {readOnly ? null : <RazorpayPaidForm readOnly={readOnly} />}
       <p className="muted">
         {total} payment{total === 1 ? "" : "s"} · Cashfree-confirmed in this view: <b style={{ color: "var(--text)" }}>{money(sum._sum.amountInr || 0)}</b>
       </p>

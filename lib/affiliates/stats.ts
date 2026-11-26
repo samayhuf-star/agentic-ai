@@ -1,12 +1,12 @@
 import { Prisma } from "@prisma/client";
 import { istDayExpr, istDayKey } from "@/lib/ist";
 import { prisma } from "@/lib/prisma";
-import { CONFIRMED_GATEWAY_SALE, MANUAL_SALE } from "@/lib/payments/confirmed";
+import { CONFIRMED_GATEWAY_SALE, MANUAL_SALE, RAZORPAY_SALE } from "@/lib/payments/confirmed";
 
 export type AffiliateKpis = {
   clicks: number;
   signups: number;
-  /** Cashfree-confirmed sales only. */
+  /** Cashfree-confirmed and Razorpay-marked sales. */
   paid: number;
   revenue: number;
   /** Admin-recorded manual sales, counted separately. */
@@ -37,7 +37,7 @@ export async function affiliateKpis(ids: string[]): Promise<Map<string, Affiliat
       GROUP BY "affiliateId"`,
     prisma.payment.groupBy({
       by: ["affiliateId"],
-      where: { affiliateId: { in: ids }, ...CONFIRMED_GATEWAY_SALE },
+      where: { affiliateId: { in: ids }, OR: [CONFIRMED_GATEWAY_SALE, RAZORPAY_SALE] },
       _count: { _all: true },
       _sum: { amountInr: true },
     }),
@@ -88,7 +88,7 @@ export async function affiliateDaily(affiliateId: string, days: number): Promise
     prisma.$queryRaw<{ day: string; n: number }[]>`
       SELECT ${paidDay} AS day, COUNT(*)::int AS n FROM "Payment"
       WHERE "affiliateId" = ${affiliateId} AND status = 'paid' AND "isTest" = false
-        AND (gateway = 'manual' OR (gateway = 'cashfree' AND "gatewayConfirmedAt" IS NOT NULL)) AND COALESCE("paidAt", "createdAt") >= ${since} GROUP BY 1`,
+        AND (gateway = 'manual' OR gateway = 'razorpay' OR (gateway = 'cashfree' AND "gatewayConfirmedAt" IS NOT NULL)) AND COALESCE("paidAt", "createdAt") >= ${since} GROUP BY 1`,
     prisma.$queryRaw<{ day: string; n: number }[]>`
       SELECT ${clickDay} AS day, COALESCE(SUM("amountInr"), 0)::int AS n FROM "AffiliateCommission"
       WHERE "affiliateId" = ${affiliateId} AND status <> 'void' AND "createdAt" >= ${since} GROUP BY 1`,

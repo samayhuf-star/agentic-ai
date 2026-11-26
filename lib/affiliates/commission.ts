@@ -30,7 +30,7 @@ export async function syncCommission(paymentId: string) {
         payment.status === "paid" &&
         !payment.isTest &&
         payment.affiliateId &&
-        (payment.gateway === "manual" || (payment.gateway === "cashfree" && payment.gatewayConfirmedAt)),
+        (payment.gateway === "manual" || payment.gateway === "razorpay" || (payment.gateway === "cashfree" && payment.gatewayConfirmedAt)),
     );
 
     if (eligible && payment && payment.affiliateId) {
