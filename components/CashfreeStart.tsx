@@ -2,15 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { CashfreeHandoff } from "@/components/CashfreeHandoff";
-import { InAppBrowserNotice } from "@/components/InAppBrowserNotice";
-import { inAppKind, shouldHoldCashfreeHandoff, type InAppKind } from "@/lib/device";
+import { InAppOpenActions } from "@/components/InAppBrowserNotice";
+import { inAppKind, osOf, preferredBrowser, shouldHoldCashfreeHandoff, type InAppKind } from "@/lib/device";
 
 export function CashfreeStart({ sessionId, mode }: { sessionId: string; mode: string }) {
   const [kind, setKind] = useState<InAppKind | "pending">("pending");
+  const [os, setOs] = useState<"android" | "ios" | "other">("other");
   const [continueHere, setContinueHere] = useState(false);
 
   useEffect(() => {
-    setKind(inAppKind(navigator.userAgent));
+    const ua = navigator.userAgent;
+    setKind(inAppKind(ua));
+    setOs(osOf(ua));
   }, []);
 
   if (kind === "pending") {
@@ -23,11 +26,12 @@ export function CashfreeStart({ sessionId, mode }: { sessionId: string; mode: st
   }
 
   if (shouldHoldCashfreeHandoff(kind) && !continueHere) {
+    const browser = preferredBrowser(os);
     return (
-      <main className="wrap onboard checkout">
-        <InAppBrowserNotice />
-        <h1>Open in Chrome to pay with UPI</h1>
-        <p className="lead">This in-app browser can block Google Pay, PhonePe and Paytm. Open the page in Chrome, then pay.</p>
+      <main className="wrap onboard checkout inapp-hold">
+        <h1>Open in {browser} to pay with UPI</h1>
+        <p className="lead">This app can block Google Pay, PhonePe and Paytm. Open this page in {browser}, then pay.</p>
+        <InAppOpenActions os={os} />
         <button type="button" className="btn btn-g" onClick={() => setContinueHere(true)}>
           Continue here anyway
         </button>

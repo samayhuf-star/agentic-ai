@@ -29,7 +29,12 @@ export function deviceLabel(ua: string | null | undefined): string | null {
   return [mobile ? "mobile" : "desktop", os, app ? `${app}-app` : "browser"].join("/");
 }
 
-/** In-app browsers where UPI intent usually fails. Don't auto-open Cashfree; show Open in Chrome first. */
+/** Safari on iPhone/iPad, Chrome otherwise. Use this for every in-app "open in browser" heading. */
+export function preferredBrowser(os: "android" | "ios" | "other") {
+  return os === "ios" ? "Safari" : "Chrome";
+}
+
+/** In-app browsers where UPI intent usually fails. Don't auto-open Cashfree; show Open in Safari/Chrome first. */
 export function shouldHoldCashfreeHandoff(kind: InAppKind) {
   return kind === "instagram" || kind === "facebook" || kind === "snapchat";
 }

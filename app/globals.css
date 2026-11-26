@@ -1314,6 +1314,13 @@ button.text-link:disabled {
 .inapp-note .btn { min-height: 40px; }
 .inapp-note .inapp-hint { margin: 8px 0 0; font-size: 0.85rem; }
 .inapp-note-compact { margin: 0; border-radius: 0; }
+.inapp-hold { max-width: 32rem; padding-top: 28px; }
+.inapp-hold h1 { margin: 0 0 8px; font-size: 1.55rem; }
+.inapp-hold .lead { margin: 0 0 16px; }
+.inapp-hold .inapp-actions { margin: 0 0 12px; display: flex; flex-wrap: wrap; gap: 8px; }
+.inapp-hold .inapp-hint { margin: 0 0 16px; font-size: 0.9rem; }
+.inapp-hold > .btn { margin-top: 4px; }
+
 .payee-note { font-size: 0.88rem; opacity: 0.8; margin: 8px 0 0; }
 .pay-ways { font-size: 0.9rem; margin: 4px 0 12px; }
 

@@ -2,7 +2,6 @@ import fs from "node:fs";
 import path from "node:path";
 import { Landing } from "@/components/landing/Landing";
 import { publicConfig } from "@/lib/config";
-import { InAppBrowserNotice } from "@/components/InAppBrowserNotice";
 
 export const dynamic = "force-dynamic";
 
@@ -14,12 +13,7 @@ export const metadata = {
 export default function AgentsOfferPage() {
   const config = publicConfig();
   const html = withCountdown(fs.readFileSync(path.join(process.cwd(), "components/landing/body.html"), "utf8"), config.offerEnds);
-  return (
-    <>
-      <InAppBrowserNotice compact />
-      <Landing html={html} config={config} />
-    </>
-  );
+  return <Landing html={html} config={config} />;
 }
 
 /** Render the launch countdown with real numbers on the server, so it never shows 00s before the script runs. */
