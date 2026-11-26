@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { json, readJson } from "@/lib/api";
 import { requireSuperAdmin } from "@/lib/admin/api";
 import { audit } from "@/lib/admin/audit";
+import { logEvent } from "@/lib/activity/log";
 import * as v from "@/lib/admin/validate";
 import { isAdminEmail, isStaffEmail } from "@/lib/config";
 import { displayPhone } from "@/lib/phone";
@@ -77,6 +78,16 @@ export async function PATCH(request: Request, { params }: Params) {
     await audit(actor, "customer.update", "customer", id, `Edited ${user.email || id}: ${changed.join(", ") || "nothing"}`, {
       before: Object.fromEntries(changed.map((key) => [key, (user as Record<string, unknown>)[key]])),
       after: data,
+    });
+    await logEvent({
+      type: "customer.update",
+      email: typeof data.email === "string" ? data.email : user.email,
+      phone: typeof data.phone === "string" ? data.phone : user.phone,
+      userId: id,
+      status: "updated",
+      summary: `Edited ${user.email || id}: ${changed.join(", ") || "nothing"}`,
+      tag: "admin",
+      dedupeKey: `customer.update:live:${id}:${Date.now()}`,
     });
     return json({ ok: true, message: emailChanged ? "Saved. The email changed, so old sign-ins were ended." : "Saved." });
   } catch (error) {

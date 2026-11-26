@@ -428,3 +428,27 @@ model MarketingVisit {
   @@index([source, createdAt])
 }
 
+model SystemEvent {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  type      String
+  source    String?
+  email     String?
+  phone     String?
+  userId    String?
+  paymentId String?
+  amountInr Int?
+  status    String?
+  summary   String
+  detail    String?
+  tag       String?
+  dedupeKey String?  @unique
+
+  @@index([createdAt])
+  @@index([type, createdAt])
+  @@index([email, createdAt])
+  @@index([source, createdAt])
+  @@index([paymentId, createdAt])
+  @@index([userId, createdAt])
+  @@index([tag, createdAt])
+}

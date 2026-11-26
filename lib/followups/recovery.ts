@@ -2,6 +2,7 @@ import { appOrigin, formatInr } from "@/lib/config";
 import { BUSINESS } from "@/lib/business";
 import { unsubscribeLink } from "@/lib/followups/run";
 import { prisma } from "@/lib/prisma";
+import { logEvent } from "@/lib/activity/log";
 
 /**
  * Payment recovery emails for failed or dropped checkouts.
@@ -171,10 +172,32 @@ async function sendStep(paymentId: string, step: Step, opts: { to?: string; keyP
   try {
     const id = await deliver(to, letter);
     console.log(`recovery ${step} sent to ${to.replace(/^(.).*@/, "$1***@")} order ${payment.id} resend ${id || "mock"}`);
+    await logEvent({
+      type: "recovery_email_sent",
+      email: to,
+      paymentId: payment.id,
+      amountInr: payment.amountInr,
+      status: step,
+      summary: `Recovery ${step} to ${to}: ${letter.subject}`,
+      detail: `order ${payment.id}`,
+      isTest: payment.isTest || Boolean(opts.keyPrefix),
+      tag: opts.keyPrefix ? "test" : undefined,
+      dedupeKey: `recovery_email_sent:${key}`,
+    });
     return id || "mock";
   } catch (error) {
     await prisma.followupSend.delete({ where: { key } }).catch(() => undefined);
     console.error("recovery", error);
+    await logEvent({
+      type: "email.failed",
+      email: to,
+      paymentId: payment.id,
+      amountInr: payment.amountInr,
+      status: step,
+      summary: `Recovery ${step} to ${to} failed`,
+      detail: error instanceof Error ? error.message : "send failed",
+      dedupeKey: `email.failed:recovery:${key}:${Date.now()}`,
+    });
     return null;
   }
 }

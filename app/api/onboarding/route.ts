@@ -5,6 +5,7 @@ import { publicKeyFor } from "@/lib/ai/keys";
 import { validateBusinessSelection } from "@/lib/business-profile";
 import { prisma } from "@/lib/prisma";
 import { assembleTeam, readGoal } from "@/lib/team";
+import { logEvent } from "@/lib/activity/log";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,6 +20,15 @@ export async function POST(request: Request) {
   const body = await readJson(request);
   if (body.step === "finish") {
     await prisma.user.update({ where: { id: user.id }, data: { onboardedAt: new Date() } });
+    await logEvent({
+      type: "agent",
+      email: user.email,
+      phone: user.phone,
+      userId: user.id,
+      status: "onboarded",
+      summary: "Finished onboarding",
+      dedupeKey: `agent:onboard:${user.id}`,
+    });
     return json({ ok: true, redirect: "/dashboard" });
   }
   const businessName = String(body.businessName || "").trim();
@@ -47,5 +57,15 @@ export async function POST(request: Request) {
   });
   const team = await assembleTeam(user.id, goal, { applyEnabled: true });
   const key = await publicKeyFor(user.id);
+  await logEvent({
+    type: "agent",
+    email: user.email,
+    phone: user.phone,
+    userId: user.id,
+    status: "team",
+    summary: `Set up workspace (${businessName})`,
+    detail: goal,
+    dedupeKey: `agent:team:${user.id}`,
+  });
   return json({ team, key });
 }

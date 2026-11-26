@@ -6,6 +6,7 @@ import * as v from "@/lib/admin/validate";
 import { prisma } from "@/lib/prisma";
 import { syncCommission } from "@/lib/affiliates/commission";
 import { affiliateIdFromCode } from "@/lib/affiliates/lookup";
+import { logEvent, paymentSource } from "@/lib/activity/log";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -72,6 +73,37 @@ export async function PATCH(request: Request, { params }: Params) {
       before: Object.fromEntries(changed.map((key) => [key, (payment as Record<string, unknown>)[key]])),
       after: data,
     });
+    if (data.status === "refunded") {
+      await logEvent({
+        type: "payment.refunded",
+        email: payment.email,
+        phone: payment.phone,
+        userId: payment.userId,
+        paymentId: id,
+        amountInr: payment.amountInr,
+        source: paymentSource(payment),
+        status: "refunded",
+        summary: `Refunded ₹${payment.amountInr.toLocaleString("en-IN")} by ${actor}`,
+        isTest: payment.isTest,
+        tag: "admin",
+        dedupeKey: `payment.refunded:${id}`,
+      });
+    } else if (data.status === "paid") {
+      await logEvent({
+        type: "payment.paid",
+        email: payment.email,
+        phone: payment.phone,
+        userId: payment.userId,
+        paymentId: id,
+        amountInr: typeof data.amountInr === "number" ? data.amountInr : payment.amountInr,
+        source: paymentSource(payment),
+        status: "paid",
+        summary: `Marked paid ₹${(typeof data.amountInr === "number" ? data.amountInr : payment.amountInr).toLocaleString("en-IN")} by ${actor}`,
+        isTest: payment.isTest,
+        tag: "admin",
+        dedupeKey: `payment.paid:${id}`,
+      });
+    }
     return json({ ok: true, message: "Saved." });
   } catch (error) {
     if (error instanceof v.InputError) return json({ message: error.message }, 400);

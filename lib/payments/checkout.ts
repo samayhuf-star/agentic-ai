@@ -9,7 +9,8 @@ import { getActiveGateway } from "@/lib/settings";
 import { attributionFromRequest } from "@/lib/affiliates/attribution";
 import { applyMarketingToUser, marketingFromRequest } from "@/lib/marketing/server";
 import { metaCapiEnabled, sendMetaEvent } from "@/lib/marketing/meta";
-import { deviceLabel } from "@/lib/device";
+import { deviceLabel, inAppKind } from "@/lib/device";
+import { logEvent, paymentSource } from "@/lib/activity/log";
 
 export function readBuyer(input: {
   name?: unknown;
@@ -98,7 +99,7 @@ export async function startCheckoutFor(request: Request, buyer: Buyer, opts: { r
   const orderId = `br${randomToken().slice(0, 16)}`;
   const origin = appOrigin(request);
   const attribution = await attributionFromRequest(request).catch(() => null);
-  await prisma.payment.create({
+  const payment = await prisma.payment.create({
     data: {
       id: orderId,
       gateway,
@@ -116,6 +117,46 @@ export async function startCheckoutFor(request: Request, buyer: Buyer, opts: { r
       adminNote: opts.retryOf ? `Pay again from ${opts.retryOf}` : null,
     },
   });
+  await logEvent({
+    type: "checkout",
+    email: buyer.email,
+    phone: buyer.phone,
+    paymentId: orderId,
+    amountInr,
+    source: paymentSource(payment),
+    status: "started",
+    summary: `Checkout ${orderId} for ${buyer.email} (₹${amountInr.toLocaleString("en-IN")})`,
+    detail: opts.retryOf ? `Pay again from ${opts.retryOf}` : buyer.name,
+    dedupeKey: `checkout:${orderId}`,
+  });
+  if (opts.retryOf) {
+    await logEvent({
+      type: "pay_again",
+      email: buyer.email,
+      phone: buyer.phone,
+      paymentId: orderId,
+      amountInr,
+      source: paymentSource(payment),
+      status: "started",
+      summary: `Pay again ${orderId} from ${opts.retryOf} for ${buyer.email}`,
+      detail: `device ${device || "unknown"}`,
+      dedupeKey: `pay_again:${opts.retryOf}:${orderId}`,
+    });
+  }
+  const inApp = inAppKind(userAgent);
+  if (inApp) {
+    await logEvent({
+      type: "inapp_browser_prompt",
+      email: buyer.email,
+      phone: buyer.phone,
+      paymentId: orderId,
+      source: paymentSource(payment),
+      status: inApp,
+      summary: `In-app browser prompt (${inApp}) at checkout ${orderId}`,
+      detail: device,
+      dedupeKey: `inapp_browser_prompt:checkout:${orderId}`,
+    });
+  }
   const existingUser = await prisma.user.findUnique({ where: { email: buyer.email }, select: { id: true } });
   if (existingUser) await applyMarketingToUser(existingUser.id, request, attribution?.affiliateId ?? null);
   // Lead = buyer details entered and checkout started. Browser pixel sends the same event id.

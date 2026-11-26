@@ -1,0 +1,114 @@
+import { isInternalEmail } from "@/lib/admin/metrics";
+import { sourceFromStored } from "@/lib/marketing/touch";
+import type { Prisma } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
+
+export const EVENT_TYPES = [
+  "visit",
+  "signup",
+  "otp",
+  "login",
+  "customer.update",
+  "checkout",
+  "pay_again",
+  "inapp_browser_prompt",
+  "cashfree.attempt",
+  "webhook",
+  "payment.paid",
+  "payment.failed",
+  "payment.refunded",
+  "email.sent",
+  "email.failed",
+  "recovery_email_sent",
+  "agent",
+  "admin",
+  "error",
+] as const;
+
+export type EventType = (typeof EVENT_TYPES)[number];
+
+export const EVENT_LABEL: Record<string, string> = {
+  visit: "Visit",
+  signup: "Signup",
+  otp: "OTP requested",
+  login: "Login",
+  "customer.update": "Customer updated",
+  checkout: "Checkout started",
+  pay_again: "Pay again",
+  inapp_browser_prompt: "In-app browser prompt",
+  "cashfree.attempt": "Cashfree attempt",
+  webhook: "Webhook",
+  "payment.paid": "Payment paid",
+  "payment.failed": "Payment failed",
+  "payment.refunded": "Payment refunded",
+  "email.sent": "Email sent",
+  "email.failed": "Email failed",
+  recovery_email_sent: "Recovery email sent",
+  agent: "Workspace",
+  admin: "Admin",
+  error: "Error",
+};
+
+export type EventInput = {
+  type: EventType | string;
+  at?: Date;
+  source?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  userId?: string | null;
+  paymentId?: string | null;
+  amountInr?: number | null;
+  status?: string | null;
+  summary: string;
+  detail?: string | null;
+  tag?: "admin" | "test" | null;
+  isTest?: boolean;
+  dedupeKey?: string | null;
+};
+
+export function eventTag(input: { email?: string | null; isTest?: boolean; tag?: "admin" | "test" | null }) {
+  if (input.tag) return input.tag;
+  if (input.isTest) return "test" as const;
+  if (isInternalEmail(input.email)) return "admin" as const;
+  return null;
+}
+
+function clip(value: string | null | undefined, max = 500) {
+  const text = (value || "").trim();
+  return text ? text.slice(0, max) : null;
+}
+
+type EventWriter = Prisma.TransactionClient | typeof prisma;
+
+/** Append-only. Never throws. Same dedupeKey is ignored on retry. */
+export async function logEvent(input: EventInput, db: EventWriter = prisma) {
+  try {
+    const email = clip(input.email?.toLowerCase(), 200);
+    const tag = eventTag({ email, isTest: input.isTest, tag: input.tag });
+    await db.systemEvent.create({
+      data: {
+        createdAt: input.at,
+        type: input.type.slice(0, 40),
+        source: clip(input.source, 80),
+        email,
+        phone: clip(input.phone, 32),
+        userId: clip(input.userId, 40),
+        paymentId: clip(input.paymentId, 64),
+        amountInr: input.amountInr ?? null,
+        status: clip(input.status, 80),
+        summary: input.summary.slice(0, 500),
+        detail: clip(input.detail, 1000),
+        tag,
+        dedupeKey: clip(input.dedupeKey, 180),
+      },
+    });
+  } catch (error) {
+    const code = error && typeof error === "object" && "code" in error ? String((error as { code?: string }).code) : "";
+    if (code === "P2002") return;
+    console.error("system event log failed", error);
+  }
+}
+
+export function paymentSource(payment: { mktLast?: unknown; mktFirst?: unknown; channelLast?: string | null; channelFirst?: string | null; affiliateId?: string | null }) {
+  return sourceFromStored(payment.mktLast || payment.mktFirst, payment.channelLast || payment.channelFirst, { affiliate: Boolean(payment.affiliateId) });
+}

@@ -26,6 +26,7 @@ const GROUPS: SideGroup[] = [
   {
     title: "System",
     items: [
+      { href: "/sup-admin/activity", label: "Activity", icon: "list" },
       { href: "/sup-admin/ops", label: "Operations", icon: "gear" },
       { href: "/sup-admin/audit", label: "Audit log", icon: "shield" },
       { href: "/dashboard", label: "Open the app", icon: "exit" },

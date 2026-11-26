@@ -71,3 +71,22 @@ export function parsePayuEvent(payload: unknown): PaidEvent {
     raw: payload,
   };
 }
+
+export function cashfreeWebhookMeta(payload: unknown) {
+  const root = asRecord(payload);
+  const data = asRecord(root?.data) ?? root;
+  const order = asRecord(data?.order);
+  const payment = asRecord(data?.payment);
+  const methodObj = asRecord(payment?.payment_method);
+  const errorDetails = asRecord(payment?.error_details);
+  const paymentStatus = text(payment?.payment_status).toUpperCase();
+  return {
+    type: text(root?.type) || null,
+    paymentStatus: paymentStatus || null,
+    method: text(payment?.payment_group) || (methodObj ? Object.keys(methodObj)[0] : "") || null,
+    error: text(errorDetails?.error_description) || text(errorDetails?.error_reason) || text(errorDetails?.error_code) || text(payment?.payment_message) || null,
+    orderId: text(order?.order_id) || null,
+    cfPaymentId: text(payment?.cf_payment_id) || null,
+    amountInr: order?.order_amount != null ? Math.round(Number(order.order_amount)) : null,
+  };
+}

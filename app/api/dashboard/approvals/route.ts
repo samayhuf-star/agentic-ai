@@ -1,5 +1,6 @@
 import { json, readJson, requireUser } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
+import { logEvent } from "@/lib/activity/log";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,14 +16,32 @@ export async function POST(request: Request) {
   if (!approval || approval.status !== "pending") return json({ message: "That item is already decided." }, 404);
   await prisma.approval.update({ where: { id }, data: { status: decision, decidedAt: new Date() } });
   if (decision === "approved") {
-    await prisma.task.create({
+    const task = await prisma.task.create({
       data: {
         userId: user.id,
         agentId: approval.agentId,
         title: `You said yes: ${approval.title}`,
       },
     });
+    await logEvent({
+      type: "agent",
+      email: user.email,
+      phone: user.phone,
+      userId: user.id,
+      status: "task",
+      summary: `Task: ${task.title}`,
+      dedupeKey: `agent:task:${task.id}`,
+    });
   }
+  await logEvent({
+    type: "agent",
+    email: user.email,
+    phone: user.phone,
+    userId: user.id,
+    status: decision,
+    summary: `${decision === "approved" ? "Approved" : "Rejected"}: ${approval.title}`,
+    dedupeKey: `agent:approval:${id}:${decision}`,
+  });
   const note = user.paused
     ? "Saved. The team is paused, so this stays on hold until you turn everyone back on."
     : decision === "approved"

@@ -1,6 +1,7 @@
 import { denyStaffMutation, json, readJson, requireAdmin } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import { syncCommission } from "@/lib/affiliates/commission";
+import { logEvent, paymentSource } from "@/lib/activity/log";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,5 +22,19 @@ export async function POST(request: Request) {
     data: { status: "refunded", refundedAt: new Date(), refundedBy: session.email },
   });
   await syncCommission(orderId);
+  await logEvent({
+    type: "payment.refunded",
+    email: payment.email,
+    phone: payment.phone,
+    userId: payment.userId,
+    paymentId: orderId,
+    amountInr: payment.amountInr,
+    source: paymentSource(payment),
+    status: "refunded",
+    summary: `Refunded ₹${payment.amountInr.toLocaleString("en-IN")} by ${session.email}`,
+    isTest: payment.isTest,
+    tag: "admin",
+    dedupeKey: `payment.refunded:${orderId}`,
+  });
   return json({ ok: true, message: "Marked refunded." });
 }

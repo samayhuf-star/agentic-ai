@@ -9,6 +9,7 @@ import { ensureTeam } from "@/lib/team";
 import { syncCommission } from "@/lib/affiliates/commission";
 import type { PaidEvent } from "@/lib/payments/types";
 import type { GatewayName } from "@/lib/payments/signature";
+import { eventTag, logEvent, paymentSource } from "@/lib/activity/log";
 
 function chosenEmail(remote?: string | null, stored?: string | null) {
   const storedEmail = (stored || "").trim().toLowerCase();
@@ -80,6 +81,19 @@ async function fulfillPaymentInner(gateway: GatewayName, event: PaidEvent) {
         orderId: payment.id,
         status: "failed",
       });
+      await logEvent({
+        type: "payment.failed",
+        email: event.email || payment.email,
+        phone: event.phone || payment.phone,
+        userId: payment.userId,
+        paymentId: payment.id,
+        amountInr: event.amountInr ?? payment.amountInr,
+        source: paymentSource(payment),
+        status: "failed",
+        summary: `Payment failed for ${payment.id}`,
+        isTest: payment.isTest,
+        dedupeKey: `payment.failed:${payment.id}`,
+      });
     }
     return { ok: true, failed: true };
   }
@@ -128,12 +142,25 @@ async function fulfillPaymentInner(gateway: GatewayName, event: PaidEvent) {
       orderId: event.orderId,
       status: "paid, email not saved",
     });
+    await logEvent({
+      type: "payment.paid",
+      email,
+      phone,
+      paymentId: event.orderId,
+      amountInr,
+      source: payment ? paymentSource(payment) : null,
+      status: "paid",
+      summary: `Paid ₹${amountInr.toLocaleString("en-IN")} (${gateway}, email not saved)`,
+      isTest: payment?.isTest,
+      dedupeKey: `payment.paid:${event.orderId}`,
+    });
     return { ok: true, needsEmail: true };
   }
 
   let user;
+  let created = false;
   try {
-    user = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
     const existing = await tx.user.findUnique({ where: { email } });
     const canUsePhone = phone ? await phoneIsFree(tx, phone, existing?.id) : false;
     const saved = existing
@@ -177,8 +204,10 @@ async function fulfillPaymentInner(gateway: GatewayName, event: PaidEvent) {
         gatewayPaymentId: event.gatewayPaymentId,
       },
     });
-    return saved;
+    return { saved, created: !existing };
   });
+    user = result.saved;
+    created = result.created;
   } catch (error) {
     if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== "P2002") throw error;
     const existing = await prisma.user.findUnique({ where: { email } });
@@ -200,6 +229,31 @@ async function fulfillPaymentInner(gateway: GatewayName, event: PaidEvent) {
     });
     user = existing;
   }
+
+  if (created) {
+    await logEvent({
+      type: "signup",
+      email,
+      phone,
+      userId: user.id,
+      summary: `Account created for ${email}`,
+      tag: eventTag({ email }),
+      dedupeKey: `signup:${user.id}`,
+    });
+  }
+  await logEvent({
+    type: "payment.paid",
+    email,
+    phone,
+    userId: user.id,
+    paymentId: event.orderId,
+    amountInr,
+    source: payment ? paymentSource(payment) : null,
+    status: "paid",
+    summary: `Paid ₹${amountInr.toLocaleString("en-IN")} (${gateway})`,
+    isTest: payment?.isTest,
+    dedupeKey: `payment.paid:${event.orderId}`,
+  });
 
   await ensureTeam(user.id);
   await markLeadPaid({ orderId: event.orderId, amountInr, phone, userId: user.id, email, name });

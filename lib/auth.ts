@@ -7,6 +7,7 @@ import { clientIp, hitLimit } from "@/lib/rate-limit";
 import { welcomeEmail } from "@/lib/copy";
 import { queueOwnerAlert } from "@/lib/alerts/notify";
 import { attachLeadContact } from "@/lib/leads";
+import { eventTag, logEvent } from "@/lib/activity/log";
 
 const TEN_MINUTES = 10 * 60 * 1000;
 const SESSION_DAYS = 30;
@@ -48,7 +49,7 @@ async function issueCode(email: string, request: Request) {
   }
   const code = sixDigitCode();
   await prisma.loginCode.deleteMany({ where: { email } });
-  await prisma.loginCode.create({
+  const codeRow = await prisma.loginCode.create({
     data: { email, codeHash: hashSecret(code), expiresAt: new Date(Date.now() + TEN_MINUTES) },
   });
   const subject = "Your AI Time Machine code";
@@ -58,6 +59,14 @@ async function issueCode(email: string, request: Request) {
   } catch {
     return { ok: false as const, status: 502, message: "The code could not be emailed. Wait a minute and try again." };
   }
+  await logEvent({
+    type: "otp",
+    email,
+    status: "requested",
+    summary: `Sign-in code emailed to ${email}`,
+    tag: eventTag({ email }),
+    dedupeKey: `otp:${codeRow.id}`,
+  });
   const emailIsMock = !process.env.RESEND_API_KEY;
   const showCode = emailIsMock || !isProduction();
   return {
@@ -83,9 +92,26 @@ async function upsertCompUser(email: string) {
         where: { id: existing.id },
         data: { compAccess: true, onboardedAt: existing.onboardedAt ?? new Date() },
       });
+      await logEvent({
+        type: "customer.update",
+        email,
+        userId: existing.id,
+        status: "comp",
+        summary: `Updated ${email} (comp access)`,
+        tag: eventTag({ email }),
+        dedupeKey: `customer.update:comp:${existing.id}`,
+      });
     }
   } else {
-    await prisma.user.create({ data: { email, compAccess: true, onboardedAt: new Date() } });
+    const created = await prisma.user.create({ data: { email, compAccess: true, onboardedAt: new Date() } });
+    await logEvent({
+      type: "signup",
+      email,
+      userId: created.id,
+      summary: `Account created for ${email}`,
+      tag: eventTag({ email }),
+      dedupeKey: `signup:${created.id}`,
+    });
   }
   return prisma.user.findUniqueOrThrow({
     where: { email },
@@ -158,6 +184,15 @@ export async function verifyLoginCode(emailInput: string, codeInput: string, req
       data: { email, pendingEmail: null, emailTokenHash: null, emailTokenExpires: null },
       include: { payments: { where: { status: "paid" }, take: 1 } },
     });
+    await logEvent({
+      type: "customer.update",
+      email,
+      phone: user.phone,
+      userId: user.id,
+      status: "email_attached",
+      summary: `Attached email ${email}`,
+      dedupeKey: `customer.update:email:${user.id}`,
+    });
     if (!user.welcomeEmailSentAt) {
       const note = welcomeEmail(user);
       await sendEmail(email, note.subject, note.text);
@@ -191,7 +226,7 @@ export async function verifyLoginCode(emailInput: string, codeInput: string, req
   }
 
   const token = randomToken();
-  await prisma.session.create({
+  const sessionRow = await prisma.session.create({
     data: {
       tokenHash: hashSecret(token),
       email,
@@ -199,6 +234,15 @@ export async function verifyLoginCode(emailInput: string, codeInput: string, req
       isAdmin: admin,
       expiresAt: new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000),
     },
+  });
+  await logEvent({
+    type: "login",
+    email,
+    userId: user?.id,
+    status: admin ? "admin" : "ok",
+    summary: `${email} signed in`,
+    tag: eventTag({ email }),
+    dedupeKey: `login:${sessionRow.id}`,
   });
   const redirect = staff ? "/sup-admin" : admin || user?.compAccess || user?.onboardedAt ? "/dashboard" : "/onboarding";
   return { ok: true as const, status: 200, token, redirect, isAdmin: admin };

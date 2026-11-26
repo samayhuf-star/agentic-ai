@@ -3,6 +3,8 @@ import { cashfreeStartUrl, cashfreeTarget, gatewayHasKeys } from "@/lib/payments
 import { startCheckoutFor } from "@/lib/payments/checkout";
 import { indianMobile } from "@/lib/phone";
 import { prisma } from "@/lib/prisma";
+import { logEvent, paymentSource } from "@/lib/activity/log";
+import { deviceLabel, inAppKind } from "@/lib/device";
 
 type CashfreeOrder = { order_status?: string; order_expiry_time?: string; payment_session_id?: string };
 
@@ -34,7 +36,37 @@ export async function payAgain(request: Request, orderId: string): Promise<{ red
     return { redirect: `${origin}/payment/success?order_id=${encodeURIComponent(orderId)}` };
   if (payment.gateway === "cashfree" && gatewayHasKeys("cashfree")) {
     const session = await activeSession(orderId).catch(() => null);
-    if (session) return { redirect: cashfreeStartUrl(origin, session) };
+    if (session) {
+      await logEvent({
+        type: "pay_again",
+        email: payment.email,
+        phone: payment.phone,
+        userId: payment.userId,
+        paymentId: orderId,
+        amountInr: payment.amountInr,
+        source: paymentSource(payment),
+        status: "reuse_session",
+        summary: `Pay again reused Cashfree session for ${orderId}`,
+        isTest: payment.isTest,
+        dedupeKey: `pay_again:${orderId}:reuse:${Date.now()}`,
+      });
+      const ua = request.headers.get("user-agent");
+      const inApp = inAppKind(ua);
+      if (inApp) {
+        await logEvent({
+          type: "inapp_browser_prompt",
+          email: payment.email,
+          phone: payment.phone,
+          paymentId: orderId,
+          source: paymentSource(payment),
+          status: inApp,
+          summary: `In-app browser prompt (${inApp}) on pay again ${orderId}`,
+          detail: deviceLabel(ua),
+          dedupeKey: `inapp_browser_prompt:pay_again:${orderId}`,
+        });
+      }
+      return { redirect: cashfreeStartUrl(origin, session) };
+    }
   }
   const mobile = indianMobile(payment.phone);
   if (!payment.name || !payment.email || !mobile.ok) return { redirect: `${origin}/checkout` };

@@ -1,6 +1,7 @@
 import { json, readJson, requireUser } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import { agentReply } from "@/lib/llm";
+import { logEvent } from "@/lib/activity/log";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,7 +25,16 @@ export async function POST(request: Request) {
   });
   const reply = await agentReply(membership.agent, user, history, text);
   if (!reply.ok) return json({ message: reply.message, needsKey: reply.needsKey }, reply.needsKey ? 409 : 502);
-  await prisma.message.create({ data: { userId: user.id, agentId, role: "user", body: text } });
+  const userMessage = await prisma.message.create({ data: { userId: user.id, agentId, role: "user", body: text } });
   const saved = await prisma.message.create({ data: { userId: user.id, agentId, role: "agent", body: reply.text } });
+  await logEvent({
+    type: "agent",
+    email: user.email,
+    phone: user.phone,
+    userId: user.id,
+    status: "message",
+    summary: `Message to ${membership.agent.name}`,
+    dedupeKey: `agent:message:${userMessage.id}`,
+  });
   return json({ reply: saved.body, agentId });
 }

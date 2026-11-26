@@ -40,7 +40,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
     <main className="page">
       <AdminKicker kicker="Audit log" readOnly={readOnly} />
       <h1>Audit log</h1>
-      <p className="muted">Every create, edit, suspend and delete made in this console, with who did it. Older gateway actions (refunds, fulfilment) keep their own fields on the payment.</p>
+      <p className="muted">Every create, edit, suspend and delete made in this console, with who did it. For visits, payments, emails and everything else, open the <Link href="/sup-admin/activity">Activity log</Link>.</p>
       <form className="adm-toolbar" action="/sup-admin/audit" method="get">
         <input name="q" defaultValue={query} placeholder="Search text, admin email or ID" aria-label="Search audit" className="grow" />
         <select name="entity" defaultValue={entity} aria-label="Type">

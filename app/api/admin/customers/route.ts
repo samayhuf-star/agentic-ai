@@ -7,6 +7,7 @@ import * as v from "@/lib/admin/validate";
 import { prisma } from "@/lib/prisma";
 import { syncCommission } from "@/lib/affiliates/commission";
 import { affiliateIdFromCode } from "@/lib/affiliates/lookup";
+import { eventTag, logEvent } from "@/lib/activity/log";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -78,10 +79,44 @@ export async function POST(request: Request) {
       suspended,
       paymentId: result.payment?.id ?? null,
     });
+    await logEvent({
+      type: "signup",
+      email,
+      phone,
+      userId: result.user.id,
+      summary: `Account created for ${email}`,
+      tag: eventTag({ email, isTest: result.payment?.isTest }),
+      dedupeKey: `signup:${result.user.id}`,
+    });
     if (result.payment) {
       await syncCommission(result.payment.id);
       await audit(actor, "payment.create", "payment", result.payment.id, `Recorded ₹${result.payment.amountInr} paid for ${email}`, {
         userId: result.user.id,
+      });
+      await logEvent({
+        type: "checkout",
+        email,
+        phone,
+        userId: result.user.id,
+        paymentId: result.payment.id,
+        amountInr: result.payment.amountInr,
+        status: "started",
+        summary: `Checkout ${result.payment.id} for ${email} (₹${result.payment.amountInr.toLocaleString("en-IN")})`,
+        isTest: result.payment.isTest,
+        dedupeKey: `checkout:${result.payment.id}`,
+      });
+      await logEvent({
+        type: "payment.paid",
+        email,
+        phone,
+        userId: result.user.id,
+        paymentId: result.payment.id,
+        amountInr: result.payment.amountInr,
+        status: "paid",
+        summary: `Paid ₹${result.payment.amountInr.toLocaleString("en-IN")} (manual)`,
+        isTest: result.payment.isTest,
+        tag: "admin",
+        dedupeKey: `payment.paid:${result.payment.id}`,
       });
     }
     return json({ ok: true, id: result.user.id, paymentId: result.payment?.id ?? null }, 201);

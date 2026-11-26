@@ -5,7 +5,8 @@ import {
   isGateway,
   type GatewayName,
 } from "@/lib/payments/signature";
-import { parseCashfreeEvent, parseFormOrJson, parsePayuEvent, parseRazorpayEvent } from "@/lib/payments/parse";
+import { cashfreeWebhookMeta, parseCashfreeEvent, parseFormOrJson, parsePayuEvent, parseRazorpayEvent } from "@/lib/payments/parse";
+import { logEvent } from "@/lib/activity/log";
 import { fulfillPayment } from "@/lib/payments/fulfill";
 import { markCashfreeConfirmed } from "@/lib/payments/confirmed";
 import { triggerRecovery } from "@/lib/followups/recovery";
@@ -27,6 +28,34 @@ export async function handleWebhook(gatewayName: string, raw: string, headers: H
       : gatewayName === "razorpay"
         ? parseRazorpayEvent(payload)
         : parsePayuEvent(payload);
+  const meta = gatewayName === "cashfree" ? cashfreeWebhookMeta(payload) : null;
+  const attemptStatus = meta?.paymentStatus || event.status;
+  await logEvent({
+    type: "webhook",
+    email: event.email,
+    phone: event.phone,
+    paymentId: event.orderId || meta?.orderId,
+    amountInr: event.amountInr ?? meta?.amountInr,
+    status: attemptStatus,
+    summary: `${gatewayName} webhook ${meta?.type || event.status} for ${event.orderId || meta?.orderId || "unknown"}`,
+    detail: [meta?.method && `via ${meta.method}`, meta?.error, meta?.cfPaymentId && `cf_payment_id ${meta.cfPaymentId}`].filter(Boolean).join(" · ") || null,
+    dedupeKey: `webhook:${gatewayName}:${meta?.type || event.status}:${event.orderId || meta?.orderId || "x"}:${meta?.cfPaymentId || event.gatewayPaymentId || Date.now()}`,
+  });
+  if (gatewayName === "cashfree" && event.orderId && (meta?.paymentStatus || meta?.cfPaymentId)) {
+    const why = meta?.error;
+    const method = meta?.method ? ` via ${meta.method}` : "";
+    await logEvent({
+      type: "cashfree.attempt",
+      email: event.email,
+      phone: event.phone,
+      paymentId: event.orderId,
+      amountInr: event.amountInr ?? meta?.amountInr,
+      status: meta?.paymentStatus || event.status,
+      summary: `Cashfree ${meta?.paymentStatus || event.status}${method} for ${event.orderId}${why ? `: ${why}` : ""}`,
+      detail: [meta?.cfPaymentId && `cf_payment_id ${meta.cfPaymentId}`, why].filter(Boolean).join(" · ") || null,
+      dedupeKey: `cashfree.attempt:${event.orderId}:${meta?.cfPaymentId || (meta?.paymentStatus || event.status) + String(Date.now())}`,
+    });
+  }
   await fulfillPayment(gatewayName, event);
   if (gatewayName === "cashfree" && event.status === "paid" && event.orderId) await markCashfreeConfirmed(event.orderId, "webhook");
   // Failed or dropped payment: recovery email #1 right away (no-op unless RECOVERY_EMAILS=on).
