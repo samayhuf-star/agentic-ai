@@ -1,6 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  async rewrites() {
+    // Markdown alternates of the AI agents guides: /ai-agents/<slug>.md -> route handler.
+    return { beforeFiles: [{ source: "/ai-agents/:slug([a-z0-9-]+)\\.md", destination: "/ai-agents-md/:slug" }] };
+  },
   async headers() {
     const noStore = [{ key: "Cache-Control", value: "no-store" }];
     const security = [

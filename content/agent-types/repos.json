@@ -1,0 +1,397 @@
+{
+"verifiedAt": "2026-11-26",
+"repos": {
+"activepieces": {
+"repo": "activepieces/activepieces",
+"license": "Custom / source-available (read the repo licence)",
+"desc": "Open-source workflow automation with AI agent steps and MCP connectors",
+"lang": "TypeScript",
+"archived": false
+},
+"adk-python": {
+"repo": "google/adk-python",
+"license": "Apache-2.0",
+"desc": "Google's open-source Python toolkit for building, evaluating and deploying agents",
+"lang": "Python",
+"archived": false
+},
+"agno": {
+"repo": "agno-agi/agno",
+"license": "Apache-2.0",
+"desc": "Python framework and runtime for building agents and multi-agent teams",
+"lang": "Python",
+"archived": false
+},
+"anything-llm": {
+"repo": "Mintplex-Labs/anything-llm",
+"license": "MIT",
+"desc": "Self-hostable app for chatting with your documents and running local agents",
+"lang": "JavaScript",
+"archived": false
+},
+"autogen": {
+"repo": "microsoft/autogen",
+"license": "CC-BY-4.0",
+"desc": "Microsoft's multi-agent conversation framework",
+"lang": "Python",
+"archived": true
+},
+"autogpt": {
+"repo": "Significant-Gravitas/AutoGPT",
+"license": "Custom / source-available (read the repo licence)",
+"desc": "Platform for building and running autonomous agent workflows",
+"lang": "Python",
+"archived": false
+},
+"botpress": {
+"repo": "botpress/botpress",
+"license": "MIT",
+"desc": "Open-source platform for building chat and LLM agents",
+"lang": "TypeScript",
+"archived": false
+},
+"browser-use": {
+"repo": "browser-use/browser-use",
+"license": "MIT",
+"desc": "Python library that lets an agent operate a web browser",
+"lang": "Python",
+"archived": false
+},
+"camel": {
+"repo": "camel-ai/camel",
+"license": "Apache-2.0",
+"desc": "Research-oriented multi-agent framework",
+"lang": "Python",
+"archived": false
+},
+"chatwoot": {
+"repo": "chatwoot/chatwoot",
+"license": "Custom / source-available (read the repo licence)",
+"desc": "Open-source omnichannel help desk (live chat, email, social) you can attach an agent to",
+"lang": "Ruby",
+"archived": false
+},
+"chroma": {
+"repo": "chroma-core/chroma",
+"license": "Apache-2.0",
+"desc": "Open-source embedding database for retrieval",
+"lang": "Rust",
+"archived": false
+},
+"composio": {
+"repo": "ComposioHQ/composio",
+"license": "MIT",
+"desc": "Tool and integration layer that connects agents to many SaaS apps with authentication",
+"lang": "TypeScript",
+"archived": false
+},
+"crawl4ai": {
+"repo": "unclecode/crawl4ai",
+"license": "Apache-2.0",
+"desc": "Open-source web crawler that outputs LLM-ready text",
+"lang": "Python",
+"archived": false
+},
+"crewai": {
+"repo": "crewAIInc/crewAI",
+"license": "MIT",
+"desc": "Python framework for role-based multi-agent crews",
+"lang": "Python",
+"archived": false
+},
+"dify": {
+"repo": "langgenius/dify",
+"license": "Custom / source-available (read the repo licence)",
+"desc": "Visual builder for LLM apps, agentic workflows and RAG pipelines",
+"lang": "Python",
+"archived": false
+},
+"docling": {
+"repo": "docling-project/docling",
+"license": "MIT",
+"desc": "Document parser that converts PDFs and office files to structured text for AI",
+"lang": "Python",
+"archived": false
+},
+"dspy": {
+"repo": "stanfordnlp/dspy",
+"license": "MIT",
+"desc": "Framework for programming and optimising LM pipelines instead of hand-writing prompts",
+"lang": "Python",
+"archived": false
+},
+"e2b": {
+"repo": "e2b-dev/E2B",
+"license": "Apache-2.0",
+"desc": "Secure cloud sandboxes for running agent-generated code",
+"lang": "Python",
+"archived": false
+},
+"elevenlabs-python": {
+"repo": "elevenlabs/elevenlabs-python",
+"license": "MIT",
+"desc": "Official Python SDK for ElevenLabs speech and voice agents",
+"lang": "Python",
+"archived": false
+},
+"firecrawl": {
+"repo": "firecrawl/firecrawl",
+"license": "AGPL-3.0",
+"desc": "Web scraping and crawling API that returns LLM-ready data",
+"lang": "TypeScript",
+"archived": false
+},
+"flowise": {
+"repo": "FlowiseAI/Flowise",
+"license": "Custom / source-available (read the repo licence)",
+"desc": "Drag-and-drop builder for LLM agents and flows",
+"lang": "TypeScript",
+"archived": true
+},
+"graphrag": {
+"repo": "microsoft/graphrag",
+"license": "MIT",
+"desc": "Microsoft's graph-based retrieval-augmented generation system",
+"lang": "Python",
+"archived": false
+},
+"haystack": {
+"repo": "deepset-ai/haystack",
+"license": "Apache-2.0",
+"desc": "Orchestration framework for production RAG and agent pipelines",
+"lang": "Python",
+"archived": false
+},
+"hrms": {
+"repo": "frappe/hrms",
+"license": "GPL-3.0",
+"desc": "Open-source HR and payroll system (Frappe) that an agent can read and update",
+"lang": "Python",
+"archived": false
+},
+"invoiceninja": {
+"repo": "invoiceninja/invoiceninja",
+"license": "Custom / source-available (read the repo licence)",
+"desc": "Source-available invoicing and billing app with an API",
+"lang": "PHP",
+"archived": false
+},
+"langchain": {
+"repo": "langchain-ai/langchain",
+"license": "MIT",
+"desc": "Widely used framework of components for LLM apps and agents",
+"lang": "Python",
+"archived": false
+},
+"langflow": {
+"repo": "langflow-ai/langflow",
+"license": "MIT",
+"desc": "Visual builder for agents and workflows on top of LangChain components",
+"lang": "Python",
+"archived": false
+},
+"langgraph": {
+"repo": "langchain-ai/langgraph",
+"license": "MIT",
+"desc": "Library for stateful, controllable agent graphs with human-in-the-loop support",
+"lang": "Python",
+"archived": false
+},
+"litellm": {
+"repo": "BerriAI/litellm",
+"license": "Custom / source-available (read the repo licence)",
+"desc": "Gateway that calls 100+ model APIs through one OpenAI-style interface",
+"lang": "Python",
+"archived": false
+},
+"livekit-agents": {
+"repo": "livekit/agents",
+"license": "Apache-2.0",
+"desc": "Framework for real-time voice and video AI agents",
+"lang": "Python",
+"archived": false
+},
+"llamaindex": {
+"repo": "run-llama/llama_index",
+"license": "MIT",
+"desc": "Framework for document ingestion, indexing and retrieval agents",
+"lang": "Python",
+"archived": false
+},
+"mastra": {
+"repo": "mastra-ai/mastra",
+"license": "Custom / source-available (read the repo licence)",
+"desc": "TypeScript framework for agents, workflows and RAG",
+"lang": "TypeScript",
+"archived": false
+},
+"mautic": {
+"repo": "mautic/mautic",
+"license": "Custom / source-available (read the repo licence)",
+"desc": "Open-source marketing automation platform",
+"lang": "PHP",
+"archived": false
+},
+"mcp-servers": {
+"repo": "modelcontextprotocol/servers",
+"license": "Custom / source-available (read the repo licence)",
+"desc": "Reference Model Context Protocol servers for connecting agents to tools",
+"lang": "TypeScript",
+"archived": false
+},
+"mem0": {
+"repo": "mem0ai/mem0",
+"license": "Apache-2.0",
+"desc": "Memory layer that stores and recalls user and session facts for agents",
+"lang": "Python",
+"archived": false
+},
+"metagpt": {
+"repo": "FoundationAgents/MetaGPT",
+"license": "MIT",
+"desc": "Multi-agent framework that assigns software-company roles to agents",
+"lang": "Python",
+"archived": false
+},
+"n8n": {
+"repo": "n8n-io/n8n",
+"license": "Custom / source-available (read the repo licence)",
+"desc": "Workflow automation platform with AI agent nodes, self-hostable",
+"lang": "TypeScript",
+"archived": false
+},
+"openai-agents-js": {
+"repo": "openai/openai-agents-js",
+"license": "MIT",
+"desc": "OpenAI's TypeScript SDK for agents, handoffs, guardrails and voice",
+"lang": "TypeScript",
+"archived": false
+},
+"openai-agents-python": {
+"repo": "openai/openai-agents-python",
+"license": "MIT",
+"desc": "OpenAI's Python SDK for agents, handoffs, guardrails and tracing",
+"lang": "Python",
+"archived": false
+},
+"openbb": {
+"repo": "openbq-org/OpenBB",
+"license": "Custom / source-available (read the repo licence)",
+"desc": "Open data platform for financial and market data",
+"lang": "Python",
+"archived": false
+},
+"openhands": {
+"repo": "OpenHands/OpenHands",
+"license": "MIT",
+"desc": "Open-source AI software-development agent",
+"lang": "TypeScript",
+"archived": false
+},
+"paperless-ngx": {
+"repo": "paperless-ngx/paperless-ngx",
+"license": "GPL-3.0",
+"desc": "Self-hosted document management with OCR and search",
+"lang": "Python",
+"archived": false
+},
+"pipecat": {
+"repo": "pipecat-ai/pipecat",
+"license": "BSD-2-Clause",
+"desc": "Open-source framework for real-time voice and multimodal agents",
+"lang": "Python",
+"archived": false
+},
+"pydantic-ai": {
+"repo": "pydantic/pydantic-ai",
+"license": "MIT",
+"desc": "Typed Python agent framework with structured outputs",
+"lang": "Python",
+"archived": false
+},
+"qdrant": {
+"repo": "qdrant/qdrant",
+"license": "Apache-2.0",
+"desc": "Open-source vector database for retrieval",
+"lang": "Rust",
+"archived": false
+},
+"ragflow": {
+"repo": "infiniflow/ragflow",
+"license": "Apache-2.0",
+"desc": "Open-source RAG engine with deep document understanding",
+"lang": "Go",
+"archived": false
+},
+"rasa": {
+"repo": "RasaHQ/rasa",
+"license": "Apache-2.0",
+"desc": "Open-source framework for text and voice conversational assistants",
+"lang": "Python",
+"archived": false
+},
+"semantic-kernel": {
+"repo": "microsoft/semantic-kernel",
+"license": "MIT",
+"desc": "Microsoft's SDK for building agents in C#, Python and Java",
+"lang": "C#",
+"archived": false
+},
+"skyvern": {
+"repo": "Skyvern-AI/skyvern",
+"license": "AGPL-3.0",
+"desc": "Browser automation agent driven by LLMs and computer vision",
+"lang": "Python",
+"archived": false
+},
+"smolagents": {
+"repo": "huggingface/smolagents",
+"license": "Apache-2.0",
+"desc": "Hugging Face's minimal library for agents that write and run code",
+"lang": "Python",
+"archived": false
+},
+"superagi": {
+"repo": "TransformerOptimus/SuperAGI",
+"license": "MIT",
+"desc": "Open-source autonomous agent framework",
+"lang": "Python",
+"archived": false
+},
+"twenty": {
+"repo": "twentyhq/twenty",
+"license": "Custom / source-available (read the repo licence)",
+"desc": "Open-source CRM with an API an agent can read and update",
+"lang": "TypeScript",
+"archived": false
+},
+"unstructured": {
+"repo": "Unstructured-IO/unstructured",
+"license": "Apache-2.0",
+"desc": "Open-source ETL for turning documents into clean, chunked data",
+"lang": "HTML",
+"archived": false
+},
+"vanna": {
+"repo": "vanna-ai/vanna",
+"license": "MIT",
+"desc": "Text-to-SQL library for asking questions of a database",
+"lang": "Python",
+"archived": true
+},
+"vercel-ai": {
+"repo": "vercel/ai",
+"license": "Custom / source-available (read the repo licence)",
+"desc": "TypeScript toolkit for AI apps and agents (AI SDK)",
+"lang": "TypeScript",
+"archived": false
+},
+"zep": {
+"repo": "getzep/zep",
+"license": "Apache-2.0",
+"desc": "Memory and context service for agents",
+"lang": "Python",
+"archived": false
+}
+}
+}

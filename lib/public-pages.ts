@@ -11,6 +11,7 @@ export const STATIC_PUBLIC_PAGES = [
   "/55-ai-agents",
   "/about",
   "/agents",
+  "/ai-agents",
   "/blog",
   "/careers",
   "/contact",

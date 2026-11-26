@@ -485,3 +485,26 @@ model CreatorApplication {
   @@index([status])
   @@index([isTest])
 }
+
+model AgentLead {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  company   String?
+  need      String
+  agentType String
+  pagePath  String
+  timeZone  String?
+  country   String?
+  referrer  String?
+  consentAt DateTime
+  isTest    Boolean  @default(false)
+  status    String   @default("new")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([createdAt])
+  @@index([email])
+  @@index([status])
+  @@index([isTest])
+}

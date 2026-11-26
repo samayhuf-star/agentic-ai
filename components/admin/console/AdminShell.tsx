@@ -11,6 +11,7 @@ const GROUPS: SideGroup[] = [
       { href: "/sup-admin/payments/reconcile", label: "Cashfree recon", icon: "shield" },
       { href: "/sup-admin/affiliates", label: "Affiliates", icon: "link" },
       { href: "/sup-admin/creators", label: "Creators", icon: "users" },
+      { href: "/sup-admin/agent-leads", label: "AI agents leads", icon: "users" },
       { href: "/sup-admin/agents", label: "Agents", icon: "bot" },
     ],
   },
