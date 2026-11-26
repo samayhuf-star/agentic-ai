@@ -5,7 +5,6 @@ import {
   SELECTABLE_APP_IDS,
   FOLLOWER_RANGES,
   PLATFORM_IDS,
-  RATE_TYPE_IDS,
 } from "@/lib/creators/apps";
 
 const FOLLOWER_SET = new Set<string>(FOLLOWER_RANGES);
@@ -22,8 +21,6 @@ export type CreatorApplyInput = {
   niche: string;
   contentTypes: string[];
   languages: string;
-  rateType: string | null;
-  rateNote: string | null;
   sampleLinks: string[];
   note: string | null;
   selectedApps: string[];
@@ -98,9 +95,6 @@ export function parseApplication(body: Record<string, unknown>): CreatorApplyInp
   const niche = v.text(body.niche, "Niche", 80, true)!;
   const contentTypes = stringList(body.contentTypes, CONTENT_TYPE_IDS, "Content type", { required: true });
   const languages = v.text(body.languages, "Languages", 120, true)!;
-  const rateTypeRaw = typeof body.rateType === "string" ? body.rateType.trim() : "";
-  if (rateTypeRaw && !RATE_TYPE_IDS.has(rateTypeRaw as never)) throw new v.InputError("Pick a valid rate expectation, or leave it blank.");
-  const rateNote = v.text(body.rateNote, "Rate note", 200);
   const sampleLinks = parseUrlList(body.sampleLinks, "Sample work link", { required: false, max: 8 });
   const note = v.text(body.note, "Note", 2000);
   const selectedApps = stringList(body.selectedApps, SELECTABLE_APP_IDS, "App", { required: true });
@@ -116,8 +110,6 @@ export function parseApplication(body: Record<string, unknown>): CreatorApplyInp
     niche,
     contentTypes,
     languages,
-    rateType: rateTypeRaw || null,
-    rateNote,
     sampleLinks,
     note,
     selectedApps,

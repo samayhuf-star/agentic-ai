@@ -6,7 +6,6 @@ import {
   COUNTRIES,
   FOLLOWER_RANGES,
   PLATFORMS,
-  RATE_TYPES,
   SELECTABLE_APPS,
 } from "@/lib/creators/apps";
 
@@ -20,8 +19,6 @@ const empty = {
   followerRange: "",
   niche: "",
   languages: "",
-  rateType: "",
-  rateNote: "",
   sampleLinks: "",
   note: "",
   website: "",
@@ -201,26 +198,6 @@ export function CreatorApplyForm() {
           <input value={f.languages} onChange={set("languages")} maxLength={120} placeholder="English, Hindi" required />
         </label>
 
-        <fieldset className="creator-chips">
-          <legend>Rate expectation (optional)</legend>
-          <p className="muted creator-rate-note">This helps us understand how you usually work. It is not an offer or a promise of payment.</p>
-          <div className="aff-toggles">
-            {RATE_TYPES.map((item) => (
-              <label key={item.id} className="aff-toggle">
-                <input type="radio" name="rateType" checked={f.rateType === item.id} onChange={() => setF({ ...f, rateType: item.id })} />
-                {item.label}
-              </label>
-            ))}
-            <label className="aff-toggle">
-              <input type="radio" name="rateType" checked={f.rateType === ""} onChange={() => setF({ ...f, rateType: "" })} />
-              Prefer not to say
-            </label>
-          </div>
-          <label className="field">
-            Rate details (optional)
-            <input value={f.rateNote} onChange={set("rateNote")} maxLength={200} placeholder="Optional notes" />
-          </label>
-        </fieldset>
 
         <label className="field">
           Sample work links

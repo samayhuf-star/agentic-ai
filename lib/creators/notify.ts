@@ -30,7 +30,6 @@ export async function notifyCreatorApplication(input: CreatorApplyInput & { id: 
     `Niche: ${input.niche}`,
     `Content: ${input.contentTypes.join(", ")}`,
     `Languages: ${input.languages}`,
-    `Rate: ${[input.rateType, input.rateNote].filter(Boolean).join(" — ") || "—"}`,
     `Samples: ${input.sampleLinks.join(", ") || "—"}`,
     `Note: ${input.note || "—"}`,
     `Received: ${formatIst(new Date())}`,

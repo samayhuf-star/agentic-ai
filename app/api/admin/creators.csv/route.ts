@@ -13,6 +13,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ message: "Sign in as an admin first." }, { status: 401 });
   }
   const rows = await prisma.creatorApplication.findMany({ orderBy: { createdAt: "desc" }, take: 2000 });
+  const includeRate = rows.some((row) => row.rateType || row.rateNote);
   const header = [
     "when",
     "name",
@@ -26,15 +27,14 @@ export async function GET(request: Request) {
     "niche",
     "content_types",
     "languages",
-    "rate_type",
-    "rate_note",
+    ...(includeRate ? ["rate_type", "rate_note"] : []),
     "sample_links",
     "note",
     "test",
     "status",
   ];
-  const lines = rows.map((row) =>
-    [
+  const lines = rows.map((row) => {
+    const cells: Array<string | number | boolean | null | undefined> = [
       formatIst(row.createdAt),
       row.name,
       row.email,
@@ -47,14 +47,11 @@ export async function GET(request: Request) {
       row.niche,
       contentLabels(row.contentTypes).join("; "),
       row.languages,
-      rateLabel(row.rateType),
-      row.rateNote,
-      splitList(row.sampleLinks, "\n").join(" "),
-      row.note,
-      row.isTest,
-      row.status,
-    ].map(csvCell).join(","),
-  );
+    ];
+    if (includeRate) cells.push(rateLabel(row.rateType), row.rateNote);
+    cells.push(splitList(row.sampleLinks, "\n").join(" "), row.note, row.isTest, row.status);
+    return cells.map(csvCell).join(",");
+  });
   return new NextResponse([header.join(","), ...lines].join("\n"), {
     headers: {
       "content-type": "text/csv; charset=utf-8",

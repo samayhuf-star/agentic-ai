@@ -86,6 +86,8 @@ test("creator catalog lists only the live App Store apps plus AI Time Machine", 
   const page = fs.readFileSync(path.join(process.cwd(), "app/creators/page.tsx"), "utf8");
   assert.match(page, /does not guarantee paid work/);
   assert.doesNotMatch(page, /powered by AI|guaranteed payment|we will pay/i);
+  const form = fs.readFileSync(path.join(process.cwd(), "components/creators/ApplyForm.tsx"), "utf8");
+  assert.doesNotMatch(form, /Rate expectation|rateType|RATE_TYPES/);
 });
 
 test("parseApplication validates fields and flags test notes", () => {
@@ -96,6 +98,7 @@ test("parseApplication validates fields and flags test notes", () => {
   assert.equal(parsed.isTest, true);
   assert.equal(parsed.profileUrls[0], "https://instagram.com/test.creator");
   assert.deepEqual(parsed.selectedApps, ["ai-time-machine", "klenzer", "alarm-klock"]);
+  assert.equal("rateType" in parsed, false);
   assert.throws(() => parseApplication({ ...APPLICATION, consent: false }), /agree/);
   assert.throws(() => parseApplication({ ...APPLICATION, selectedApps: [] }), /app/i);
   assert.throws(() => parseApplication({ ...APPLICATION, selectedApps: ["not-an-app"] }), /valid app/i);
@@ -131,6 +134,16 @@ test("apply API stores a multi-app test submission, blocks honeypots, and export
   const body = await csv.text();
   assert.match(body, /AI Time Machine/);
   assert.match(body, /samayhuf\+creatortest@example.com/);
+  assert.doesNotMatch(body, /rate_type|rate_note/);
+  assert.equal(row!.rateType, null);
+  assert.equal(row!.rateNote, null);
+
+  await prisma.creatorApplication.update({ where: { id: row!.id }, data: { rateType: "paid", rateNote: "legacy" } });
+  const csvWithRate = await exportCsv(req("/api/admin/creators.csv", "GET", undefined, cookie));
+  const withRate = await csvWithRate.text();
+  assert.match(withRate, /rate_type,rate_note/);
+  assert.match(withRate, /Paid work/);
+  assert.match(withRate, /legacy/);
 
   const patched = await patchCreator(req(`/api/admin/creators/${row!.id}`, "PATCH", { status: "reviewed" }, cookie), { params: Promise.resolve({ id: row!.id }) });
   assert.equal(patched.status, 200, await patched.clone().text());
