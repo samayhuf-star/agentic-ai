@@ -153,7 +153,7 @@ export async function startWelcome(token: string, emailInput: string, request: R
   return { ...issued, message: issued.devCode ? "Email is in test mode. Use the code shown here." : "Code sent. Check your inbox." };
 }
 
-export async function verifyLoginCode(emailInput: string, codeInput: string, request?: Request) {
+export async function verifyLoginCode(emailInput: string, codeInput: string, request?: Request, next?: string) {
   const email = cleanEmail(emailInput || "");
   const code = (codeInput || "").replace(/\D/g, "");
   if (!isEmail(email) || code.length !== 6) {
@@ -171,10 +171,17 @@ export async function verifyLoginCode(emailInput: string, codeInput: string, req
     return { ok: false as const, status: 400, message: "That code is not right." };
   }
   await prisma.loginCode.delete({ where: { id: row.id } });
-  return completeLogin(email, request);
+  return completeLogin(email, request, "otp", next);
 }
 
-export async function completeLogin(email: string, request?: Request, via?: "otp" | "pin") {
+export function safeRedirectPath(raw: unknown, fallback: string) {
+  const path = String(raw || "").trim();
+  if (!path.startsWith("/") || path.startsWith("//") || path.includes("://") || path.includes("\\")) return fallback;
+  if (/[\s<>]/.test(path)) return fallback;
+  return path;
+}
+
+export async function completeLogin(email: string, request?: Request, via?: "otp" | "pin", next?: string) {
   let user = await prisma.user.findFirst({
     where: { OR: [{ email }, { pendingEmail: email }] },
     include: { payments: { where: { status: "paid" }, take: 1 } },
@@ -225,7 +232,13 @@ export async function completeLogin(email: string, request?: Request, via?: "otp
       });
     }
     await attachLeadContact({ userId: user.id, phone: user.phone, email: user.email || email, name: user.businessName });
-    if (request) await applyMarketingToUser(user.id, request);
+    if (request) {
+      try {
+        await applyMarketingToUser(user.id, request);
+      } catch (error) {
+        console.error("login marketing", error);
+      }
+    }
   }
 
   const token = randomToken();
@@ -248,7 +261,8 @@ export async function completeLogin(email: string, request?: Request, via?: "otp
     tag: eventTag({ email }),
     dedupeKey: `login:${sessionRow.id}`,
   });
-  const redirect = staff ? "/sup-admin" : admin || user?.compAccess || user?.onboardedAt ? "/dashboard" : "/onboarding";
+  const fallback = (via === "pin" && (admin || staff)) || staff ? "/sup-admin" : admin || user?.compAccess || user?.onboardedAt ? "/dashboard" : "/onboarding";
+  const redirect = safeRedirectPath(next, fallback);
   return { ok: true as const, status: 200, token, redirect, isAdmin: admin };
 }
 

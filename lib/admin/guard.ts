@@ -5,6 +5,6 @@ import { getSession } from "@/lib/session";
 export async function requireAdminPage() {
   const session = await getSession();
   const role: AccessRole = session ? resolveAccessRole(session.email, Boolean(session.userId)) : "none";
-  if (!session || (role !== "admin" && role !== "staff")) redirect("/login");
+  if (!session || (role !== "admin" && role !== "staff")) redirect("/login?next=/sup-admin");
   return { session, role, readOnly: role === "staff" };
 }

@@ -5,6 +5,13 @@ import { OtpInput } from "@/components/OtpInput";
 
 type Step = "email" | "pin" | "code";
 
+function nextFromPage() {
+  if (typeof window === "undefined") return "";
+  const raw = new URLSearchParams(window.location.search).get("next") || "";
+  if (!raw.startsWith("/") || raw.startsWith("//")) return "";
+  return raw;
+}
+
 export function LoginForm() {
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -74,7 +81,7 @@ export function LoginForm() {
     const response = await fetch("/api/auth/verify-pin", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ email, pin }),
+      body: JSON.stringify({ email, pin, next: nextFromPage() }),
     });
     const data = (await response.json().catch(() => ({}))) as { message?: string; redirect?: string };
     setBusy(false);
@@ -93,7 +100,7 @@ export function LoginForm() {
     const response = await fetch("/api/auth/verify-code", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ email, code }),
+      body: JSON.stringify({ email, code, next: nextFromPage() }),
     });
     const data = (await response.json().catch(() => ({}))) as { message?: string; redirect?: string };
     setBusy(false);

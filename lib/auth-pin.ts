@@ -44,7 +44,7 @@ async function logPinAttempt(email: string, status: "failed" | "locked") {
   });
 }
 
-export async function verifyLoginPin(emailInput: string, pinInput: string, request?: Request) {
+export async function verifyLoginPin(emailInput: string, pinInput: string, request?: Request, next?: string) {
   const email = cleanEmail(emailInput || "");
   const pin = (pinInput || "").replace(/\D/g, "");
   if (!isEmail(email) || pin.length !== 6) {
@@ -71,5 +71,5 @@ export async function verifyLoginPin(emailInput: string, pinInput: string, reque
     return { ok: false as const, status: 400, message: "That PIN is not right." };
   }
   await prisma.rateLimit.deleteMany({ where: { id: key } });
-  return completeLogin(email, request, "pin");
+  return completeLogin(email, request, "pin", next);
 }

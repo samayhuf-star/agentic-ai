@@ -67,12 +67,19 @@ export async function applyMarketingToUser(userId: string, request: Request, aff
   if (!fields.mktFirst && !fields.mktLast) return;
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { mktFirst: true } });
   if (!user) return;
+  // stamp() also returns gclid for Payment rows. User has no gclid column, so only copy user fields.
+  const data = {
+    mktFirst: fields.mktFirst,
+    mktLast: fields.mktLast,
+    channelFirst: fields.channelFirst,
+    channelLast: fields.channelLast,
+  };
   if (user.mktFirst) {
     await prisma.user.update({
       where: { id: userId },
-      data: { mktLast: fields.mktLast, channelLast: fields.channelLast },
+      data: { mktLast: data.mktLast, channelLast: data.channelLast },
     });
     return;
   }
-  await prisma.user.update({ where: { id: userId }, data: fields });
+  await prisma.user.update({ where: { id: userId }, data });
 }

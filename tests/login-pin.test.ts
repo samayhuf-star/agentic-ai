@@ -4,6 +4,8 @@ import bcrypt from "bcryptjs";
 import { prisma } from "../lib/prisma";
 import { requestLoginCode, verifyLoginCode } from "../lib/auth";
 import { loginOptions, verifyLoginPin } from "../lib/auth-pin";
+import { applyMarketingToUser } from "../lib/marketing/server";
+import { encodeMarketing, MT_COOKIE } from "../lib/marketing/touch";
 
 if (!process.env.AUTH_SECRET) process.env.AUTH_SECRET = "test-secret";
 
@@ -65,7 +67,7 @@ test("an account with a PIN hash can sign in, and a wrong PIN is rejected and th
     const signedIn = await verifyLoginPin(email, TEST_PIN);
     assert.equal(signedIn.ok, true);
     if (!signedIn.ok) return;
-    assert.equal(signedIn.redirect, "/dashboard");
+    assert.equal(signedIn.redirect, "/sup-admin");
     assert.equal(signedIn.isAdmin, true);
     const session = await prisma.session.findFirst({ where: { email }, orderBy: { createdAt: "desc" } });
     assert.ok(session);
@@ -122,7 +124,7 @@ test("a hashed env PIN works for the configured email, and other users still use
     const signedIn = await verifyLoginPin(email, TEST_PIN);
     assert.equal(signedIn.ok, true);
     if (!signedIn.ok) return;
-    assert.equal(signedIn.redirect, "/dashboard");
+    assert.equal(signedIn.redirect, "/sup-admin");
 
     const mailed = await requestLoginCode(other, new Request("http://localhost/api/auth/request-code", { headers: { "x-forwarded-for": "203.0.113.201" } }));
     assert.equal(mailed.ok, true);
@@ -133,4 +135,60 @@ test("a hashed env PIN works for the configured email, and other users still use
     if (!verified.ok) return;
     assert.equal(verified.redirect, "/dashboard");
   });
+});
+
+test("PIN sign-in sends an admin to /sup-admin, honors a safe next path, and survives an ads cookie", async () => {
+  const email = "pin-sup-admin@example.com";
+  await withAdmin(email, async () => {
+    delete process.env.LOGIN_PIN_HASH;
+    delete process.env.LOGIN_PIN_EMAIL;
+    await removeUser(email);
+    await clearPinLimit(email);
+    const pinHash = await bcrypt.hash(TEST_PIN, 4);
+    await prisma.user.create({ data: { email, compAccess: true, onboardedAt: new Date(), pinHash } });
+
+    const cookie = encodeMarketing({
+      f: { s: "google", m: "cpc", g: "Cj0TESTCLICK", p: "/", at: Math.floor(Date.now() / 1000) },
+      l: { s: "google", m: "cpc", g: "Cj0TESTCLICK", p: "/sup-admin", at: Math.floor(Date.now() / 1000) },
+    });
+    const request = new Request("https://www.theaitimemachine.com/api/auth/verify-pin", {
+      method: "POST",
+      headers: { cookie: `${MT_COOKIE}=${cookie}`, "x-forwarded-host": "www.theaitimemachine.com" },
+    });
+    const signedIn = await verifyLoginPin(email, TEST_PIN, request);
+    assert.equal(signedIn.ok, true);
+    if (!signedIn.ok) return;
+    assert.equal(signedIn.redirect, "/sup-admin");
+    const user = await prisma.user.findUniqueOrThrow({ where: { email } });
+    assert.equal(user.channelFirst, "Paid Google");
+    assert.equal((user.mktLast as { g?: string } | null)?.g, "Cj0TESTCLICK");
+
+    await clearPinLimit(email);
+    const next = await verifyLoginPin(email, TEST_PIN, undefined, "/sup-admin/activity");
+    assert.equal(next.ok, true);
+    if (!next.ok) return;
+    assert.equal(next.redirect, "/sup-admin/activity");
+
+    const rejected = await verifyLoginPin(email, TEST_PIN, undefined, "https://evil.example/phish");
+    assert.equal(rejected.ok, true);
+    if (!rejected.ok) return;
+    assert.equal(rejected.redirect, "/sup-admin");
+  });
+});
+
+test("copying an ads cookie onto a user does not pass Payment-only fields", async () => {
+  const email = "pin-mkt-user@example.com";
+  await prisma.user.deleteMany({ where: { email } });
+  const user = await prisma.user.create({ data: { email, compAccess: true, onboardedAt: new Date() } });
+  const cookie = encodeMarketing({
+    f: { s: "google", m: "cpc", g: "GCLIDTEST", p: "/", at: Math.floor(Date.now() / 1000) },
+    l: { s: "google", m: "cpc", g: "GCLIDTEST", p: "/login", at: Math.floor(Date.now() / 1000) },
+  });
+  await applyMarketingToUser(
+    user.id,
+    new Request("https://www.theaitimemachine.com/login", { headers: { cookie: `${MT_COOKIE}=${cookie}` } }),
+  );
+  const saved = await prisma.user.findUniqueOrThrow({ where: { id: user.id } });
+  assert.equal(saved.channelLast, "Paid Google");
+  assert.equal((saved.mktFirst as { g?: string } | null)?.g, "GCLIDTEST");
 });
