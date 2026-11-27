@@ -6,10 +6,13 @@ import { inAppKind, osOf, preferredBrowser, type InAppKind } from "@/lib/device"
 const APP_NAME: Record<Exclude<InAppKind, null>, string> = {
   google: "the Google app",
   instagram: "Instagram",
-  facebook: "Facebook",
+  facebook: "Facebook or Messenger",
   linkedin: "LinkedIn",
   snapchat: "Snapchat",
   twitter: "X",
+  line: "LINE",
+  tiktok: "TikTok",
+  whatsapp: "WhatsApp",
   webview: "this app",
 };
 
@@ -48,7 +51,7 @@ export function InAppOpenActions({ os }: { os: "android" | "ios" | "other" }) {
           {copied ? `Link copied. Paste it in ${browser}` : "Copy link"}
         </button>
       </div>
-      {os === "ios" ? <p className="inapp-hint">Or tap ••• at the top and choose “Open in browser”.</p> : null}
+      {os === "ios" ? <p className="inapp-hint">On iPhone, tap ••• at the top and choose “Open in Safari”.</p> : null}
     </>
   );
 }

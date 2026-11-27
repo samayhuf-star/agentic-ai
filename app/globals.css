@@ -1363,3 +1363,21 @@ button.text-link:disabled {
   min-height: 36px;
 }
 
+
+.inapp-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: #fffaf3;
+  color: #1b1b1b;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  padding: 28px 22px 40px;
+  max-width: 32rem;
+  margin: 0 auto;
+}
+.inapp-gate h1 { margin: 0; font-size: 1.7rem; line-height: 1.2; }
+.inapp-gate .lead { margin: 0; }
+.inapp-gate .inapp-actions { margin-top: 6px; }

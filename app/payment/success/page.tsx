@@ -50,7 +50,7 @@ export default async function PaymentSuccessPage({ searchParams }: { searchParam
 
   return (
     <>
-      <GtmSuccess purchase={gtmPurchase} />
+      {gtmPurchase ? <GtmSuccess purchase={gtmPurchase} /> : null}
       <QuietHeader />
       <main className="wrap onboard checkout">
         {!payment ? (

@@ -439,7 +439,10 @@ test("UPI checkout asks Cashfree for UPI only, and the card path excludes UPI", 
   assert.equal(shouldHoldCashfreeHandoff("snapchat"), true);
   assert.equal(shouldHoldCashfreeHandoff("facebook"), true);
   assert.equal(shouldHoldCashfreeHandoff("instagram"), true);
-  assert.equal(shouldHoldCashfreeHandoff("google"), false);
+  assert.equal(shouldHoldCashfreeHandoff("linkedin"), true);
+  assert.equal(shouldHoldCashfreeHandoff("line"), true);
+  assert.equal(shouldHoldCashfreeHandoff("google"), true);
+  assert.equal(shouldHoldCashfreeHandoff("webview"), true);
   assert.equal(shouldHoldCashfreeHandoff(null), false);
 
   const { preferredBrowser, osOf } = await import("../lib/device");
@@ -453,11 +456,11 @@ test("UPI checkout asks Cashfree for UPI only, and the card path excludes UPI", 
   const checkoutPage = fs.readFileSync(path.join(root, "app/checkout/page.tsx"), "utf8");
   const landingPage = fs.readFileSync(path.join(root, "app/55-ai-agents/page.tsx"), "utf8");
   const holdPage = fs.readFileSync(path.join(root, "components/CashfreeStart.tsx"), "utf8");
-  assert.doesNotMatch(checkoutPage, /InAppBrowserNotice/);
+  assert.match(checkoutPage, /InAppPayGate/);
+  assert.doesNotMatch(landingPage, /InAppPayGate/);
   assert.doesNotMatch(landingPage, /InAppBrowserNotice/);
-  assert.match(holdPage, /preferredBrowser/);
-  assert.match(holdPage, /Continue here anyway/);
-  assert.doesNotMatch(holdPage, /Open in Chrome to pay with UPI/);
+  assert.match(holdPage, /InAppPayGate/);
+  assert.doesNotMatch(holdPage, /Continue here anyway/);
 
   process.env.CASHFREE_APP_ID = "test_id";
   process.env.CASHFREE_SECRET_KEY = "test_secret";
