@@ -479,6 +479,7 @@ model SystemEvent {
   @@index([paymentId, createdAt])
   @@index([userId, createdAt])
   @@index([tag, createdAt])
+  @@index([tag, type, createdAt])
 }
 
 model CreatorApplication {

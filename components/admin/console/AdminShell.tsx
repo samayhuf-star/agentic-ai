@@ -18,6 +18,7 @@ const GROUPS: SideGroup[] = [
   {
     title: "Stats",
     items: [
+      { href: "/sup-admin/stats/live", label: "Live analytics", icon: "chart" },
       { href: "/sup-admin/stats", label: "Sales", icon: "chart", exact: true },
       { href: "/sup-admin/stats/orders", label: "Orders", icon: "list" },
       { href: "/sup-admin/stats/customers", label: "Customer stats", icon: "pie" },
