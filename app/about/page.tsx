@@ -43,7 +43,7 @@ export default function AboutPage() {
             </div>
           </div>
           <p>
-            Samay started Rizwiz Enterprises in Delhi and built AI Time Machine for owners who want help, and also want the last word. For press, see the <Link href="/press">media kit</Link>. For work enquiries, see <Link href="/careers">careers</Link>.
+            Samay started Rizwiz Enterprises in Delhi and built AI Time Machine for owners who want help, and also want the last word. For work enquiries, see <Link href="/careers">careers</Link>.
           </p>
         </div>
         <aside className="mk-aside">

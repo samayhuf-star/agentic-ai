@@ -43,7 +43,6 @@ test("public pages include the new marketing routes and every agent", () => {
     "/acceptable-use",
     "/privacy-rights",
     "/partners",
-    "/press",
     "/pricing",
     "/security",
     "/sitemap",
@@ -61,7 +60,7 @@ test("public pages include the new marketing routes and every agent", () => {
 });
 
 test("marketing copy does not invent social proof", () => {
-  const roots = ["content", "app/about", "app/press", "app/careers", "app/integrations", "app/security"];
+  const roots = ["content", "app/about", "app/careers", "app/integrations", "app/security"];
   const files: string[] = [];
   for (const root of roots) {
     const dir = path.join(process.cwd(), root);
