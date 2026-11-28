@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  async redirects() {
+    return [{ source: "/press", destination: "/", permanent: true }];
+  },
   async rewrites() {
     // Markdown alternates of the AI agents guides: /ai-agents/<slug>.md -> route handler.
     return { beforeFiles: [{ source: "/ai-agents/:slug([a-z0-9-]+)\\.md", destination: "/ai-agents-md/:slug" }] };

@@ -26,7 +26,6 @@ export const STATIC_PUBLIC_PAGES = [
   "/partners",
   "/partners/apply",
   "/partners/terms",
-  "/press",
   "/pricing",
   "/privacy",
   "/refund-policy",
